@@ -12,7 +12,7 @@ Usage:
 from cmd_parser import CmdParser
 from utils import parse_yaml
 
-if __name__ == "__main__":
+if __name__ == "__main__":    
     parser = CmdParser()
     cmd_args = parser.get_args()
 
