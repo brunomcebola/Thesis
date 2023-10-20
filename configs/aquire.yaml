@@ -1,0 +1,22 @@
+mode: aquire
+
+# Define the input source for the data to be acquired
+input:
+  - camera: 1355220772030
+    name: Left camera
+    stream_mode:
+      - type: depth
+        config:
+          width: 640
+          height: 480
+          fps: 30
+          format: z16
+      - type: color
+        config:
+          width: 640
+          height: 480
+          fps: 30
+          format: z16
+
+# Define the output destination for the acquired data
+output: /media/brunomcebola/RPi_Storage/cameras/
