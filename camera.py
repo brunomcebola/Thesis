@@ -4,8 +4,8 @@ This module allows the abstract use of the realsense cameras.
 Classes:
 --------
     - Camera: Class to abstract the use of the realsense cameras
-    - StreamType: Enum to represent the type of stream
-    - StreamConfig: Named tuple to represent the configuration of a stream
+    - StreamType: Enum to represent the type of video stream
+    - StreamConfig: Named tuple to represent the configuration of the video stream
 
 Exceptions:
 -----------
@@ -32,9 +32,10 @@ class StreamType(IntEnum):
     An enumeration of the different types of streams that can be captured by the camera.
 
     Attributes:
-        DEPTH (0): A stream of depth data.
-        COLOR (1): A stream of color data.
-        DEPTH_N_COLOR (2): A stream of both depth and color data.
+    -----------
+        - DEPTH (0): A stream of depth data.
+        - COLOR (1): A stream of color data.
+        - DEPTH_N_COLOR (2): A stream of both depth and color data.
     """
 
     DEPTH = 0
@@ -44,18 +45,14 @@ class StreamType(IntEnum):
 
 class StreamConfig(NamedTuple):
     """
-    A named tuple representing the configuration of a camera stream.
+    Named tuple representing the configuration of the stream.
 
     Attributes:
     -----------
-    width : int
-        The width of the camera stream.
-    height : int
-        The height of the camera stream.
-    fps : int
-        The frames per second of the camera stream.
-    format : rs.format
-        The format of the camera stream.
+        - width: The width of the camera stream.
+        - height: The height of the camera stream.
+        - fps: The frames per second of the camera stream.
+        - format: The format of the camera stream.
     """
 
     width: int
@@ -102,7 +99,7 @@ class Camera:
             - stream_type: The type of stream to capture.
             - depth_config: The configuration for the depth stream.
             - color_config: The configuration for the color stream.
-            
+
         Raises:
         -------
             - StreamConfigError: If the configuration is not correct.
@@ -122,6 +119,7 @@ class Camera:
         """
         Stops the pipeline object when the Camera object is deleted.
         """
+
         if self.__pipeline is not None:
             self.__pipeline.stop()
 
@@ -129,6 +127,7 @@ class Camera:
         """
         Checks if the given configuration is valid for the given stream type.
         """
+        
         if self.__stream_type == StreamType.DEPTH and self.__depth_config is None:
             raise StreamConfigError("Depth stream config must be set when in depth stream type.")
         elif self.__stream_type == StreamType.COLOR and self.__color_config is None:
@@ -157,6 +156,7 @@ class Camera:
         Raises:
             - StreamConfigError: If the configuration is not correct.
         """
+        
         old_stream_type = self.__stream_type
         old_depth_config = self.__depth_config
         old_color_config = self.__color_config
@@ -177,6 +177,7 @@ class Camera:
         """
         Starts the pipeline object to capture frames.
         """
+        
         config = rs.config()
 
         config.enable_device(self.__serial_number)
@@ -210,6 +211,7 @@ class Camera:
         """
         Stops the pipeline object.
         """
+        
         if self.__pipeline is not None:
             self.__pipeline = self.__pipeline.stop()
             print(f"Camera {self.__serial_number} stopped.")
@@ -218,6 +220,7 @@ class Camera:
         """
         Captures and returns a frame from the camera.
         """
+        
         if self.__pipeline is not None:
             frames = self.__pipeline.wait_for_frames()
             return frames
@@ -228,10 +231,12 @@ class Camera:
         """
         Returns the serial number of the camera.
         """
+        
         return self.__serial_number
 
     def get_name(self) -> str:
         """
         Returns the name of the camera.
         """
+        
         return self.__name
