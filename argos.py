@@ -9,20 +9,26 @@ It includes a command-line interface with four modes:
 Usage:
     $ python argos.py [-h] {aquire,train,online,yaml} ...
 """
-from cmd_parser import CmdParser
+from arg_parser import ArgParser
 from utils import parse_yaml
+from aquire import AquireNamespace
 
-if __name__ == "__main__":    
-    parser = CmdParser()
+if __name__ == "__main__":
+    parser = ArgParser()
     cmd_args = parser.get_args()
 
-    if cmd_args["mode"] in ["aquire", "a"]:
+    if cmd_args.mode in ["aquire", "a"]:
         print("aquire")
-    elif cmd_args["mode"] in ["train", "t"]:
+        a = AquireNamespace(**cmd_args.__dict__)
+        print(a)
+    elif cmd_args.mode in ["train", "t"]:
         print("train")
-    elif cmd_args["mode"] in ["online", "o"]:
+    elif cmd_args.mode in ["online", "o"]:
         print("online")
-    elif cmd_args["mode"] in ["yaml", "y"]:
-        parse_yaml(cmd_args["file"])
+    elif cmd_args.mode in ["yaml", "y"]:
+        print(cmd_args)
+        args = parse_yaml(cmd_args.file)
+        print(args["mode"])
+
     else:
         exit(0)

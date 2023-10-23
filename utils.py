@@ -5,7 +5,6 @@ Functions:
 - parse_yaml(file_path): Validates a YAML file at the given file path.
 """
 
-import json
 import sys
 import yaml
 
@@ -27,7 +26,6 @@ def parse_yaml(file_path):
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             args = yaml.safe_load(f)
-            print(json.dumps(args, indent=4))
             return args
     except FileNotFoundError:
         print(

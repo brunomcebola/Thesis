@@ -8,10 +8,11 @@ Classes:
 import argparse
 import sys
 
+from types import SimpleNamespace
 from colorama import Fore, Style
 
 
-class CmdParser:
+class ArgParser:
     """
     A class for parsing command line arguments into Python objects.
 
@@ -142,6 +143,7 @@ class CmdParser:
             nargs="+",
             help="List with the serial numbers of the cameras to be used.",
             metavar="sn",
+            default=[]
         )
 
         parser_required = parser.add_argument_group("Required arguments")
@@ -230,4 +232,4 @@ class CmdParser:
         Returns:
             dict: The command line arguments as a dictionary.
         """
-        return vars(self._parser.parse_args())
+        return self._parser.parse_args()
