@@ -8,8 +8,8 @@ Classes:
 import argparse
 import sys
 
-from types import SimpleNamespace
 from colorama import Fore, Style
+from camera import StreamType
 
 
 class ArgParser:
@@ -54,25 +54,22 @@ class ArgParser:
         def error(self, message):
             print(f"{Fore.RED + Style.BRIGHT}Error:{Style.RESET_ALL} {message}\n")
 
-            if len({"a", "aquire"}.intersection(sys.argv[1:])):
-                self.parse_args(["a", "-h"])
-            elif len({"t", "train"}.intersection(sys.argv[1:])):
-                # self.parse_args(["t", "-h"])
-                pass
-            elif len({"o", "online"}.intersection(sys.argv[1:])):
-                # self.parse_args(["o", "-h"])
-                pass
-            elif len({"y", "yaml"}.intersection(sys.argv[1:])):
-                self.parse_args(["y", "-h"])
-            else:
+            if not self._subparsers:
                 self.print_help()
+            else:
+                actions = self._subparsers._group_actions  # pylint: disable=protected-access
+                keys = actions[0].choices.keys()
+                if sys.argv[1] in keys:
+                    self.parse_args([sys.argv[1], "-h"])
+                else:
+                    self.print_help()
 
-            self.exit(2)
+            exit(2)
 
-    class _SubcommandHelpFormatter(argparse.HelpFormatter):
+    class _HelpFormatter(argparse.HelpFormatter):
         def add_usage(self, usage, actions, groups, prefix=None):
             if prefix is None:
-                prefix = "Usage: "
+                prefix = Style.BRIGHT + "Usage\n  " + Style.RESET_ALL
                 return super().add_usage(usage, actions, groups, prefix)
 
         def _format_action(self, action):
@@ -87,7 +84,7 @@ class ArgParser:
 
             return parts
 
-    class _SubcommandHelpFormatterModes(_SubcommandHelpFormatter):
+    class _HelpFormatterModes(_HelpFormatter):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self._max_help_position = 100
@@ -95,7 +92,7 @@ class ArgParser:
     def __init__(self):
         self._parser = self._ArgumentParser(
             description="Argos, Real-time Image Analysis for Fraud Detection",
-            formatter_class=self._SubcommandHelpFormatter,
+            formatter_class=self._HelpFormatter,
             usage="argos.py [-h | --help]\n" + "       argos.py <mode> [<args>]",
             add_help=False,
         )
@@ -123,9 +120,9 @@ class ArgParser:
             description="Argos, Real-time Image Analysis for Fraud Detection",
             help="Mode to capture and store video.",
             allow_abbrev=False,
-            formatter_class=self._SubcommandHelpFormatterModes,
-            usage="argos.py aquire [-h | --help]\n"
-            + "       argos.py aquire {-o | --output <path>} [-c | --cameras <sn> ...]",
+            formatter_class=self._HelpFormatterModes,
+            usage="argos.py aquire (-o | --output) <path> [(-c | --camera) <sn>]\n"
+            + "                  [(-s | --stream-type) <stream>]",
             add_help=False,
         )
 
@@ -139,11 +136,26 @@ class ArgParser:
 
         parser.add_argument(
             "-c",
-            "--cameras",
-            nargs="+",
-            help="List with the serial numbers of the cameras to be used.",
+            "--camera",
+            nargs="?",
+            help="When not specified, all cameras will be used. Otherwise, only the specified camera will be used.",
             metavar="sn",
-            default=[]
+        )
+
+        class _StreamTypeAction(argparse.Action):
+            def __call__(self, parser, namespace, values, option_string=None):
+                setattr(namespace, self.dest, StreamType[values])
+
+        parser.add_argument(
+            "-s",
+            "--stream-type",
+            choices=[type.name for type in StreamType],
+            type=str.upper,
+            default=StreamType.DEPTH,
+            nargs="?",
+            help="When not specified, only the depth stream will be used. Otherwise, the specified stream will be used.",
+            metavar="stream",
+            action=_StreamTypeAction,
         )
 
         parser_required = parser.add_argument_group("Required arguments")
@@ -156,6 +168,7 @@ class ArgParser:
             metavar="path",
         )
 
+    # TODO
     def _add_train_mode_subparser(self):
         parser = self._subparsers.add_parser(
             "train",
@@ -163,7 +176,7 @@ class ArgParser:
             description="Argos, Real-time Image Analysis for Fraud Detection",
             help="Mode to train a model.",
             allow_abbrev=False,
-            formatter_class=self._SubcommandHelpFormatterModes,
+            formatter_class=self._HelpFormatterModes,
             usage="argos.py train [-h | --help]",
             add_help=False,
         )
@@ -176,6 +189,7 @@ class ArgParser:
             help="Show this help message and exit.",
         )
 
+    # TODO
     def _add_online_mode_subparser(self):
         parser = self._subparsers.add_parser(
             "online",
@@ -183,7 +197,7 @@ class ArgParser:
             description="Argos, Real-time Image Analysis for Fraud Detection",
             help="Mode to run the model online.",
             allow_abbrev=False,
-            formatter_class=self._SubcommandHelpFormatterModes,
+            formatter_class=self._HelpFormatterModes,
             usage="argos.py online [-h | --help]",
             add_help=False,
         )
@@ -196,6 +210,7 @@ class ArgParser:
             help="Show this help message and exit.",
         )
 
+    # TODO
     def _add_yaml_mode_subparser(self):
         # create the parser for the "yaml" mode
         parser = self._subparsers.add_parser(
@@ -204,7 +219,7 @@ class ArgParser:
             description="Argos, Real-time Image Analysis for Fraud Detection",
             help="Mode to run the model based on a yaml file.",
             allow_abbrev=False,
-            formatter_class=self._SubcommandHelpFormatterModes,
+            formatter_class=self._HelpFormatterModes,
             usage="argos.py yaml [-h | --help]\n" + "       argos.py yaml <file>",
             add_help=False,
         )

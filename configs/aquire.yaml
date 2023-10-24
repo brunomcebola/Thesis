@@ -1,8 +1,8 @@
 mode: aquire
 
 # Define the input source for the data to be acquired
-input:
-  - camera: 1355220772030
+cameras:
+  - sn: 1355220772030
     name: Left camera
     stream_mode:
       - type: depth

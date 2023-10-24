@@ -22,6 +22,7 @@ class AquireNamespace(SimpleNamespace):
 
 
 # STORAGE_PATH = os.getenv("STORAGE_PATH")
+
 # if STORAGE_PATH is None:
 #     exit("STORAGE_PATH is not set in .env file.")
 # elif not os.path.exists(STORAGE_PATH):
@@ -39,7 +40,7 @@ class AquireNamespace(SimpleNamespace):
 #     serial_number = dev.get_info(rs.camera_info.serial_number)
 #     print("serial number: ", serial_number)
 #     cameras.append(
-        Camera(serial_number, StreamType.DEPTH, StreamConfig(640, 480, 30, rs.format.z16))
+#         Camera(serial_number, StreamType.DEPTH, StreamConfig(640, 480, 30, rs.format.z16))
 #     )
 
 #     # check if folder exists and if not create it
