@@ -4,7 +4,7 @@ mode: aquire
 cameras:
   - sn: 1355220772030
     name: Left camera
-    stream_mode:
+    stream:
       - type: depth
         config:
           width: 640
@@ -19,4 +19,4 @@ cameras:
           format: z16
 
 # Define the output destination for the acquired data
-output: /media/brunomcebola/RPi_Storage/cameras/
+output_folder: /media/brunomcebola/RPi_Storage/cameras/

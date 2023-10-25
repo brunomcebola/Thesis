@@ -6,27 +6,79 @@ Classes:
 
 
 """
-from types import SimpleNamespace
-import pyrealsense2.pyrealsense2 as rs
+import os
+from utils import print_error, BaseNamespace, ArgSource
 
-from camera import Camera, StreamType, StreamConfig
+from camera import Camera
 
 
-class AquireNamespace(SimpleNamespace):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+class AquireNamespace(BaseNamespace):
+    """
+    This class holds the arguments for the aquire mode.
 
-        print(self.__dict__.get("ttt"))
+    It can be initialized with explicit arguments or with a dictionary.
 
-        self.__dict__.update(a=1)
+    Attributes:
+    -----------
+        - source:
+            Indicates wheter the args come from the command line of from a YAML file.
+        - output:
+            The path to the output folder.
+        - cameras:
+            The serial numbers of the cameras to be used.
+        - stream:
+            The type of stream to be captured by each camera.
+        - config:
+            The configuration of the stream to be captured by each camera.
+        - op_time:
+            The time interval in which the cameras will be capturing data.
+        - source:
+            Indicates wheter the args come from a YAML file of from the command line.
+        - kwargs:
+            Used as dumpster for extra arguments passed from mappings.
+    """
+
+    def __init__(
+        self,
+        source: ArgSource,
+        output_folder: str,
+        cameras: list[str] | None = None,
+        # stream_types: list[StreamType] = None,
+        # stream_configs: list[tuple[StreamConfig | None, StreamConfig | None]] = None,
+        # op_times: list[tuple[int, int]] = None,
+        **kwargs,
+    ):
+        del kwargs
+
+        super().__init__(source)
+
+        if self.source == ArgSource.CMD:
+            # output folder
+            if not os.path.exists(output_folder):
+                print_error(f"Output folder does not exist ({output_folder}).")
+                exit(1)
+
+            self.output_folder = output_folder
+
+            # cameras
+            if cameras is None:
+                cameras = Camera.get_available_cameras()
+                if len(cameras) == 0:
+                    print_error("No available cameras.")
+                    exit(1)
+                self.cameras = cameras
+            elif Camera.is_camera_available(cameras[0]):
+                self.cameras = cameras
+            else:
+                print_error(f"Camera {cameras[0]} is not available.")
+                exit(1)
+
+        elif self.source == ArgSource.YAML:
+            pass
 
 
 # STORAGE_PATH = os.getenv("STORAGE_PATH")
 
-# if STORAGE_PATH is None:
-#     exit("STORAGE_PATH is not set in .env file.")
-# elif not os.path.exists(STORAGE_PATH):
-#     exit(f"STORAGE_PATH set in .env file does not exist ({STORAGE_PATH}) .")
 
 # context = rs.context()
 # devices = context.query_devices()

@@ -8,7 +8,8 @@ Classes:
 import argparse
 import sys
 
-from colorama import Fore, Style
+from colorama import Style
+from utils import print_error
 from camera import StreamType
 
 
@@ -52,7 +53,8 @@ class ArgParser:
             return formatter.format_help()
 
         def error(self, message):
-            print(f"{Fore.RED + Style.BRIGHT}Error:{Style.RESET_ALL} {message}\n")
+            print_error(message)
+            print()
 
             if not self._subparsers:
                 self.print_help()
@@ -114,6 +116,31 @@ class ArgParser:
         self._add_subparsers()
 
     def _add_aquire_mode_subparser(self):
+        def _camera_type(value: str):
+            value = value.strip()
+            if len(value) == 0:
+                raise argparse.ArgumentTypeError("Empty string")
+            return value
+
+        def _stream_type_type(value: str):
+            value = value.strip().upper()
+
+            if value in [type.name for type in StreamType]:
+                return StreamType[value]
+            elif value.isdigit() and int(value) in [type.value for type in StreamType]:
+                return StreamType(int(value))
+            else:
+                options = ", ".join([f"'{type.name}' ({type.value})" for type in StreamType])
+                raise argparse.ArgumentTypeError(
+                    f"invalid choice: '{value}' (choose from {options})"
+                )
+
+        def _output_folder_type(value: str):
+            value = value.strip()
+            if len(value) == 0:
+                raise argparse.ArgumentTypeError("Empty string")
+            return value
+
         parser = self._subparsers.add_parser(
             "aquire",
             aliases="a",
@@ -138,34 +165,32 @@ class ArgParser:
             "-c",
             "--camera",
             nargs="?",
-            help="When not specified, all cameras will be used. Otherwise, only the specified camera will be used.",
+            help="Specify the camera to use by passing its serial number.",
             metavar="sn",
+            dest="cameras",
+            type=_camera_type,
+            action="append",
         )
 
-        class _StreamTypeAction(argparse.Action):
-            def __call__(self, parser, namespace, values, option_string=None):
-                setattr(namespace, self.dest, StreamType[values])
-
+        options = ", ".join([f"'{type.name}' ({type.value})" for type in StreamType])
         parser.add_argument(
             "-s",
             "--stream-type",
-            choices=[type.name for type in StreamType],
-            type=str.upper,
-            default=StreamType.DEPTH,
             nargs="?",
-            help="When not specified, only the depth stream will be used. Otherwise, the specified stream will be used.",
+            help=f"Specify the stream type to use ({options}).",
             metavar="stream",
-            action=_StreamTypeAction,
+            type=_stream_type_type,
         )
 
         parser_required = parser.add_argument_group("Required arguments")
 
         parser_required.add_argument(
             "-o",
-            "--output",
+            "--output-folder",
             required=True,
-            help="Folder where will be created folders for each camera to store the images.",
+            help="Folder where sub folders for each camera will be created to store the images.",
             metavar="path",
+            type=_output_folder_type,
         )
 
     # TODO

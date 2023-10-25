@@ -65,7 +65,7 @@ class Camera:
     """
     A class representing a camera device.
 
-    Methods:
+    Instance Methods:
     --------
         - change_config(stream_type, depth_config, color_config) -> None:
             Changes the configuration of the camera.
@@ -79,6 +79,13 @@ class Camera:
             Returns the serial number of the camera.
         - get_name() -> str:
             Returns the name of the camera.
+
+    Class Methods:
+    --------------
+        - get_available_cameras() -> list:
+            Returns a list with the serial numbers of the available cameras.
+        - is_camera_available(sn) -> bool:
+            Checks if camera is available.
     """
 
     def __init__(
@@ -137,7 +144,7 @@ class Camera:
         ):
             raise StreamConfigError("Depth and color streams configs are not set.")
 
-    # Public methods
+    # Public instace methods
 
     def change_config(
         self,
@@ -240,3 +247,38 @@ class Camera:
         """
 
         return self.__name
+
+    # Public class methods
+    @classmethod
+    def get_available_cameras(cls) -> list:
+        """
+        Returns a list with the serial numbers of the available cameras.
+        """
+        cameras_sn = []
+
+        context = rs.context()
+        devices = context.query_devices()
+
+        for device in devices:
+            cameras_sn.append(device.get_info(rs.camera_info.serial_number))
+
+        return cameras_sn
+
+    @classmethod
+    def is_camera_available(cls, sn: str) -> bool:
+        """
+        Checks if camera is available.
+
+        Args:
+        -----
+            - sn: The serial number of the camera.
+        """
+
+        context = rs.context()
+        devices = context.query_devices()
+
+        for device in devices:
+            if device.get_info(rs.camera_info.serial_number) == sn:
+                return True
+
+        return False
