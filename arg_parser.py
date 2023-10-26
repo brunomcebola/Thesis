@@ -60,7 +60,7 @@ class ArgParser:
                 self.print_help()
             else:
                 actions = self._subparsers._group_actions  # pylint: disable=protected-access
-                keys = actions[0].choices.keys()
+                keys = actions[0].choices.keys()  # type: ignore
                 if sys.argv[1] in keys:
                     self.parse_args([sys.argv[1], "-h"])
                 else:
@@ -117,12 +117,18 @@ class ArgParser:
 
     def _add_aquire_mode_subparser(self):
         def _camera_type(value: str):
+            """
+            Checks if a non-empty string was assigned to the camera argument.
+            """
             value = value.strip()
             if len(value) == 0:
                 raise argparse.ArgumentTypeError("Empty string")
             return value
 
         def _stream_type_type(value: str):
+            """
+            Checks if the stream type is either a key or a value of the StreamType enum.
+            """
             value = value.strip().upper()
 
             if value in [type.name for type in StreamType]:
@@ -136,6 +142,9 @@ class ArgParser:
                 )
 
         def _output_folder_type(value: str):
+            """
+            Checks if a non-empty string was assigned to the output folder argument.
+            """
             value = value.strip()
             if len(value) == 0:
                 raise argparse.ArgumentTypeError("Empty string")
@@ -167,7 +176,7 @@ class ArgParser:
             nargs="?",
             help="Specify the camera to use by passing its serial number.",
             metavar="sn",
-            dest="cameras",
+            dest="serial_numbers",
             type=_camera_type,
             action="append",
         )
@@ -178,8 +187,10 @@ class ArgParser:
             "--stream-type",
             nargs="?",
             help=f"Specify the stream type to use ({options}).",
+            dest="stream_types",
             metavar="stream",
             type=_stream_type_type,
+            action="append",
         )
 
         parser_required = parser.add_argument_group("Required arguments")

@@ -7,9 +7,11 @@ Classes:
 
 """
 import os
-from utils import print_error, BaseNamespace, ArgSource
+import time
+import logging
 
-from camera import Camera
+from utils import print_error, print_warning, BaseNamespace, ArgSource
+from camera import Camera, StreamType
 
 
 class AquireNamespace(BaseNamespace):
@@ -42,10 +44,11 @@ class AquireNamespace(BaseNamespace):
         self,
         source: ArgSource,
         output_folder: str,
-        cameras: list[str] | None = None,
-        # stream_types: list[StreamType] = None,
-        # stream_configs: list[tuple[StreamConfig | None, StreamConfig | None]] = None,
-        # op_times: list[tuple[int, int]] = None,
+        serial_numbers: list[str] | None = None,
+        stream_types: list[StreamType] | None = None,
+        # names: list[str] | None = None,
+        # stream_configs: list[dict[str, StreamConfig]] | None = None,
+        # op_times: tuple[int, int] | list[tuple[str, int, int]] | None = None,
         **kwargs,
     ):
         del kwargs
@@ -53,28 +56,98 @@ class AquireNamespace(BaseNamespace):
         super().__init__(source)
 
         if self.source == ArgSource.CMD:
-            # output folder
+            # output folder (argparser ensure it is a non-empty string)
             if not os.path.exists(output_folder):
                 print_error(f"Output folder does not exist ({output_folder}).")
                 exit(1)
 
             self.output_folder = output_folder
 
-            # cameras
-            if cameras is None:
-                cameras = Camera.get_available_cameras()
-                if len(cameras) == 0:
+            # serial_numbers (argparser ensures it is either None or a list with only one element)
+            #   if None then all available cameras will be used
+            #   if list then specified serial number must match an available camera
+            if serial_numbers is None:
+                serial_numbers = Camera.get_available_cameras()
+                if len(serial_numbers) == 0:
                     print_error("No available cameras.")
                     exit(1)
-                self.cameras = cameras
-            elif Camera.is_camera_available(cameras[0]):
-                self.cameras = cameras
+                print_warning(
+                    f"No specific camera specified. Using all available cameras: {serial_numbers}."
+                )
+                self.serial_numbers = serial_numbers
+            elif Camera.is_camera_available(serial_numbers[0]):
+                self.serial_numbers = serial_numbers
             else:
-                print_error(f"Camera {cameras[0]} is not available.")
+                print_error(f"Camera {serial_numbers[0]} is not available.")
                 exit(1)
+
+            # stream types (argparser ensures it is either None or a list with only one element)
+            #   if None then depth stream will be used to all cameras
+            #   if list then specified stream type will be used to all cameras
+            if stream_types is None:
+                print_warning("No stream type specified. Setting depth as stream of all cameras.")
+                self.stream_types = [StreamType.DEPTH] * len(self.serial_numbers)
+            else:
+                self.stream_types = stream_types * len(self.serial_numbers)
+
+            # names (argparser ensures it is None)
+            # cameras' names will be their serial numbers
+            print_warning("Using serial number as name for all cameras.")
+            self.names = list(self.serial_numbers)
+
+            # stream configs (argparser ensures it is None)
+            # default configs will be used for all cameras based on their models
+            print_warning("Using default stream configs for all cameras based on their models.")
+            self.stream_configs = [
+                Camera.get_camera_default_config(Camera.get_camera_model(sn))
+                for sn in self.serial_numbers
+            ]
+
+            # op times (argparser ensures it is None)
+            # cameras will be capturing data all the time
+            print_warning("Cameras will be capturing data all the time.")
+            self.op_times = (0, 24)
 
         elif self.source == ArgSource.YAML:
             pass
+
+    def __str__(self) -> str:
+        string = ""
+
+        max_name_len = max([len(name) for name in self.names])
+        max_sn_len = max([len(sn) for sn in self.serial_numbers])
+        max_stream_len = max([len(str(stream)) for stream in self.stream_types])
+        max_config_len = max([len(str(config)) for config in self.stream_configs])
+
+        string += f"\tOutput folder: {self.output_folder}\n"
+        string += "\tOperation time: allways\n"
+        string += "\tCameras:"
+        for name, sn, stream, config in zip(
+            self.names, self.serial_numbers, self.stream_types, self.stream_configs
+        ):
+            string += "\n"
+            string += f"\t\tName: {name}{' ' * (max_name_len - len(name))} | "
+            string += f"Serial number: {sn}{' ' * (max_sn_len - len(sn))} | "
+            string += f"Stream type: {stream}{' ' * (max_stream_len - len(str(stream)))} | "
+
+            string += f"Stream config: {config}{' ' * (max_config_len - len(str(config)))}"
+
+        return string
+
+
+# STOP_FLAG = False
+
+
+# def aquire():
+#     logging.basicConfig(
+#         filename="thread_output.log", level=logging.INFO, format="%(asctime)s - %(message)s"
+#     )
+
+#     while not STOP_FLAG:
+#         logging.info("aquire")
+#         time.sleep(1)
+
+#     logging.info("adeus")
 
 
 # STORAGE_PATH = os.getenv("STORAGE_PATH")

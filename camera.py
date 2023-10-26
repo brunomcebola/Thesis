@@ -42,6 +42,9 @@ class StreamType(IntEnum):
     COLOR = 1
     DEPTH_N_COLOR = 2
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class StreamConfig(NamedTuple):
     """
@@ -60,10 +63,20 @@ class StreamConfig(NamedTuple):
     fps: int
     format: rs.format
 
+    def __str__(self) -> str:
+        return f"{{width={self.width}, height={self.height}, fps={self.fps}, format={self.format}}}"
 
+
+# TODO: prevent the same camera to be instantiated twice
+# TODO: allow to change only one of the configs (depth to depth n color if color config is set)
+# TODO: check config must verify if the config is valid for the camera model
 class Camera:
     """
-    A class representing a camera device.
+    A class to abstract the intecartion with Intel Realsense cameras.
+
+    Class Attributes:
+    -----------
+        - configs: A dictionary with the default configurations for the different cameras.
 
     Instance Methods:
     --------
@@ -82,11 +95,54 @@ class Camera:
 
     Class Methods:
     --------------
-        - get_available_cameras() -> list:
-            Returns a list with the serial numbers of the available cameras.
+        - get_available_cameras() -> list[str]:
+            Returns a list with the serial numbers of the available cameras
+            or an empty list if no cameras are available.
         - is_camera_available(sn) -> bool:
             Checks if camera is available.
+        - get_camera_model(sn) -> str:
+            Returns the camera model.
+        - get_camera_default_config(camera_model) -> dict[str, StreamConfig]:
+            Returns the default configuration for the given camera model.
+
+    Examples:
+    ----------
+
+    - Get the available cameras::
+
+        >>> Camera.get_available_cameras()
+        ['123456789', '987654321']
+
+    - Check if a camera is available::
+
+        >>> Camera.is_camera_available('123456789')
+        True
+
+    - Create a camera object::
+
+        camera = Camera(
+            name="camera1",
+            serial_number="123456789",
+            stream_type=StreamType.DEPTH_N_COLOR,
+            depth_config=StreamConfig(640, 480, 30, rs.format.z16),
+            color_config=StreamConfig(640, 480, 30, rs.format.rgb8),
+        )
+
+
+    - Change the configuration of the camera::
+
+        camera.change_config(
+            stream_type=StreamType.DEPTH,
+            depth_config=StreamConfig(640, 480, 30, rs.format.z16),
+        )
     """
+
+    configs = {
+        "D435": {
+            "depth": StreamConfig(640, 480, 30, rs.format.z16),
+            "color": StreamConfig(640, 480, 30, rs.format.rgb8),
+        },
+    }
 
     def __init__(
         self,
@@ -190,7 +246,9 @@ class Camera:
         config.enable_device(self.__serial_number)
 
         # set config according to stream_type
-        if self.__stream_type == StreamType.DEPTH or self.__stream_type == StreamType.DEPTH_N_COLOR:
+        if (
+            self.__stream_type == StreamType.DEPTH or self.__stream_type == StreamType.DEPTH_N_COLOR
+        ) and self.__depth_config is not None:
             config.enable_stream(
                 rs.stream.depth,
                 self.__depth_config.width,
@@ -200,7 +258,7 @@ class Camera:
             )
         elif (
             self.__stream_type == StreamType.COLOR or self.__stream_type == StreamType.DEPTH_N_COLOR
-        ):
+        ) and self.__color_config is not None:
             config.enable_stream(
                 rs.stream.color,
                 self.__color_config.width,
@@ -250,9 +308,10 @@ class Camera:
 
     # Public class methods
     @classmethod
-    def get_available_cameras(cls) -> list:
+    def get_available_cameras(cls) -> list[str]:
         """
-        Returns a list with the serial numbers of the available cameras.
+        Returns a list with the serial numbers of the available cameras
+        or an empty list if no cameras are available.
         """
         cameras_sn = []
 
@@ -282,3 +341,30 @@ class Camera:
                 return True
 
         return False
+
+    @classmethod
+    def get_camera_model(cls, sn: str) -> str:
+        """
+        Returns the camera model.
+        """
+
+        context = rs.context()
+        devices = context.query_devices()
+
+        for device in devices:
+            if device.get_info(rs.camera_info.serial_number) == sn:
+                return device.get_info(rs.camera_info.name).split(" ")[-1][:4]
+
+        return ""
+
+    @classmethod
+    def get_camera_default_config(cls, camera_model: str) -> dict[str, StreamConfig]:
+        """
+        Returns the default configuration for the given camera model.
+
+        Args:
+        -----
+            - camera_model: The model of the camera.
+        """
+
+        return cls.configs.get(camera_model, {})

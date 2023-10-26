@@ -8,11 +8,12 @@ Classes:
 
 Functions:
 ----------
-- parse_yaml(file_path): Validates a YAML file at the given file path.
+- parse_yaml(file_path) -> dict: Validates a YAML file at the given file path.
 - print_info(message): Prints an info message.
 - print_success(message): Prints a success message.
 - print_warning(message): Prints a warning message.
 - print_error(message): Prints an error message.
+- get_user_confirmation(message) -> bool: Asks the user for confirmation.
 """
 
 from enum import IntEnum
@@ -35,11 +36,24 @@ class ArgSource(IntEnum):
     YAML = 1
 
 
-class BaseNamespace(SimpleNamespace):
+class _PostNamespaceInitMeta(type):
+    """
+    A metaclass that deletes the source attribute after the namespace is initialized.
+    """
+
+    def __call__(cls, *args, **kwargs):
+        obj = super().__call__(*args, **kwargs)
+        delattr(obj, "source")
+        return obj
+
+
+class BaseNamespace(SimpleNamespace, metaclass=_PostNamespaceInitMeta):
     """
     This class serves as the base for the different modes specific namesapces.
 
     It is not inteded to be instantiated directly, but rather to be inherited from.
+
+    After the namespace is initialized, its source attribute is automatically deleted.
 
     Attributes:
     -----------
@@ -72,7 +86,7 @@ def parse_yaml(file_path: str) -> dict:
         exit(1)
     except yaml.YAMLError as e:
         if hasattr(e, "problem_mark"):
-            print_error(f"Wrong syntax on line {e.problem_mark.line + 1} of the YAML file.")
+            print_error(f"Wrong syntax on line {e.problem_mark.line + 1} of the YAML file.")  # type: ignore
         else:
             print_error("Unknown problem on the specified YAML file.")
         exit(1)
@@ -86,7 +100,7 @@ def print_info(message: str) -> None:
     -----
         - message: The info message to be printed.
     """
-    print(f"{Fore.BLUE + Style.BRIGHT}Info:{Style.RESET_ALL} {message}")
+    print(f"{Fore.LIGHTCYAN_EX + Style.BRIGHT}Info:{Style.RESET_ALL} {message}")
 
 
 def print_success(message: str) -> None:
@@ -97,7 +111,7 @@ def print_success(message: str) -> None:
     -----
         - message: The success message to be printed.
     """
-    print(f"{Fore.GREEN + Style.BRIGHT}Success:{Style.RESET_ALL} {message}")
+    print(f"{Fore.LIGHTGREEN_EX + Style.BRIGHT}Success:{Style.RESET_ALL} {message}")
 
 
 def print_warning(message: str) -> None:
@@ -108,7 +122,7 @@ def print_warning(message: str) -> None:
     -----
         - message: The warning message to be printed.
     """
-    print(f"{Fore.YELLOW + Style.BRIGHT}Warning:{Style.RESET_ALL} {message}")
+    print(f"{Fore.LIGHTYELLOW_EX + Style.BRIGHT}Warning:{Style.RESET_ALL} {message}")
 
 
 def print_error(message: str) -> None:
@@ -120,3 +134,17 @@ def print_error(message: str) -> None:
         - message: The error message to be printed.
     """
     print(f"{Fore.RED + Style.BRIGHT}Error:{Style.RESET_ALL} {message}")
+
+
+def get_user_confirmation(message: str) -> bool:
+    """
+    Asks the user for confirmation.
+    """
+    while True:
+        response = input(f"{message} (y/n): ")
+        if response in ["y", "Y", "yes", "Yes", "YES"]:
+            return True
+        elif response in ["n", "N", "no", "No", "NO"]:
+            return False
+        else:
+            print_warning("Invalid response. Please enter y or n.")
