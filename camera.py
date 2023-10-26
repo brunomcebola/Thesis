@@ -140,7 +140,7 @@ class Camera:
     configs = {
         "D435": {
             "depth": StreamConfig(640, 480, 30, rs.format.z16),
-            "color": StreamConfig(640, 480, 30, rs.format.rgb8),
+            "color1": StreamConfig(640, 480, 30, rs.format.rgb8),
         },
     }
 

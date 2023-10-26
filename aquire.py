@@ -9,9 +9,12 @@ Classes:
 import os
 import time
 import logging
+import calendar
 
 from utils import print_error, print_warning, BaseNamespace, ArgSource
-from camera import Camera, StreamType
+from camera import Camera, StreamType, StreamConfig
+
+WEEK_DAYS = list(calendar.day_abbr)
 
 
 class AquireNamespace(BaseNamespace):
@@ -22,22 +25,20 @@ class AquireNamespace(BaseNamespace):
 
     Attributes:
     -----------
-        - source:
-            Indicates wheter the args come from the command line of from a YAML file.
-        - output:
+        - output_folder (str):
             The path to the output folder.
-        - cameras:
+        - serial_numbers (list[str]):
             The serial numbers of the cameras to be used.
-        - stream:
+        - names (list[str]):
+            The names of the cameras to be used.
+        - stream_types (list[StreamType]):
             The type of stream to be captured by each camera.
-        - config:
+        - stream_configs (list[dict[str, StreamConfig]]):
             The configuration of the stream to be captured by each camera.
-        - op_time:
-            The time interval in which the cameras will be capturing data.
-        - source:
-            Indicates wheter the args come from a YAML file of from the command line.
+        - op_times (list[tuple[str, int, int]]):
+            The time interval in which the cameras will be capturing data for each day of the week.
         - kwargs:
-            Used as dumpster for extra arguments passed from mappings.
+            Used as a dumpster for extra arguments passed from mappings.
     """
 
     def __init__(
@@ -45,10 +46,10 @@ class AquireNamespace(BaseNamespace):
         source: ArgSource,
         output_folder: str,
         serial_numbers: list[str] | None = None,
+        names: list[str] | None = None,
         stream_types: list[StreamType] | None = None,
-        # names: list[str] | None = None,
-        # stream_configs: list[dict[str, StreamConfig]] | None = None,
-        # op_times: tuple[int, int] | list[tuple[str, int, int]] | None = None,
+        stream_configs: list[dict[str, StreamConfig]] | None = None,
+        op_times: tuple[int, int] | list[tuple[str, int, int]] | None = None,
         **kwargs,
     ):
         del kwargs
@@ -81,6 +82,8 @@ class AquireNamespace(BaseNamespace):
                 print_error(f"Camera {serial_numbers[0]} is not available.")
                 exit(1)
 
+            self.serial_numbers = self.serial_numbers * 2
+
             # stream types (argparser ensures it is either None or a list with only one element)
             #   if None then depth stream will be used to all cameras
             #   if list then specified stream type will be used to all cameras
@@ -106,7 +109,7 @@ class AquireNamespace(BaseNamespace):
             # op times (argparser ensures it is None)
             # cameras will be capturing data all the time
             print_warning("Cameras will be capturing data all the time.")
-            self.op_times = (0, 24)
+            self.op_times = [(i, 0, 24) for i in range(7)]
 
         elif self.source == ArgSource.YAML:
             pass
@@ -114,25 +117,35 @@ class AquireNamespace(BaseNamespace):
     def __str__(self) -> str:
         string = ""
 
-        max_name_len = max([len(name) for name in self.names])
-        max_sn_len = max([len(sn) for sn in self.serial_numbers])
-        max_stream_len = max([len(str(stream)) for stream in self.stream_types])
-        max_config_len = max([len(str(config)) for config in self.stream_configs])
-
-        string += f"\tOutput folder: {self.output_folder}\n"
-        string += "\tOperation time: allways\n"
+        string += f"\tOutput folder: '{self.output_folder}'\n"
+        string += (
+            f"\tOperation time: {[(WEEK_DAYS[op[0]], op[1], op[2]) for op in self.op_times]}\n"
+        )
         string += "\tCameras:"
         for name, sn, stream, config in zip(
             self.names, self.serial_numbers, self.stream_types, self.stream_configs
         ):
             string += "\n"
-            string += f"\t\tName: {name}{' ' * (max_name_len - len(name))} | "
-            string += f"Serial number: {sn}{' ' * (max_sn_len - len(sn))} | "
-            string += f"Stream type: {stream}{' ' * (max_stream_len - len(str(stream)))} | "
+            string += f"\t\tName:{name}\n"
+            string += f"\t\tSerial number:{sn}\n"
+            string += f"\t\tStream type:{stream}\n"
+            for key, value in config.items():
+                string += f"\t\t{key.capitalize()} stream config:{str(value)}\n"
 
-            string += f"Stream config: {config}{' ' * (max_config_len - len(str(config)))}"
+        # align elements
+        string = string.split(("Cameras:"))
+        lines = string[1].split("\t\t")
 
-        return string
+        max_title = max([len(line.split(":")[0]) for line in lines])
+
+        lines = [
+            f":  {' ' * (max_title - len(line.split(':')[0]))}".join(line.split(":"))
+            for line in lines
+        ]
+
+        lines = "\t\t".join(lines)
+
+        return (string[0] + "Cameras:" + lines).rstrip()
 
 
 # STOP_FLAG = False
