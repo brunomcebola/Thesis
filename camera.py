@@ -189,11 +189,13 @@ class Camera:
             - name: The name of the camera.
             - serial_number: The serial number of the camera.
             - stream_type: The type of data to stream.
-            - stream_configs: The configuration for the streams.
+            - stream_configs: The configuration of the streams.
 
         Raises:
         -------
             - StreamConfigError: If the configuration is not correct.
+            - CameraUnavailableError: If the camera is not available.
+            - CameraAlreadyExistsError: If the camera is already instanciated.
         """
 
         self.__duplicate_error = False
