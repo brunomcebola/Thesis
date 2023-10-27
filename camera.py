@@ -31,12 +31,16 @@ class StreamType(Enum):
         - DEPTH_N_COLOR: A stream of both depth and color data.
     """
 
-    # Base ypes
+    # Base types
     DEPTH = rs.stream.depth
     COLOR = rs.stream.color
 
     # Composed types
-    DEPTH_N_COLOR = [DEPTH, COLOR]
+    DEPTH_N_COLOR = None
+
+    def __init__(self, *_, **__):
+        if self.name == "DEPTH_N_COLOR":
+            self._value_ = [self.DEPTH, self.COLOR]
 
     def __str__(self) -> str:
         return self.name
@@ -147,7 +151,7 @@ class Camera:
         name: str,
         serial_number: str,
         stream_type: StreamType,
-        stream_formats: dict[StreamType, StreamFormat],
+        stream_formats: dict[str, StreamFormat],
     ) -> None:
         """
         Initializes a Camera object with the given parameters.
