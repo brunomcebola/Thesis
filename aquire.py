@@ -12,7 +12,7 @@ import logging
 import calendar
 
 from utils import print_error, print_warning, BaseNamespace, ArgSource
-from camera import Camera, StreamType, StreamConfig
+from camera import Camera, StreamType, StreamFormat
 
 WEEK_DAYS = list(calendar.day_abbr)
 
@@ -27,16 +27,20 @@ class AquireNamespace(BaseNamespace):
     -----------
         - output_folder (str):
             The path to the output folder.
+        - op_times (list[tuple[int, int, int]]):
+            The time interval in which the cameras will be capturing data for each day of the week.
+        - cameras (list[Camera]):
+
+
         - serial_numbers (list[str]):
             The serial numbers of the cameras to be used.
         - names (list[str]):
             The names of the cameras to be used.
         - stream_types (list[StreamType]):
             The type of stream to be captured by each camera.
-        - stream_configs (list[dict[str, StreamConfig]]):
+        - stream_configs (list[dict[str, StreamFormat]]):
             The configuration of the stream to be captured by each camera.
-        - op_times (list[tuple[str, int, int]]):
-            The time interval in which the cameras will be capturing data for each day of the week.
+
         - kwargs:
             Used as a dumpster for extra arguments passed from mappings.
     """
@@ -46,12 +50,18 @@ class AquireNamespace(BaseNamespace):
         source: ArgSource,
         output_folder: str,
         serial_numbers: list[str] | None = None,
-        names: list[str] | None = None,
+        # names: list[str] | None = None,
         stream_types: list[StreamType] | None = None,
-        stream_configs: list[dict[str, StreamConfig]] | None = None,
-        op_times: tuple[int, int] | list[tuple[str, int, int]] | None = None,
+        # stream_configs: list[dict[str, StreamFormat]] | None = None,
+        # op_times: tuple[int, int] | list[tuple[str, int, int]] | None = None,
         **kwargs,
     ):
+        # type definitions
+        self.output_folder: str
+        self.op_times: list[tuple[int, int, int]]
+
+
+
         del kwargs
 
         super().__init__(source)
@@ -81,8 +91,6 @@ class AquireNamespace(BaseNamespace):
             else:
                 print_error(f"Camera {serial_numbers[0]} is not available.")
                 exit(1)
-
-            self.serial_numbers = self.serial_numbers * 2
 
             # stream types (argparser ensures it is either None or a list with only one element)
             #   if None then depth stream will be used to all cameras
@@ -178,7 +186,7 @@ class AquireNamespace(BaseNamespace):
 #     serial_number = dev.get_info(rs.camera_info.serial_number)
 #     print("serial number: ", serial_number)
 #     cameras.append(
-#         Camera(serial_number, StreamType.DEPTH, StreamConfig(640, 480, 30, rs.format.z16))
+#         Camera(serial_number, StreamType.DEPTH, StreamFormat(640, 480, 30, rs.format.z16))
 #     )
 
 #     # check if folder exists and if not create it

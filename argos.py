@@ -15,14 +15,9 @@ import sys
 
 # import threading
 
+import utils
 import aquire
 from arg_parser import ArgParser
-from utils import parse_yaml, ArgSource, print_info, get_user_confirmation
-
-from camera import StreamConfig
-
-s = StreamConfig(1,1,1,1)
-print(s)
 
 if __name__ == "__main__":
     abspath = os.path.abspath(__file__)
@@ -33,20 +28,24 @@ if __name__ == "__main__":
 
     parser = ArgParser()
     cmd_args = parser.get_args()
-    print(cmd_args)
 
     if cmd_args.mode in ["aquire", "a"]:
-        print_info("Entering aquire mode...")
+        utils.print_info("Entering aquire mode...")
         print()
 
-        aquireNamespace = aquire.AquireNamespace(ArgSource.CMD, **cmd_args.__dict__)
+        aquireNamespace = aquire.AquireNamespace(utils.ArgSource.CMD, **cmd_args.__dict__)
 
         print()
-        print_info("Aquire mode settings:")
+        utils.print_info("Aquire mode settings:")
         print(aquireNamespace)
         print()
 
-        if get_user_confirmation("Do you wish to continue?"):
+        prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
+            "Do you wish to continue?"
+        )
+        print()
+
+        if prompt:
             pass
             # t1 = threading.Thread(target=aquire.aquire)
             # t1.start()
@@ -56,15 +55,19 @@ if __name__ == "__main__":
             #     t1.join()
             #     exit(0)
         else:
+            utils.print_info("Exiting aquire mode...")
             exit(0)
 
     elif cmd_args.mode in ["train", "t"]:
-        print("train")
+        utils.print_info("Entering train mode...")
+        print()
     elif cmd_args.mode in ["online", "o"]:
-        print("online")
+        utils.print_info("Entering online mode...")
+        print()
     elif cmd_args.mode in ["yaml", "y"]:
-        print(cmd_args)
-        args = parse_yaml(cmd_args.file)
-        print(args["mode"])
+        utils.print_info("Entering yaml mode...")
+        print()
+        args = utils.parse_yaml(cmd_args.file)
+        print(args)
     else:
         exit(0)
