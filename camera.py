@@ -10,40 +10,42 @@ Classes:
 Exceptions:
 -----------
     - StreamFormatError: Raised when there is an error in the configuration of the video stream.
-
-
-
 """
 
-from enum import Enum, IntEnum
+from enum import Enum
 from typing import NamedTuple
 
 import pyrealsense2.pyrealsense2 as rs
+
+
+class StreamType(Enum):
+    """
+    An enumeration of the different types of streams that can be captured by the camera.
+
+    Attributes with '_N_' are composed type and therefore must be decomposed into base types.
+
+    Attributes:
+    -----------
+        - DEPTH: A stream of depth data.
+        - COLOR: A stream of color data.
+        - DEPTH_N_COLOR: A stream of both depth and color data.
+    """
+
+    # Base ypes
+    DEPTH = rs.stream.depth
+    COLOR = rs.stream.color
+
+    # Composed types
+    DEPTH_N_COLOR = [DEPTH, COLOR]
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class StreamFormatError(ValueError):
     """
     Exception raised when there is an error in the configuration of the video stream.
     """
-
-
-class StreamType(IntEnum):
-    """
-    An enumeration of the different types of streams that can be captured by the camera.
-
-    Attributes:
-    -----------
-        - DEPTH (0): A stream of depth data.
-        - COLOR (1): A stream of color data.
-        - DEPTH_N_COLOR (2): A stream of both depth and color data.
-    """
-
-    DEPTH = 0
-    COLOR = 1
-    DEPTH_N_COLOR = 2
-
-    def __str__(self) -> str:
-        return self.name
 
 
 class StreamFormat(NamedTuple):
@@ -65,18 +67,20 @@ class StreamFormat(NamedTuple):
     DEFAULTS = {
         "D435": {
             StreamType.DEPTH: (rs.format.z16, (640, 480), 30),
-            StreamType.COLOR: (rs.format.z16, (640, 480), 30),
-        }
+            StreamType.COLOR: (rs.format.rgb8, (640, 480), 30),
+        },
+        "D455": {
+            StreamType.DEPTH: (rs.format.z16, (640, 480), 30),
+            StreamType.COLOR: (rs.format.rgb8, (640, 480), 30),
+        },
     }
 
     def __str__(self) -> str:
-        return f"{{width={self.width}, height={self.height}, fps={self.fps}, format={self.format}}}"
+        return f"format={self.format}, resolution={self.resolution[0]} x {self.resolution[1]}, fps={self.fps}"  # pylint: disable=line-too-long
 
 
 # TODO: prevent the same camera to be instantiated twice
 # TODO: allow to change only one of the configs (depth to depth n color if color config is set)
-# TODO: check config must verify if the config is valid for the camera model
-# TODO: all stream related defs should be defined outside to be easily changed and inside class access enums, tuples, etc
 class Camera:
     """
     A class to abstract the intecartion with Intel Realsense cameras.
@@ -143,8 +147,7 @@ class Camera:
         name: str,
         serial_number: str,
         stream_type: StreamType,
-        depth_config: StreamFormat | None = None,
-        color_config: StreamFormat | None = None,
+        stream_formats: dict[StreamType, StreamFormat],
     ) -> None:
         """
         Initializes a Camera object with the given parameters.
@@ -153,37 +156,38 @@ class Camera:
         -----
             - name: The name of the camera.
             - serial_number: The serial number of the camera.
-            - stream_type: The type of stream to capture.
-            - depth_config: The configuration for the depth stream.
-            - color_config: The configuration for the color stream.
+            - stream_type: The type of data to stream.
+            - stream_formats: The configuration for the streams.
 
         Raises:
         -------
             - StreamFormatError: If the configuration is not correct.
         """
 
+        # Type definitions
+        self.__name: str
+        self.__serial_number: str
+        self.__stream_types: list[StreamType]
+        self.__stream_formats: dict[StreamType, StreamFormat]
+
+        # Attribute assignement
         self.__name = name
         self.__serial_number = serial_number
-
-        self.__stream_type = stream_type
-        self.__depth_config = depth_config
-        self.__color_config = color_config
-        self.__check_config()
+        self.__stream_types = [
+            StreamType[type] for type in StreamType(stream_type).name.split("_N_")
+        ]
+        self.__stream_formats = stream_formats
+        self.__check_stream_formats()
 
         self.__pipeline = None
 
-    def __del__(self):
+    def __check_stream_formats(self):
         """
-        Stops the pipeline object when the Camera object is deleted.
+        Checks if the given stream formats are valid.
         """
 
-        if self.__pipeline is not None:
-            self.__pipeline.stop()
-
-    def __check_config(self):
-        """
-        Checks if the given configuration is valid for the given stream type.
-        """
+        # ensures that there are stream formats for all stream types
+        stream_types = self.__stream_type
 
         if self.__stream_type == StreamType.DEPTH and self.__depth_config is None:
             raise StreamFormatError("Depth stream config must be set when in depth stream type.")
@@ -193,6 +197,14 @@ class Camera:
             self.__depth_config is None or self.__color_config is None
         ):
             raise StreamFormatError("Depth and color streams configs are not set.")
+
+    def __del__(self):
+        """
+        Stops the pipeline object when the Camera object is deleted.
+        """
+
+        if self.__pipeline is not None:
+            self.__pipeline.stop()
 
     # Public instace methods
 
