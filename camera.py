@@ -50,7 +50,7 @@ class StreamFormatError(ValueError):
 
 class StreamFormat(NamedTuple):
     """
-    Named tuple representing the configuration of the stream.
+    Named tuple representing the format of the stream.
 
     Attributes:
     -----------
