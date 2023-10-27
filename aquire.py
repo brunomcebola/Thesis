@@ -12,11 +12,11 @@ import logging
 import calendar
 
 from utils import print_error, print_warning, BaseNamespace, ArgSource
-from camera import Camera, StreamType, StreamFormat
+from camera import Camera, StreamType, StreamConfig
 
 WEEK_DAYS = list(calendar.day_abbr)
 
-
+# TODO: change exit to raise
 class AquireNamespace(BaseNamespace):
     """
     This class holds the arguments for the aquire mode.
@@ -38,7 +38,7 @@ class AquireNamespace(BaseNamespace):
             The names of the cameras to be used.
         - stream_types (list[StreamType]):
             The type of stream to be captured by each camera.
-        - stream_configs (list[dict[str, StreamFormat]]):
+        - stream_configs (list[dict[str, StreamConfig]]):
             The configuration of the stream to be captured by each camera.
 
         - kwargs:
@@ -52,7 +52,7 @@ class AquireNamespace(BaseNamespace):
         serial_numbers: list[str] | None = None,
         # names: list[str] | None = None,
         stream_types: list[StreamType] | None = None,
-        # stream_configs: list[dict[str, StreamFormat]] | None = None,
+        # stream_configs: list[dict[str, StreamConfig]] | None = None,
         # op_times: tuple[int, int] | list[tuple[str, int, int]] | None = None,
         **kwargs,
     ):
@@ -186,7 +186,7 @@ class AquireNamespace(BaseNamespace):
 #     serial_number = dev.get_info(rs.camera_info.serial_number)
 #     print("serial number: ", serial_number)
 #     cameras.append(
-#         Camera(serial_number, StreamType.DEPTH, StreamFormat(640, 480, 30, rs.format.z16))
+#         Camera(serial_number, StreamType.DEPTH, StreamConfig(640, 480, 30, rs.format.z16))
 #     )
 
 #     # check if folder exists and if not create it

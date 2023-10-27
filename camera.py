@@ -5,20 +5,37 @@ Classes:
 --------
     - Camera: Class to abstract the use of the realsense cameras
     - StreamType: Enum to represent the type of video stream
-    - StreamFormat: Named tuple to represent the configuration of the video stream
+    - StreamConfig: Named tuple to represent the configuration of the video stream
 
 Exceptions:
 -----------
-    - StreamFormatError: Raised when there is an error in the configuration of the video stream.
+    - StreamConfigError: Raised when there is an error in the configuration of the video stream.
 """
 
 from enum import Enum
 from typing import NamedTuple
-
 import pyrealsense2.pyrealsense2 as rs
 
 
-class StreamFormat(NamedTuple):
+class StreamConfigError(Exception):
+    """
+    Exception raised when there is an error in the configuration of the video stream.
+    """
+
+
+class CameraUnavailableError(Exception):
+    """
+    Exception raised when the camera is not available.
+    """
+
+
+class PipelineRunningError(Exception):
+    """
+    Exception raised when the pipeline is running.
+    """
+
+
+class StreamConfig(NamedTuple):
     """
     Named tuple representing the format of the stream.
 
@@ -63,12 +80,6 @@ class StreamType(Enum):
 
     def __str__(self) -> str:
         return self.name
-
-
-class StreamFormatError(ValueError):
-    """
-    Exception raised when there is an error in the configuration of the video stream.
-    """
 
 
 # TODO: prevent the same camera to be instantiated twice
@@ -121,8 +132,8 @@ class Camera:
             name="camera1",
             serial_number="123456789",
             stream_type=StreamType.DEPTH_N_COLOR,
-            depth_config=StreamFormat(640, 480, 30, rs.format.z16),
-            color_config=StreamFormat(640, 480, 30, rs.format.rgb8),
+            depth_config=StreamConfig(640, 480, 30, rs.format.z16),
+            color_config=StreamConfig(640, 480, 30, rs.format.rgb8),
         )
 
 
@@ -130,18 +141,18 @@ class Camera:
 
         camera.change_config(
             stream_type=StreamType.DEPTH,
-            depth_config=StreamFormat(640, 480, 30, rs.format.z16),
+            depth_config=StreamConfig(640, 480, 30, rs.format.z16),
         )
     """
 
     DEFAULTS = {
         "D435": {
-            StreamType.DEPTH: StreamFormat(rs.format.z16, (640, 480), 30),
-            StreamType.COLOR: StreamFormat(rs.format.rgb8, (640, 480), 30),
+            StreamType.DEPTH: StreamConfig(rs.format.z16, (640, 480), 30),
+            StreamType.COLOR: StreamConfig(rs.format.rgb8, (640, 480), 30),
         },
         "D455": {
-            StreamType.DEPTH: StreamFormat(rs.format.z16, (640, 480), 30),
-            StreamType.COLOR: StreamFormat(rs.format.rgb8, (640, 480), 30),
+            StreamType.DEPTH: StreamConfig(rs.format.z16, (640, 480), 30),
+            StreamType.COLOR: StreamConfig(rs.format.rgb8, (640, 480), 30),
         },
     }
 
@@ -150,7 +161,7 @@ class Camera:
         name: str,
         serial_number: str,
         stream_type: StreamType,
-        stream_formats: dict[StreamType, StreamFormat],
+        stream_configs: dict[StreamType, StreamConfig],
     ) -> None:
         """
         Initializes a Camera object with the given parameters.
@@ -160,18 +171,18 @@ class Camera:
             - name: The name of the camera.
             - serial_number: The serial number of the camera.
             - stream_type: The type of data to stream.
-            - stream_formats: The configuration for the streams.
+            - stream_configs: The configuration for the streams.
 
         Raises:
         -------
-            - StreamFormatError: If the configuration is not correct.
+            - StreamConfigError: If the configuration is not correct.
         """
 
         # Type definitions
         self.__name: str
         self.__serial_number: str
         self.__stream_types: list[StreamType]
-        self.__stream_formats: dict[StreamType, StreamFormat]
+        self.__stream_formats: dict[StreamType, StreamConfig]
 
         # Attribute assignment
         self.__name = name
@@ -179,12 +190,18 @@ class Camera:
         self.__stream_types = (
             stream_type.value if isinstance(stream_type.value, list) else [stream_type]
         )
-        self.__stream_formats = stream_formats
+        self.__stream_formats = stream_configs
 
         # initializes remaining attributes
         self.__pipeline = rs.pipeline()
+        self.__running = False
         self.__config = rs.config()
-        # self.__config.enable_device(self.__serial_number)
+
+        # initial configurations
+        if Camera.is_camera_available(self.__serial_number):
+            self.__config.enable_device(self.__serial_number)
+        else:
+            raise CameraUnavailableError(f"Camera {self.__serial_number} is not available.")
 
         # check if stream configurations are valid
         self.__apply_stream_configs()
@@ -194,41 +211,46 @@ class Camera:
         # TODO: docstring for __apply_stream_configs
         """
 
-        # ensures that there are stream formats for all stream types
-        for stream_type in self.__stream_types:
-            if stream_type not in self.__stream_formats:
-                raise StreamFormatError(
-                    f"Stream format for stream type {stream_type.name} is not set."
-                )
+        if not self.__running:
+            # ensures that there are stream configs for all stream types
+            for stream_type in self.__stream_types:
+                if stream_type not in self.__stream_formats:
+                    raise StreamConfigError(
+                        f"Stream config for stream type {stream_type.name} is not set."
+                    )
 
-        # if (
-        #     self.__stream_type == StreamType.DEPTH or self.__stream_type == StreamType.DEPTH_N_COLOR
-        # ) and self.__depth_config is not None:
-        #     config.enable_stream(
-        #         rs.stream.depth,
-        #         self.__depth_config.width,
-        #         self.__depth_config.height,
-        #         self.__depth_config.format,
-        #         self.__depth_config.fps,
-        #     )
+            self.__config.disable_all_streams()
+
+            for stream_type in self.__stream_types:
+                self.__config.enable_stream(
+                    stream_type.value,
+                    self.__stream_formats[stream_type].resolution[0],
+                    self.__stream_formats[stream_type].resolution[1],
+                    self.__stream_formats[stream_type].format,
+                    self.__stream_formats[stream_type].fps,
+                )
+                if not self.__config.can_resolve(self.__pipeline):
+                    raise StreamConfigError(
+                        f"Stream config for stream type {stream_type.name} is not valid."
+                    )
+        else:
+            raise PipelineRunningError()
 
     def __del__(self):
         """
         Stops the pipeline object when the Camera object is deleted if it is running.
         """
 
-        try:
+        if self.__running:
             self.__pipeline.stop()
-        except RuntimeError:
-            pass
 
     # # Public instace methods
 
     # def change_config(
     #     self,
     #     stream_type: StreamType,
-    #     depth_config: StreamFormat | None = None,
-    #     color_config: StreamFormat | None = None,
+    #     depth_config: StreamConfig | None = None,
+    #     color_config: StreamConfig | None = None,
     # ) -> None:
     #     """
     #     Changes the stream configuration of the camera.
@@ -239,7 +261,7 @@ class Camera:
     #         - color_config: The configuration for the color stream.
 
     #     Raises:
-    #         - StreamFormatError: If the configuration is not correct.
+    #         - StreamConfigError: If the configuration is not correct.
     #     """
 
     #     old_stream_type = self.__stream_type
@@ -252,7 +274,7 @@ class Camera:
 
     #     try:
     #         self.__check_config()
-    #     except StreamFormatError:
+    #     except StreamConfigError:
     #         self.__stream_type = old_stream_type
     #         self.__depth_config = old_depth_config
     #         self.__color_config = old_color_config
@@ -345,24 +367,24 @@ class Camera:
 
     #     return cameras_sn
 
-    # @classmethod
-    # def is_camera_available(cls, sn: str) -> bool:
-    #     """
-    #     Checks if camera is available.
+    @classmethod
+    def is_camera_available(cls, sn: str) -> bool:
+        """
+        Checks if camera is available.
 
-    #     Args:
-    #     -----
-    #         - sn: The serial number of the camera.
-    #     """
+        Args:
+        -----
+            - sn: The serial number of the camera.
+        """
 
-    #     context = rs.context()
-    #     devices = context.query_devices()
+        context = rs.context()
+        devices = context.query_devices()
 
-    #     for device in devices:
-    #         if device.get_info(rs.camera_info.serial_number) == sn:
-    #             return True
+        for device in devices:
+            if device.get_info(rs.camera_info.serial_number) == sn:
+                return True
 
-    #     return False
+        return False
 
     # @classmethod
     # def get_camera_model(cls, sn: str) -> str:

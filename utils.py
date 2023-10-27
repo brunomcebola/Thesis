@@ -65,6 +65,7 @@ class BaseNamespace(SimpleNamespace, metaclass=_PostNamespaceInitMeta):
         self.source = ArgSource(source)
 
 
+# TODO: change exit to raise
 def parse_yaml(file_path: str) -> dict:
     """
     Parses a YAML file and returns its contents as a dictionary.
