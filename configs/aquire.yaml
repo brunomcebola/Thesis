@@ -1,22 +1,23 @@
 mode: aquire
 
+output_folder: /media/brunomcebola/RPi_Storage/cameras/
+
+operation_time:
+  -
+
 # Define the input source for the data to be acquired
 cameras:
   - sn: 1355220772030
     name: Left camera
-    stream:
-      - type: depth
-        config:
-          width: 640
-          height: 480
-          fps: 30
-          format: z16
-      - type: color
-        config:
-          width: 640
-          height: 480
-          fps: 30
-          format: z16
-
-# Define the output destination for the acquired data
-output_folder: /media/brunomcebola/RPi_Storage/cameras/
+    stream_type: depth
+    stream_config:
+      depth:
+        width: 640
+        height: 480
+        fps: 30
+        format: z16
+      color:
+        width: 640
+        height: 480
+        fps: 30
+        format: z16

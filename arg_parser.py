@@ -13,6 +13,7 @@ from utils import print_error
 from camera import StreamType
 
 
+# TODO: add option in parser to access thread output
 class ArgParser:
     """
     A class for parsing command line arguments into Python objects.
@@ -30,9 +31,17 @@ class ArgParser:
         def format_help(self):
             formatter = self._get_formatter()
 
-            # description
             if self.description:
-                formatter.add_text(Style.BRIGHT + self.description + Style.RESET_ALL)
+                formatter.add_text(
+                    Style.BRIGHT
+                    + self.description
+                    + (
+                        (" - " + self.prog.strip().capitalize() + " mode")
+                        if self.prog != "argos.py"
+                        else ""
+                    )
+                    + Style.RESET_ALL
+                )
 
             # usage
             formatter.add_usage(self.usage, self._actions, self._mutually_exclusive_groups)
@@ -61,7 +70,8 @@ class ArgParser:
             else:
                 actions = self._subparsers._group_actions  # pylint: disable=protected-access
                 keys = actions[0].choices.keys()  # type: ignore
-                if sys.argv[1] in keys:
+
+                if len(sys.argv) > 1 and sys.argv[1] in keys:
                     self.parse_args([sys.argv[1], "-h"])
                 else:
                     self.print_help()
@@ -95,7 +105,7 @@ class ArgParser:
         self._parser = self._ArgumentParser(
             description="Argos, Real-time Image Analysis for Fraud Detection",
             formatter_class=self._HelpFormatter,
-            usage="argos.py [-h | --help]\n" + "       argos.py <mode> [<args>]",
+            usage="argos.py <mode> [<args>]",
             add_help=False,
         )
 
@@ -256,7 +266,7 @@ class ArgParser:
             help="Mode to run the model based on a yaml file.",
             allow_abbrev=False,
             formatter_class=self._HelpFormatterModes,
-            usage="argos.py yaml [-h | --help]\n" + "       argos.py yaml <file>",
+            usage="argos.py yaml <file>",
             add_help=False,
         )
 

@@ -86,7 +86,8 @@ def parse_yaml(file_path: str) -> dict:
         exit(1)
     except yaml.YAMLError as e:
         if hasattr(e, "problem_mark"):
-            print_error(f"Wrong syntax on line {e.problem_mark.line + 1} of the YAML file.")  # type: ignore
+            line = e.problem_mark.line + 1  # type: ignore
+            print_error(f"Wrong syntax on line {line} of the YAML file.")
         else:
             print_error("Unknown problem on the specified YAML file.")
         exit(1)
