@@ -22,7 +22,7 @@ class StreamType(Enum):
     """
     An enumeration of the different types of streams that can be captured by the camera.
 
-    Attributes with '_N_' are composed type and therefore must be decomposed into base types.
+    Attributes with '_N_' are composed types, i.e., are lists of base types.
 
     Attributes:
     -----------
