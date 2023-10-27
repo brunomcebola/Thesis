@@ -66,12 +66,12 @@ class StreamFormat(NamedTuple):
 
     DEFAULTS = {
         "D435": {
-            StreamType.DEPTH: (rs.format.z16, (640, 480), 30),
-            StreamType.COLOR: (rs.format.rgb8, (640, 480), 30),
+            StreamType.DEPTH.name: (rs.format.z16, (640, 480), 30),
+            StreamType.COLOR.name: (rs.format.rgb8, (640, 480), 30),
         },
         "D455": {
-            StreamType.DEPTH: (rs.format.z16, (640, 480), 30),
-            StreamType.COLOR: (rs.format.rgb8, (640, 480), 30),
+            StreamType.DEPTH.name: (rs.format.z16, (640, 480), 30),
+            StreamType.COLOR.name: (rs.format.rgb8, (640, 480), 30),
         },
     }
 
