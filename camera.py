@@ -88,10 +88,9 @@ class StreamType(Enum):
         return self.name
 
 
-# TODO: prevent the same camera to be instantiated twice
-# TODO: allow to change only one of the configs (depth to depth n color if color config is set)
 # TODO: use cameral name instead of sn to refer to it in errors
 class Camera:
+    # TODO: update docstring of Camera class
     """
     A class to abstract the intecartion with Intel Realsense cameras.
 
@@ -229,7 +228,12 @@ class Camera:
 
     def __apply_stream_configs(self):
         """
-        # TODO: docstring for __apply_stream_configs
+        Applies the stream configurations.
+
+        Raises:
+        -------
+            - StreamConfigError: If the configuration is not correct.
+            - PipelineRunningError: If the pipeline is running.
         """
 
         if not self.__running:
@@ -348,47 +352,47 @@ class Camera:
     #         self.__pipeline = self.__pipeline.stop()
     #         print(f"Camera {self.__serial_number} stopped.")
 
-    # def get_frames(self) -> rs.composite_frame:
-    #     """
-    #     Captures and returns a frame from the camera.
-    #     """
+    def get_frames(self) -> rs.composite_frame:
+        """
+        Captures and returns a frame from the camera.
+        """
 
-    #     if self.__pipeline is not None:
-    #         frames = self.__pipeline.wait_for_frames()
-    #         return frames
-    #     else:
-    #         return []
+        if self.__pipeline is not None:
+            frames = self.__pipeline.wait_for_frames()
+            return frames
+        else:
+            return []
 
-    # def get_serial_number(self) -> str:
-    #     """
-    #     Returns the serial number of the camera.
-    #     """
+    def get_serial_number(self) -> str:
+        """
+        Returns the serial number of the camera.
+        """
 
-    #     return self.__serial_number
+        return self.__serial_number
 
-    # def get_name(self) -> str:
-    #     """
-    #     Returns the name of the camera.
-    #     """
+    def get_name(self) -> str:
+        """
+        Returns the name of the camera.
+        """
 
-    #     return self.__name
+        return self.__name
 
-    # # Public class methods
-    # @classmethod
-    # def get_available_cameras(cls) -> list[str]:
-    #     """
-    #     Returns a list with the serial numbers of the available cameras
-    #     or an empty list if no cameras are available.
-    #     """
-    #     cameras_sn = []
+    # Public class methods
+    @classmethod
+    def get_available_cameras(cls) -> list[str]:
+        """
+        Returns a list with the serial numbers of the available cameras
+        or an empty list if no cameras are available.
+        """
+        cameras_sn = []
 
-    #     context = rs.context()
-    #     devices = context.query_devices()
+        context = rs.context()
+        devices = context.query_devices()
 
-    #     for device in devices:
-    #         cameras_sn.append(device.get_info(rs.camera_info.serial_number))
+        for device in devices:
+            cameras_sn.append(device.get_info(rs.camera_info.serial_number))
 
-    #     return cameras_sn
+        return cameras_sn
 
     @classmethod
     def is_camera_available(cls, sn: str) -> bool:
@@ -409,17 +413,17 @@ class Camera:
 
         return False
 
-    # @classmethod
-    # def get_camera_model(cls, sn: str) -> str:
-    #     """
-    #     Returns the camera model.
-    #     """
+    @classmethod
+    def get_camera_model(cls, sn: str) -> str:
+        """
+        Returns the camera model.
+        """
 
-    #     context = rs.context()
-    #     devices = context.query_devices()
+        context = rs.context()
+        devices = context.query_devices()
 
-    #     for device in devices:
-    #         if device.get_info(rs.camera_info.serial_number) == sn:
-    #             return device.get_info(rs.camera_info.name).split(" ")[-1][:4]
+        for device in devices:
+            if device.get_info(rs.camera_info.serial_number) == sn:
+                return device.get_info(rs.camera_info.name).split(" ")[-1][:4]
 
-    #     return ""
+        return ""
