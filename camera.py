@@ -35,6 +35,12 @@ class PipelineRunningError(Exception):
     """
 
 
+class CameraAlreadyExistsError(Exception):
+    """
+    Exception raised when the camera is already instantiated.
+    """
+
+
 class StreamConfig(NamedTuple):
     """
     Named tuple representing the format of the stream.
@@ -84,6 +90,7 @@ class StreamType(Enum):
 
 # TODO: prevent the same camera to be instantiated twice
 # TODO: allow to change only one of the configs (depth to depth n color if color config is set)
+# TODO: use cameral name instead of sn to refer to it in errors
 class Camera:
     """
     A class to abstract the intecartion with Intel Realsense cameras.
@@ -156,6 +163,17 @@ class Camera:
         },
     }
 
+    cameras = []
+
+    # Type definitions
+    __name: str
+    __serial_number: str
+    __stream_types: list[StreamType]
+    __stream_formats: dict[StreamType, StreamConfig]
+    __pipeline: rs.pipeline
+    __running: bool
+    __config: rs.config
+
     def __init__(
         self,
         name: str,
@@ -178,24 +196,22 @@ class Camera:
             - StreamConfigError: If the configuration is not correct.
         """
 
-        # Type definitions
-        self.__name: str
-        self.__serial_number: str
-        self.__stream_types: list[StreamType]
-        self.__stream_formats: dict[StreamType, StreamConfig]
+        self.__duplicate_error = False
+        if serial_number in Camera.cameras:
+            self.__duplicate_error = True
+            raise CameraAlreadyExistsError(f"Camera {serial_number} already instanciated.")
 
-        # Attribute assignment
+        self.__running = False
+        self.__pipeline = rs.pipeline()
+        self.__config = rs.config()
+
+        # Initializes attributes dependent on user parameters
         self.__name = name
         self.__serial_number = serial_number
         self.__stream_types = (
             stream_type.value if isinstance(stream_type.value, list) else [stream_type]
         )
         self.__stream_formats = stream_configs
-
-        # initializes remaining attributes
-        self.__pipeline = rs.pipeline()
-        self.__running = False
-        self.__config = rs.config()
 
         # initial configurations
         if Camera.is_camera_available(self.__serial_number):
@@ -205,6 +221,9 @@ class Camera:
 
         # check if stream configurations are valid
         self.__apply_stream_configs()
+
+        # adds camera sn to the list of cameras
+        Camera.cameras.append(self.__serial_number)
 
     def __apply_stream_configs(self):
         """
@@ -241,8 +260,10 @@ class Camera:
         Stops the pipeline object when the Camera object is deleted if it is running.
         """
 
-        if self.__running:
-            self.__pipeline.stop()
+        if not self.__duplicate_error:
+            if self.__running:
+                self.__pipeline.stop()
+            Camera.cameras.remove(self.__serial_number)
 
     # # Public instace methods
 
