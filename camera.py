@@ -170,8 +170,8 @@ class Camera:
     __stream_types: list[StreamType]
     __stream_configs: dict[StreamType, StreamConfig]
     __pipeline: rs.pipeline
-    __running: bool
     __config: rs.config
+    __running: bool
 
     def __init__(
         self,
@@ -200,10 +200,6 @@ class Camera:
         if serial_number in Camera.cameras:
             raise CameraAlreadyExistsError(f"Camera {serial_number} already instanciated.")
 
-        self.__running = False
-        self.__pipeline = rs.pipeline()
-        self.__config = rs.config()
-
         # Initializes attributes dependent on user parameters
         self.__name = name
         self.__serial_number = serial_number
@@ -212,13 +208,18 @@ class Camera:
         )
         self.__stream_configs = stream_configs
 
-        # initial configurations
+        # initializes independent attributes
+        self.__running = False
+        self.__pipeline = rs.pipeline()
+        self.__config = rs.config()
+
+        # checks if camera is available
         if Camera.is_camera_available(self.__serial_number):
             self.__config.enable_device(self.__serial_number)
         else:
             raise CameraUnavailableError(f"Camera {self.__serial_number} is not available.")
 
-        # check if stream configurations are valid
+        # check if stream configurations are valid and applies them if so
         self.__apply_stream_configs()
 
         # adds camera sn to the list of cameras
@@ -254,11 +255,16 @@ class Camera:
                     stream_config.fps,
                 )
                 valid = self.__config.can_resolve(self.__pipeline)
-                self.__config.disable_stream(stream_type.value)
+
                 if not valid:
+                    self.__config.disable_all_streams()  # fail safe
+
                     raise StreamConfigError(
                         f"Stream config for stream type {stream_type.name} is not valid."
                     )
+
+            self.__config.disable_all_streams()
+
             # enables needed streams
             for stream_type in self.__stream_types:
                 self.__config.enable_stream(
@@ -277,11 +283,18 @@ class Camera:
         Stops the pipeline object when the Camera object is deleted if it is running.
         """
 
-        if "__running" in self.__dict__ and self.__running:
+        if hasattr(self, "_Camera__running") and self.__running:
+            print("pipe")
             self.__pipeline.stop()
 
-        if "__serial_number" in self.__dict__:
-            Camera.cameras.remove(self.__serial_number)
+        if hasattr(self, "_Camera__serial_number"):
+            print("cam")
+            try:
+                Camera.cameras.remove(self.__serial_number)
+            except ValueError:
+                pass
+
+        print("del")
 
     # Instace public methods
 
@@ -322,59 +335,49 @@ class Camera:
 
             raise
 
-    # def start_pipeline(self) -> None:
-    #     """
-    #     Starts the pipeline object to capture frames.
-    #     """
+    def start(self) -> bool:
+        """
+        Starts the camera stream.
+        """
 
-    #     config = rs.config()
+        if self.__running:
+            return False
 
-    #     config.enable_device(self.__serial_number)
+        self.__pipeline.start(self.__config)
+        self.__running = True
 
-    #     if (
-    #         self.__stream_type == StreamType.DEPTH or self.__stream_type == StreamType.DEPTH_N_COLOR
-    #     ) and self.__depth_config is not None:
-    #         config.enable_stream(
-    #             rs.stream.depth,
-    #             self.__depth_config.width,
-    #             self.__depth_config.height,
-    #             self.__depth_config.format,
-    #             self.__depth_config.fps,
-    #         )
+        return True
 
-    #     if (
-    #         self.__stream_type == StreamType.COLOR or self.__stream_type == StreamType.DEPTH_N_COLOR
-    #     ) and self.__color_config is not None:
-    #         config.enable_stream(
-    #             rs.stream.color,
-    #             self.__color_config.width,
-    #             self.__color_config.height,
-    #             self.__color_config.format,
-    #             self.__color_config.fps,
-    #         )
+    def get_status(self) -> bool:
+        """
+        Returns True if the camera is streaming, False otherwise.
+        """
 
-    #     self.__pipeline = rs.pipeline()
-    #     self.__pipeline.start(config)
+        return self.__running
 
-    #     print(f"Camera {self.__serial_number} started.")
+    def stop(self) -> bool:
+        """
+        Stops the camera stream.
 
-    # def stop_pipeline(self) -> None:
-    #     """
-    #     Stops the pipeline object.
-    #     """
+        Returns:
+        --------
+            - True if the pipeline was running as was stopped
+            - False otherwise.
+        """
 
-    #     if self.__pipeline is not None:
-    #         self.__pipeline = self.__pipeline.stop()
-    #         print(f"Camera {self.__serial_number} stopped.")
+        if self.__running:
+            self.__pipeline.stop()
+            self.__running = False
+            return True
+        return False
 
     def get_frames(self) -> rs.composite_frame:
         """
         Captures and returns a frame from the camera.
         """
 
-        if self.__pipeline is not None:
-            frames = self.__pipeline.wait_for_frames()
-            return frames
+        if self.__running:
+            return self.__pipeline.wait_for_frames()
         else:
             return []
 
