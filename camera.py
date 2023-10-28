@@ -10,6 +10,9 @@ Classes:
 Exceptions:
 -----------
     - StreamConfigError: Raised when there is an error in the configuration of the video stream.
+    - CameraUnavailableError: Raised when the camera is not available.
+    - PipelineRunningError: Raised when the pipeline is running.
+    - CameraAlreadyExistsError: Raised when the camera is already instantiated.
 """
 
 from enum import Enum
@@ -43,7 +46,7 @@ class CameraAlreadyExistsError(Exception):
 
 class StreamConfig(NamedTuple):
     """
-    Named tuple representing the format of the stream.
+    Named tuple representing the format of the stream configuration.
 
     Attributes:
     -----------
@@ -60,6 +63,7 @@ class StreamConfig(NamedTuple):
         return f"format={self.format}, resolution={self.resolution[0]} x {self.resolution[1]}, fps={self.fps}"  # pylint: disable=line-too-long
 
 
+# TODO: add handler to access each type of frame
 class StreamType(Enum):
     """
     An enumeration of the different types of streams that can be captured by the camera.
@@ -88,36 +92,34 @@ class StreamType(Enum):
         return self.name
 
 
-# TODO: use cameral name instead of sn to refer to it in errors
 class Camera:
-    # TODO: update docstring of Camera class
     """
-    A class to abstract the intecartion with Intel Realsense cameras.
-
-    Instance Methods:
-    --------
-        - change_config(stream_type, depth_config, color_config) -> None:
-            Changes the configuration of the camera.
-        - start_pipeline() -> None:
-            Starts the pipeline object to capture frames.
-        - stop_pipeline() -> None:
-            Stops the pipeline object.
-        - get_frames() -> rs.composite_frame:
-            Captures and returns a frame from the camera.
-        - get_serial_number() -> str:
-            Returns the serial number of the camera.
-        - get_name() -> str:
-            Returns the name of the camera.
+    A class to abstract the interaction with Intel Realsense cameras.
 
     Class Methods:
     --------------
-        - get_available_cameras() -> list[str]:
+        - get_available_cameras:
             Returns a list with the serial numbers of the available cameras
             or an empty list if no cameras are available.
-        - is_camera_available(sn) -> bool:
+        - is_camera_available:
             Checks if camera is available.
-        - get_camera_model(sn) -> str:
+        - get_camera_model:
             Returns the camera model.
+
+    Instance Methods:
+    --------
+        - change_stream_configs:
+            Changes the stream configurations.
+        - start:
+            Starts the camera stream.
+        - is_streaming:
+            Returns the status of the camera stream.
+        - stop:
+            Stops the camera stream.
+        - get_serial_number:
+            Returns the serial number of the camera.
+        - get_name:
+            Returns the name of the camera.
 
     Examples:
     ----------
@@ -134,21 +136,18 @@ class Camera:
 
     - Create a camera object::
 
-        camera = Camera(
-            name="camera1",
-            serial_number="123456789",
-            stream_type=StreamType.DEPTH_N_COLOR,
-            depth_config=StreamConfig(640, 480, 30, rs.format.z16),
-            color_config=StreamConfig(640, 480, 30, rs.format.rgb8),
-        )
+        >>> camera = Camera(
+                "135522077203",
+                StreamType.DEPTH,
+                {StreamType.DEPTH: StreamConfig(rs.format.z16, (640, 480), 30)},
+                "My camera",
+            )
 
+    - Keep depth stream, but change resolution and framerate::
 
-    - Change the configuration of the camera::
-
-        camera.change_config(
-            stream_type=StreamType.DEPTH,
-            depth_config=StreamConfig(640, 480, 30, rs.format.z16),
-        )
+        >>> camera.change_config(
+                {StreamType.DEPTH: StreamConfig(rs.format.z16, (1280, 720), 5)},
+            )
     """
 
     DEFAULTS = {
@@ -175,20 +174,20 @@ class Camera:
 
     def __init__(
         self,
-        name: str,
         serial_number: str,
         stream_type: StreamType,
         stream_configs: dict[StreamType, StreamConfig],
+        name: str | None = None,
     ) -> None:
         """
-        Initializes a Camera object with the given parameters.
+        Camera constructor.
 
         Args:
         -----
-            - name: The name of the camera.
             - serial_number: The serial number of the camera.
             - stream_type: The type of data to stream.
             - stream_configs: The configuration of the streams.
+            - name: The name of the camera. When None it defaults to the serial number.
 
         Raises:
         -------
@@ -198,11 +197,15 @@ class Camera:
         """
 
         if serial_number in Camera.cameras:
-            raise CameraAlreadyExistsError(f"Camera {serial_number} already instanciated.")
+            raise CameraAlreadyExistsError(
+                f"Camera with serial number {serial_number} already exists."
+            )
+
+        self.__serial_number = serial_number
+        self.__name = name if name else serial_number
 
         # Initializes attributes dependent on user parameters
-        self.__name = name
-        self.__serial_number = serial_number
+
         self.__stream_types = (
             stream_type.value if isinstance(stream_type.value, list) else [stream_type]
         )
@@ -280,18 +283,19 @@ class Camera:
 
     def __del__(self):
         """
-        Stops the pipeline object when the Camera object is deleted if it is running.
+        Camera destructor.
         """
 
         if hasattr(self, "_Camera__running") and self.__running:
-            print("pipe")
-            self.__pipeline.stop()
+            try:
+                self.__pipeline.stop()
+            except Exception:
+                pass
 
         if hasattr(self, "_Camera__serial_number"):
-            print("cam")
             try:
                 Camera.cameras.remove(self.__serial_number)
-            except ValueError:
+            except Exception:
                 pass
 
         print("del")
@@ -304,7 +308,22 @@ class Camera:
         stream_configs: dict[StreamType, StreamConfig] | None = None,
     ) -> None:
         """
-        # TODO: update docstring of change_config method
+        Changes the stream configurations.
+
+        It is possible to change only the stream type, only the stream configs or both.
+
+        It necessary to guarantee that there is a matching stream config for each stream type,
+        either set during instantiation or passed in this method.
+
+        Args:
+        -----
+            - stream_type: The type of data to stream.
+            - stream_configs: The configuration of the streams.
+
+        Raises:
+        -------
+            - StreamConfigError: If the configuration is not correct.
+            - PipelineRunningError: If the pipeline is running.
         """
 
         if stream_type is None and stream_configs is None:
@@ -338,6 +357,11 @@ class Camera:
     def start(self) -> bool:
         """
         Starts the camera stream.
+
+        Returns:
+        --------
+            - True if the pipeline was not running and was started
+            - False if the pipelin was already running.
         """
 
         if self.__running:
@@ -348,9 +372,9 @@ class Camera:
 
         return True
 
-    def get_status(self) -> bool:
+    def is_streaming(self) -> bool:
         """
-        Returns True if the camera is streaming, False otherwise.
+        Returns the status of the camera stream.
         """
 
         return self.__running
@@ -361,25 +385,30 @@ class Camera:
 
         Returns:
         --------
-            - True if the pipeline was running as was stopped
-            - False otherwise.
+            - True if the pipeline was running and was stopped
+            - False if the pipeline was already stopped.
         """
 
-        if self.__running:
-            self.__pipeline.stop()
-            self.__running = False
-            return True
-        return False
+        if not self.__running:
+            return False
 
-    def get_frames(self) -> rs.composite_frame:
-        """
-        Captures and returns a frame from the camera.
-        """
+        self.__pipeline.stop()
+        self.__running = False
 
-        if self.__running:
-            return self.__pipeline.wait_for_frames()
-        else:
-            return []
+        return True
+
+    # TODO: missing implementation of get_frames
+    # def get_frames(self) -> rs.composite_frame:
+    #     """
+    #     Returns an object representing a frame from the camera.
+
+    #     In order to access the frame data itself it is necessary to use the
+    #     """
+
+    #     if self.__running:
+    #         return self.__pipeline.wait_for_frames()
+    #     else:
+    #         return []
 
     def get_serial_number(self) -> str:
         """
@@ -435,6 +464,10 @@ class Camera:
     def get_camera_model(cls, sn: str) -> str:
         """
         Returns the camera model.
+
+        Args:
+        -----
+            - sn: The serial number of the camera.
         """
 
         context = rs.context()
