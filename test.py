@@ -8,16 +8,17 @@ c1 = Camera(
     "123",
     "135522077203",
     StreamType.DEPTH,
-    {StreamType.DEPTH: StreamConfig(rs.format.z16, (640, 480), 30)},
+    {
+        StreamType.DEPTH: StreamConfig(rs.format.z16, (640, 480), 30),
+        StreamType.COLOR: StreamConfig(rs.format.rgb8, (640, 480), 30),
+    },
 )
 
-del c1
+print("ola")
 
-c2 = Camera(
-    "123",
-    "135522077203",
-    StreamType.DEPTH,
-    {StreamType.DEPTH: StreamConfig(rs.format.z16, (640, 480), 30)},
+c1.change_stream_configs(
+    StreamType.COLOR,
+    {StreamType.COLOR: StreamConfig(rs.format.rgb8, (640, 480), 30)},
 )
 
 # print(Camera.DEFAULTS)

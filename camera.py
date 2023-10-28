@@ -168,7 +168,7 @@ class Camera:
     __name: str
     __serial_number: str
     __stream_types: list[StreamType]
-    __stream_formats: dict[StreamType, StreamConfig]
+    __stream_configs: dict[StreamType, StreamConfig]
     __pipeline: rs.pipeline
     __running: bool
     __config: rs.config
@@ -197,9 +197,7 @@ class Camera:
             - CameraAlreadyExistsError: If the camera is already instanciated.
         """
 
-        self.__duplicate_error = False
         if serial_number in Camera.cameras:
-            self.__duplicate_error = True
             raise CameraAlreadyExistsError(f"Camera {serial_number} already instanciated.")
 
         self.__running = False
@@ -212,7 +210,7 @@ class Camera:
         self.__stream_types = (
             stream_type.value if isinstance(stream_type.value, list) else [stream_type]
         )
-        self.__stream_formats = stream_configs
+        self.__stream_configs = stream_configs
 
         # initial configurations
         if Camera.is_camera_available(self.__serial_number):
@@ -239,25 +237,38 @@ class Camera:
         if not self.__running:
             # ensures that there are stream configs for all stream types
             for stream_type in self.__stream_types:
-                if stream_type not in self.__stream_formats:
+                if stream_type not in self.__stream_configs:
                     raise StreamConfigError(
                         f"Stream config for stream type {stream_type.name} is not set."
                     )
 
             self.__config.disable_all_streams()
 
-            for stream_type in self.__stream_types:
+            # checks if all configs are valid
+            for stream_type, stream_config in self.__stream_configs.items():
                 self.__config.enable_stream(
                     stream_type.value,
-                    self.__stream_formats[stream_type].resolution[0],
-                    self.__stream_formats[stream_type].resolution[1],
-                    self.__stream_formats[stream_type].format,
-                    self.__stream_formats[stream_type].fps,
+                    stream_config.resolution[0],
+                    stream_config.resolution[1],
+                    stream_config.format,
+                    stream_config.fps,
                 )
-                if not self.__config.can_resolve(self.__pipeline):
+                valid = self.__config.can_resolve(self.__pipeline)
+                self.__config.disable_stream(stream_type.value)
+                if not valid:
                     raise StreamConfigError(
                         f"Stream config for stream type {stream_type.name} is not valid."
                     )
+            # enables needed streams
+            for stream_type in self.__stream_types:
+                self.__config.enable_stream(
+                    stream_type.value,
+                    self.__stream_configs[stream_type].resolution[0],
+                    self.__stream_configs[stream_type].resolution[1],
+                    self.__stream_configs[stream_type].format,
+                    self.__stream_configs[stream_type].fps,
+                )
+
         else:
             raise PipelineRunningError()
 
@@ -266,46 +277,50 @@ class Camera:
         Stops the pipeline object when the Camera object is deleted if it is running.
         """
 
-        if not self.__duplicate_error:
-            if self.__running:
-                self.__pipeline.stop()
+        if "__running" in self.__dict__ and self.__running:
+            self.__pipeline.stop()
+
+        if "__serial_number" in self.__dict__:
             Camera.cameras.remove(self.__serial_number)
 
-    # # Public instace methods
+    # Instace public methods
 
-    # def change_config(
-    #     self,
-    #     stream_type: StreamType,
-    #     depth_config: StreamConfig | None = None,
-    #     color_config: StreamConfig | None = None,
-    # ) -> None:
-    #     """
-    #     Changes the stream configuration of the camera.
+    def change_stream_configs(
+        self,
+        stream_type: StreamType | None = None,
+        stream_configs: dict[StreamType, StreamConfig] | None = None,
+    ) -> None:
+        """
+        # TODO: update docstring of change_config method
+        """
 
-    #     Args:
-    #         - stream_type: The type of stream to capture.
-    #         - depth_config: The configuration for the depth stream.
-    #         - color_config: The configuration for the color stream.
+        if stream_type is None and stream_configs is None:
+            raise StreamConfigError("No stream type or stream configs were specified.")
 
-    #     Raises:
-    #         - StreamConfigError: If the configuration is not correct.
-    #     """
+        old_stream_types = self.__stream_types
+        old_stream_formats = self.__stream_configs
 
-    #     old_stream_type = self.__stream_type
-    #     old_depth_config = self.__depth_config
-    #     old_color_config = self.__color_config
+        if stream_type is not None:
+            self.__stream_types = (
+                stream_type.value if isinstance(stream_type.value, list) else [stream_type]
+            )
 
-    #     self.__stream_type = stream_type
-    #     self.__depth_config = depth_config
-    #     self.__color_config = color_config
+        if stream_configs is not None:
+            self.__stream_configs = stream_configs
 
-    #     try:
-    #         self.__check_config()
-    #     except StreamConfigError:
-    #         self.__stream_type = old_stream_type
-    #         self.__depth_config = old_depth_config
-    #         self.__color_config = old_color_config
-    #         raise
+        try:
+            self.__apply_stream_configs()
+        except StreamConfigError:
+            self.__stream_types = old_stream_types
+            self.__stream_configs = old_stream_formats
+            self.__apply_stream_configs()
+
+            raise
+        except PipelineRunningError:
+            self.__stream_types = old_stream_types
+            self.__stream_configs = old_stream_formats
+
+            raise
 
     # def start_pipeline(self) -> None:
     #     """
@@ -377,7 +392,7 @@ class Camera:
 
         return self.__name
 
-    # Public class methods
+    # Class public methods
     @classmethod
     def get_available_cameras(cls) -> list[str]:
         """
