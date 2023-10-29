@@ -17,6 +17,8 @@ Exceptions:
 
 from enum import Enum
 from typing import NamedTuple
+from abc import ABC, abstractmethod
+
 import pyrealsense2.pyrealsense2 as rs
 
 
@@ -63,7 +65,6 @@ class StreamConfig(NamedTuple):
         return f"format={self.format}, resolution={self.resolution[0]} x {self.resolution[1]}, fps={self.fps}"  # pylint: disable=line-too-long
 
 
-# TODO: add handler to access each type of frame
 class StreamType(Enum):
     """
     An enumeration of the different types of streams that can be captured by the camera.
@@ -80,13 +81,26 @@ class StreamType(Enum):
     # Base types
     DEPTH = rs.stream.depth
     COLOR = rs.stream.color
+    IR = rs.stream.infrared
 
     # Composed types
     DEPTH_N_COLOR = None
+    DEPTH_N_IR = None
+    COLOR_N_IR = None
+    DEPTH_N_COLOR_N_IR = None
 
-    def __init__(self, *_, **__):
+    def __init__(self, *_, **__) -> None:
         if self.name == "DEPTH_N_COLOR":
             self._value_ = [self.DEPTH, self.COLOR]
+
+        elif self.name == "DEPTH_N_IR":
+            self._value_ = [self.DEPTH, self.IR]
+
+        elif self.name == "COLOR_N_IR":
+            self._value_ = [self.COLOR, self.IR]
+
+        elif self.name == "DEPTH_N_COLOR_N_IR":
+            self._value_ = [self.DEPTH, self.COLOR, self.IR]
 
     def __str__(self) -> str:
         return self.name
@@ -397,18 +411,17 @@ class Camera:
 
         return True
 
-    # TODO: missing implementation of get_frames
-    # def get_frames(self) -> rs.composite_frame:
-    #     """
-    #     Returns an object representing a frame from the camera.
+    def get_frames(self) -> rs.composite_frame:
+        """
+        Returns an object representing a frame from the camera.
 
-    #     In order to access the frame data itself it is necessary to use the
-    #     """
+        In order to access the frame data itself it is necessary to use a subclass of Frame.
+        """
 
-    #     if self.__running:
-    #         return self.__pipeline.wait_for_frames()
-    #     else:
-    #         return []
+        if self.__running:
+            return self.__pipeline.wait_for_frames()
+        else:
+            return []
 
     def get_serial_number(self) -> str:
         """
@@ -478,3 +491,35 @@ class Camera:
                 return device.get_info(rs.camera_info.name).split(" ")[-1][:4]
 
         return ""
+
+
+class Frame(ABC):
+    """
+    # TODO: missing docstring for Frame
+    """
+
+    def __init__(
+        self,
+        frame: rs.composite_frame,
+    ) -> None:
+        """
+        Frame constructor.
+
+        Args:
+        -----
+            - stream_type: The type of data to stream.
+            - frame: The actual frame captured by a camera.
+        """
+
+        self.frame = frame
+
+    @abstractmethod
+    def save(self):
+        """
+        Saves the frame to a ply file
+        """
+
+    @classmethod
+    def create_instance(cls):
+        # TODO: implement
+        pass

@@ -12,7 +12,7 @@ import logging
 import calendar
 
 from utils import print_error, print_warning, BaseNamespace, ArgSource
-from camera import Camera, StreamType, StreamConfig
+from intel import Camera, StreamType, StreamConfig
 
 WEEK_DAYS = list(calendar.day_abbr)
 
