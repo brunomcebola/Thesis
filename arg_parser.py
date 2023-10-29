@@ -10,7 +10,7 @@ import sys
 
 from colorama import Style
 from utils import print_error
-from camera import StreamType
+from intel import StreamType
 
 
 # TODO: add option in parser to access thread output
