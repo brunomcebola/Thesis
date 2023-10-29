@@ -64,6 +64,11 @@ class BaseNamespace(SimpleNamespace, metaclass=_PostNamespaceInitMeta):
     def __init__(self, source: ArgSource):
         self.source = ArgSource(source)
 
+    def __new__(cls, *args, **kwargs):
+        if cls is BaseNamespace:
+            raise TypeError(f"Can't instantiate '{cls.__name__}' directly.")
+        return SimpleNamespace.__new__(cls, *args, **kwargs)
+
 
 # TODO: change exit to raise
 def parse_yaml(file_path: str) -> dict:
