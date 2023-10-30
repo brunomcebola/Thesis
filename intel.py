@@ -525,10 +525,13 @@ class Frame(ABC):
         self.frame = frame
 
     @abstractmethod
-    def save(self):
+    def get_data(self):
         """
         Saves the frame to a ply file
         """
+
+    def save(self):
+        pass
 
     @classmethod
     def create_instance(cls):
