@@ -1,11 +1,9 @@
 """
 Module for testing
 """
-import pyrealsense2.pyrealsense2 as rs
+
 from intel import Camera, StreamType, StreamConfig
 import utils
-
-from abc import ABC, abstractmethod
 
 # c1 = Camera(
 #     "135522077203",
@@ -27,11 +25,14 @@ from abc import ABC, abstractmethod
 # c1.start()
 # c1.stop()
 
-class t(utils.BaseNamespace):
-    def __init__(self, source: utils.ArgSource):
-        super().__init__(source)
-        print("init")
 
-b = utils.BaseNamespace(utils.ArgSource.CMD)
+c = Camera("135522077203", StreamType.DEPTH, Camera.DEFAULTS["D435"], "c1")
+
+c.start()
+
+frame = c.get_frames()
+print(frame)
+
+c.stop()
 
 # print(Camera.DEFAULTS)
