@@ -184,6 +184,7 @@ class Camera:
     __stream_configs: dict[StreamType, StreamConfig]
     __pipeline: rs.pipeline
     __config: rs.config
+    __device: rs.device
     __running: bool
 
     def __init__(
@@ -235,6 +236,18 @@ class Camera:
             self.__config.enable_device(self.__serial_number)
         else:
             raise CameraUnavailableError(f"Camera {self.__serial_number} is not available.")
+
+        # save device object
+        context = rs.context()
+        devices = context.query_devices()
+
+        for device in devices:
+            if device.get_info(rs.camera_info.serial_number) == self.__serial_number:
+                self.__device = device
+                break
+
+        # force camera reset
+        self.__device.hardware_reset()
 
         # check if stream configurations are valid and applies them if so
         self.__apply_stream_configs()
@@ -311,8 +324,6 @@ class Camera:
                 Camera.cameras.remove(self.__serial_number)
             except Exception:
                 pass
-
-        print("del")
 
     # Instace public methods
 
