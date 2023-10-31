@@ -99,7 +99,7 @@ class AquireNamespace(BaseNamespace):
             # default configs will be used for all cameras based on their models
             print_warning("Using default stream configs for all cameras based on their models.")
             stream_configs = [
-                Camera.get_default_config(Camera.get_camera_model(sn)) for sn in self.serial_numbers
+                Camera.get_default_config(Camera.get_camera_model(sn)) for sn in serial_numbers
             ]
 
             # names (argparser ensures it is None)
@@ -131,11 +131,11 @@ class AquireNamespace(BaseNamespace):
         string += "\tCameras:"
         for camera in self.cameras:
             string += "\n"
-            string += f"\t\tName:{camera}\n"
-            string += f"\t\tSerial number:{camera}\n"
-            string += f"\t\tStream type:{camera}\n"
-            for key, value in camera():
-                string += f"\t\t{key.capitalize()} stream config:{str(value)}\n"
+            string += f"\t\tName:{camera.name}\n"
+            string += f"\t\tSerial number:{camera.serial_number}\n"
+            string += f"\t\tStream type:{camera.stream_type}\n"
+            for key, value in camera.stream_configs.items():
+                string += f"\t\t{key.name.capitalize()} stream config:{str(value)}\n"
 
         # align elements
         string = string.split(("Cameras:"))
