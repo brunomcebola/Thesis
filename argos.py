@@ -33,7 +33,11 @@ if __name__ == "__main__":
         utils.print_info("Entering aquire mode...")
         print()
 
-        aquireNamespace = aquire.AquireNamespace(utils.ArgSource.CMD, **cmd_args.__dict__)
+        try:
+            aquireNamespace = aquire.AquireNamespace(utils.ArgSource.CMD, **cmd_args.__dict__)
+        except Exception as e:
+            utils.print_error(str(e))
+            exit(1)
 
         print()
         utils.print_info("Aquire mode settings:")

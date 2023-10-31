@@ -7,16 +7,20 @@ Classes:
 
 """
 import os
-import time
-import logging
 import calendar
 
-from utils import print_error, print_warning, BaseNamespace, ArgSource
-from intel import Camera, StreamType, StreamConfig
+from utils import print_warning, BaseNamespace, ArgSource
+from intel import Camera, StreamType, CameraUnavailableError
 
 WEEK_DAYS = list(calendar.day_abbr)
 
-# TODO: change exit to raise
+
+class OutputFolderError(Exception):
+    """
+    Exception raised when the output folder does not exist.
+    """
+
+
 class AquireNamespace(BaseNamespace):
     """
     This class holds the arguments for the aquire mode.
@@ -30,19 +34,7 @@ class AquireNamespace(BaseNamespace):
         - op_times (list[tuple[int, int, int]]):
             The time interval in which the cameras will be capturing data for each day of the week.
         - cameras (list[Camera]):
-
-
-        - serial_numbers (list[str]):
-            The serial numbers of the cameras to be used.
-        - names (list[str]):
-            The names of the cameras to be used.
-        - stream_types (list[StreamType]):
-            The type of stream to be captured by each camera.
-        - stream_configs (list[dict[str, StreamConfig]]):
-            The configuration of the stream to be captured by each camera.
-
-        - kwargs:
-            Used as a dumpster for extra arguments passed from mappings.
+            The list with the cameras to be used.
     """
 
     def __init__(
@@ -50,17 +42,27 @@ class AquireNamespace(BaseNamespace):
         source: ArgSource,
         output_folder: str,
         serial_numbers: list[str] | None = None,
-        # names: list[str] | None = None,
         stream_types: list[StreamType] | None = None,
+        # names: list[str] | None = None,
         # stream_configs: list[dict[str, StreamConfig]] | None = None,
         # op_times: tuple[int, int] | list[tuple[str, int, int]] | None = None,
         **kwargs,
     ):
+        """
+        AquireNamespace constructor.
+
+        Args:
+        -----
+            - source: Origin of the arguments.
+            - output_folder: The path to the output folder.
+            - serial_numbers: The serial numbers of the cameras to be used.
+            - stream_types: The stream types to be used.
+            - kwargs: The remaining arguments (to allow for the use of **vars(args))
+        """
+
         # type definitions
         self.output_folder: str
         self.op_times: list[tuple[int, int, int]]
-
-
 
         del kwargs
 
@@ -69,8 +71,7 @@ class AquireNamespace(BaseNamespace):
         if self.source == ArgSource.CMD:
             # output folder (argparser ensure it is a non-empty string)
             if not os.path.exists(output_folder):
-                print_error(f"Output folder does not exist ({output_folder}).")
-                exit(1)
+                raise OutputFolderError(f"Output folder does not exist ({output_folder}).")
 
             self.output_folder = output_folder
 
@@ -78,40 +79,37 @@ class AquireNamespace(BaseNamespace):
             #   if None then all available cameras will be used
             #   if list then specified serial number must match an available camera
             if serial_numbers is None:
+                print_warning("No specific camera specified. Using all connected cameras.")
                 serial_numbers = Camera.get_available_cameras()
                 if len(serial_numbers) == 0:
-                    print_error("No available cameras.")
-                    exit(1)
-                print_warning(
-                    f"No specific camera specified. Using all available cameras: {serial_numbers}."
-                )
-                self.serial_numbers = serial_numbers
-            elif Camera.is_camera_available(serial_numbers[0]):
-                self.serial_numbers = serial_numbers
-            else:
-                print_error(f"Camera {serial_numbers[0]} is not available.")
-                exit(1)
+                    raise CameraUnavailableError("No available cameras.")
+            elif not Camera.is_camera_available(serial_numbers[0]):
+                raise CameraUnavailableError(f"Camera {serial_numbers[0]} is not available.")
 
             # stream types (argparser ensures it is either None or a list with only one element)
             #   if None then depth stream will be used to all cameras
             #   if list then specified stream type will be used to all cameras
             if stream_types is None:
                 print_warning("No stream type specified. Setting depth as stream of all cameras.")
-                self.stream_types = [StreamType.DEPTH] * len(self.serial_numbers)
+                stream_types = [StreamType.DEPTH] * len(serial_numbers)
             else:
-                self.stream_types = stream_types * len(self.serial_numbers)
-
-            # names (argparser ensures it is None)
-            # cameras' names will be their serial numbers
-            print_warning("Using serial number as name for all cameras.")
-            self.names = list(self.serial_numbers)
+                stream_types = stream_types * len(serial_numbers)
 
             # stream configs (argparser ensures it is None)
             # default configs will be used for all cameras based on their models
             print_warning("Using default stream configs for all cameras based on their models.")
-            self.stream_configs = [
-                Camera.get_camera_default_config(Camera.get_camera_model(sn))
-                for sn in self.serial_numbers
+            stream_configs = [
+                Camera.DEFAULTS[Camera.get_camera_model(sn)] for sn in self.serial_numbers
+            ]
+
+            # names (argparser ensures it is None)
+            # cameras' names will be their serial numbers
+            print_warning("Using serial number as name for all cameras.")
+
+            # create list of camera instances
+            self.cameras = [
+                Camera(sn, st, sc)
+                for sn, st, sc in zip(serial_numbers, stream_types, stream_configs)
             ]
 
             # op times (argparser ensures it is None)
@@ -122,6 +120,7 @@ class AquireNamespace(BaseNamespace):
         elif self.source == ArgSource.YAML:
             pass
 
+    # TODO: change to direct access
     def __str__(self) -> str:
         string = ""
 
@@ -130,14 +129,12 @@ class AquireNamespace(BaseNamespace):
             f"\tOperation time: {[(WEEK_DAYS[op[0]], op[1], op[2]) for op in self.op_times]}\n"
         )
         string += "\tCameras:"
-        for name, sn, stream, config in zip(
-            self.names, self.serial_numbers, self.stream_types, self.stream_configs
-        ):
+        for camera in self.cameras:
             string += "\n"
-            string += f"\t\tName:{name}\n"
-            string += f"\t\tSerial number:{sn}\n"
-            string += f"\t\tStream type:{stream}\n"
-            for key, value in config.items():
+            string += f"\t\tName:{camera}\n"
+            string += f"\t\tSerial number:{camera}\n"
+            string += f"\t\tStream type:{camera}\n"
+            for key, value in camera():
                 string += f"\t\t{key.capitalize()} stream config:{str(value)}\n"
 
         # align elements
@@ -157,7 +154,8 @@ class AquireNamespace(BaseNamespace):
 
 
 # STOP_FLAG = False
-
+# import time
+# import logging
 
 # def aquire():
 #     logging.basicConfig(
