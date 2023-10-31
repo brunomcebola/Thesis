@@ -47,7 +47,7 @@ class ArgParser:
             formatter.add_usage(self.usage, self._actions, self._mutually_exclusive_groups)
 
             # positionals, optionals and user-defined groups
-            for action_group in self._action_groups:
+            for action_group in self._action_groups[::-1]:
                 formatter.start_section(action_group.title)
                 formatter.add_text(action_group.description)
                 formatter.add_arguments(
@@ -258,7 +258,15 @@ class ArgParser:
 
     # TODO
     def _add_yaml_mode_subparser(self):
-        # create the parser for the "yaml" mode
+        def _config_file(value: str):
+            """
+            Checks if a non-empty string was assigned to the output folder argument.
+            """
+            value = value.strip()
+            if len(value) == 0:
+                raise argparse.ArgumentTypeError("Empty string")
+            return value
+
         parser = self._subparsers.add_parser(
             "yaml",
             aliases="y",
@@ -266,7 +274,7 @@ class ArgParser:
             help="Mode to run the model based on a yaml file.",
             allow_abbrev=False,
             formatter_class=self._HelpFormatterModes,
-            usage="argos.py yaml <file>",
+            usage="argos.py yaml (-f | --config-file) <path>",
             add_help=False,
         )
 
@@ -278,7 +286,16 @@ class ArgParser:
             help="Show this help message and exit.",
         )
 
-        parser.add_argument("file", help="Path to yaml file.")
+        parser_required = parser.add_argument_group("Required arguments")
+
+        parser_required.add_argument(
+            "-f",
+            "--config-file",
+            required=True,
+            help="Path to the yaml file containing the camera's configuration.",
+            metavar="path",
+            type=_config_file,
+        )
 
     def _add_subparsers(self):
         self._add_aquire_mode_subparser()
