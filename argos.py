@@ -71,7 +71,7 @@ if __name__ == "__main__":
     elif cmd_args.mode in ["yaml", "y"]:
         utils.print_info("Entering yaml mode...")
         print()
-        args = utils.parse_yaml(cmd_args.file)
+        args = utils.parse_yaml(cmd_args.config_file)
         print(args)
     else:
         exit(0)
