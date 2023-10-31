@@ -105,10 +105,15 @@ class StreamType(Enum):
     def __str__(self) -> str:
         return self.name
 
-
+# TODO: store StreamType besides the list of base types
 class Camera:
     """
     A class to abstract the interaction with Intel Realsense cameras.
+
+    Attributes:
+    -----------
+        - DEFAULTS: A dictionary with the default stream configurations for each camera model.
+        - __stream_type: A list with the serial numbers of the available cameras.
 
     Class Methods:
     --------------
@@ -518,7 +523,6 @@ class Frame(ABC):
 
         Args:
         -----
-            - stream_type: The type of data to stream.
             - frame: The actual frame captured by a camera.
         """
 
@@ -527,7 +531,7 @@ class Frame(ABC):
     @abstractmethod
     def get_data(self):
         """
-        Saves the frame to a ply file
+        Returns the data to be stored.
         """
 
     def save(self):
