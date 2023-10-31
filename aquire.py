@@ -99,7 +99,7 @@ class AquireNamespace(BaseNamespace):
             # default configs will be used for all cameras based on their models
             print_warning("Using default stream configs for all cameras based on their models.")
             stream_configs = [
-                Camera.DEFAULTS[Camera.get_camera_model(sn)] for sn in self.serial_numbers
+                Camera.get_default_config(Camera.get_camera_model(sn)) for sn in self.serial_numbers
             ]
 
             # names (argparser ensures it is None)
