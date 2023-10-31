@@ -191,7 +191,7 @@ class ArgParser:
             action="append",
         )
 
-        options = ", ".join([f"'{type.name}' ({type.value})" for type in StreamType])
+        options = ", ".join([f"{type.name}" for type in StreamType])
         parser.add_argument(
             "-s",
             "--stream-type",
