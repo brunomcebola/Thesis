@@ -1,6 +1,6 @@
 mode: aquire
 
-output_folder:
+output_folder: ./
 
 operation_time:
   -
