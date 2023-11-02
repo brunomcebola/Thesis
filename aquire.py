@@ -118,7 +118,19 @@ class AquireNamespace(BaseNamespace):
             self.op_times = [(i, 0, 24) for i in range(7)]
 
         elif self.source == ArgSource.YAML:
-            pass
+            # output folder
+            if output_folder is None:
+                raise OutputFolderError("The output folder must be specified.")
+
+            output_folder = str(output_folder)
+            output_folder = output_folder.strip()
+            if output_folder == "":
+                raise OutputFolderError("The output folder cannot be a empty string.")
+
+            if not os.path.exists(output_folder):
+                raise OutputFolderError(f"The output folder does not exist ({output_folder}).")
+
+            self.output_folder = output_folder
 
     # TODO: change to direct access
     def __str__(self) -> str:
