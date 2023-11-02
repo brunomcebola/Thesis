@@ -73,5 +73,11 @@ if __name__ == "__main__":
         print()
         args = utils.parse_yaml(cmd_args.config_file)
         print(args)
+
+        try:
+            aquireNamespace = aquire.AquireNamespace(utils.ArgSource.YAML, **args)
+        except Exception as e:
+            utils.print_error(str(e))
+            exit(1)
     else:
         exit(0)

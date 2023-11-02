@@ -1,6 +1,6 @@
 mode: aquire
 
-output_folder: /media/brunomcebola/RPi_Storage/cameras/
+output_folder:
 
 operation_time:
   -
