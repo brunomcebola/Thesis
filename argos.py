@@ -71,6 +71,7 @@ if __name__ == "__main__":
     elif cmd_args.mode in ["yaml", "y"]:
         utils.print_info("Entering yaml mode...")
         print()
+        
         args = utils.parse_yaml(cmd_args.config_file)
         print(args)
 
@@ -79,5 +80,10 @@ if __name__ == "__main__":
         except Exception as e:
             utils.print_error(str(e))
             exit(1)
+
+        print()
+        utils.print_info("Aquire mode settings:")
+        print(aquireNamespace)
+        print()
     else:
         exit(0)

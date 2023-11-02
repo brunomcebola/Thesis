@@ -61,8 +61,9 @@ class AquireNamespace(BaseNamespace):
         """
 
         # type definitions
-        self.output_folder: str
-        self.op_times: list[tuple[int, int, int]]
+        self.output_folder: str = ""
+        self.op_times: list[tuple[int, int, int]] = []
+        self.cameras: list[Camera] = []
 
         del kwargs
 
