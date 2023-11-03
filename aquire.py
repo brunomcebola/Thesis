@@ -52,6 +52,12 @@ class OperationTimeError(Exception):
         super().__init__(error_message, error_index)
 
 
+class NamesError(Exception):
+    """
+    Exception raised when errors related to the names occur.
+    """
+
+
 class AquireNamespace(SimpleNamespace):
     """
     This class holds the arguments for the aquire mode.
@@ -74,8 +80,8 @@ class AquireNamespace(SimpleNamespace):
         output_folder: str,
         op_times: list[tuple[int, int]] | None = None,
         serial_numbers: list[str] | None = None,
+        names: list[str] | None = None,
         # stream_types: list[StreamType] | None = None,
-        # names: list[str] | None = None,
         # stream_configs: list[dict[str, StreamConfig]] | None = None,
     ):
         """
@@ -92,6 +98,9 @@ class AquireNamespace(SimpleNamespace):
             - serial_numbers: The serial numbers of the cameras to be used.
                 - If None then all connected cameras will be used.
                 - If list then the specified cameras will be used.
+            - names: The names of the cameras to be used.
+                - If None then the serial numbers will be used as names.
+                - If list then the specified names will be used.
 
         """
 
@@ -166,7 +175,14 @@ class AquireNamespace(SimpleNamespace):
             if len(serial_numbers) == 0:
                 raise CameraUnavailableError("No available cameras.")
 
+        # names
+        if names is None:
+            print_warning("Using serial number as name for all cameras.")
 
+            names = serial_numbers
+
+        elif len(names) != len(serial_numbers):
+            raise NamesError("The number of names must be equal to the number of cameras.")
 
         # TODO
 
@@ -185,10 +201,6 @@ class AquireNamespace(SimpleNamespace):
         # stream_configs = [
         #     Camera.get_default_config(Camera.get_camera_model(sn)) for sn in serial_numbers
         # ]
-
-        # # names (argparser ensures it is None)
-        # # cameras' names will be their serial numbers
-        # print_warning("Using serial number as name for all cameras.")
 
         # # create list of camera instances
         # # TODO: handle exceptions
