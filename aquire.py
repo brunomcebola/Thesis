@@ -8,8 +8,9 @@ Classes:
 """
 import os
 import calendar
+from types import SimpleNamespace
 
-from utils import print_warning, BaseNamespace, ArgSource
+from utils import print_warning
 from intel import Camera, StreamType, CameraUnavailableError
 
 WEEK_DAYS = list(calendar.day_name)
@@ -25,10 +26,28 @@ class OutputFolderError(Exception):
 class OperationTimeError(Exception):
     """
     Exception raised when the operation time is invalid.
+
+    It returns a tuple with information about the error.
+
+    Tuple Structure:
+    ----------------
+        - error_message (str): A human-readable error message providing more
+          details about the issue.
+        - error_index (int | None): The index of the invalid operation time.
+
+    Usage:
+    ------
+        try:
+           # Code that may raise the exception
+        except OperationTimeError as e:
+           error_message, error_index = e.args
     """
 
+    def __init__(self, error_message, error_index: int | None = None):
+        super().__init__(error_message, error_index)
 
-class AquireNamespace(BaseNamespace):
+
+class AquireNamespace(SimpleNamespace):
     """
     This class holds the arguments for the aquire mode.
 
@@ -38,161 +57,133 @@ class AquireNamespace(BaseNamespace):
     -----------
         - output_folder (str):
             The path to the output folder.
-        - op_times (list[tuple[int, int, int]]):
-            The time interval in which the cameras will be capturing data for each day of the week.
+        - op_times (list[tuple[int, int]]):
+            The time interval in which the cameras will be capturing data
+            for each day of the week (Monday to Sunday).
         - cameras (list[Camera]):
             The list with the cameras to be used.
     """
 
     def __init__(
         self,
-        source: ArgSource,
         output_folder: str,
-        op_times: list[tuple[int, int, int]] | None = None,
-        serial_numbers: list[str] | None = None,
-        stream_types: list[StreamType] | None = None,
+        op_times: list[tuple[int, int]] | None = None,
+        # serial_numbers: list[str] | None = None,
+        # stream_types: list[StreamType] | None = None,
         # names: list[str] | None = None,
         # stream_configs: list[dict[str, StreamConfig]] | None = None,
-        **kwargs,
     ):
         """
         AquireNamespace constructor.
 
         Args:
         -----
-            - source: Origin of the arguments.
             - output_folder: The path to the output folder.
-            - serial_numbers: The serial numbers of the cameras to be used.
-            - stream_types: The stream types to be used.
-            - kwargs: The remaining arguments (to allow for the use of **vars(args))
+            - op_times: The time interval in which the cameras will be capturing data
+                        for each day of the week (Monday to Sunday).
+                - If None then cameras will be capturing data all the time.
+                - If list with 1 element then the specified time interval will be used for all days.
+                - If list with 7 elements then each element will be used for each day.
+
         """
 
         # type definitions
         self.output_folder: str = ""
-        self.op_times: list[tuple[int, int, int]] = []
+        self.op_times: list[tuple[int, int]] = []
         self.cameras: list[Camera] = []
 
-        del kwargs
+        # output_folder validations
+        output_folder = output_folder.strip()
 
-        super().__init__(source)
+        if output_folder == "":
+            raise OutputFolderError("The output folder cannot be a empty string.")
 
-        if self.source == ArgSource.CMD:
-            # output folder (argparser ensure it is a non-empty string)
-            if not os.path.exists(output_folder):
-                raise OutputFolderError(f"Output folder does not exist ({output_folder}).")
+        if not os.path.exists(output_folder):
+            raise OutputFolderError(f"The output folder '{output_folder}' does not exist.")
 
-            self.output_folder = output_folder
+        self.output_folder = output_folder
 
-            # serial_numbers (argparser ensures it is either None or a list with only one element)
-            #   if None then all available cameras will be used
-            #   if list then specified serial number must match an available camera
-            if serial_numbers is None:
-                print_warning("No specific camera specified. Using all connected cameras.")
-                serial_numbers = Camera.get_available_cameras()
-                if len(serial_numbers) == 0:
-                    raise CameraUnavailableError("No available cameras.")
-            elif not Camera.is_camera_available(serial_numbers[0]):
-                raise CameraUnavailableError(f"Camera {serial_numbers[0]} is not available.")
+        # op_times validations
+        if op_times is None:
+            print_warning(
+                "No operation time specified. Cameras will be capturing data all the time."
+            )
+            op_times = [(int(0), int(24))] * 7
 
-            # stream types (argparser ensures it is either None or a list with only one element)
-            #   if None then depth stream will be used to all cameras
-            #   if list then specified stream type will be used to all cameras
-            if stream_types is None:
-                print_warning("No stream type specified. Setting depth as stream of all cameras.")
-                stream_types = [StreamType.DEPTH] * len(serial_numbers)
-            else:
-                stream_types = stream_types * len(serial_numbers)
+        elif len(op_times) == 1:
+            print_warning("Using the same operation time for all days.")
+            op_times = op_times * 7
 
-            # stream configs (argparser ensures it is None)
-            # default configs will be used for all cameras based on their models
-            print_warning("Using default stream configs for all cameras based on their models.")
-            stream_configs = [
-                Camera.get_default_config(Camera.get_camera_model(sn)) for sn in serial_numbers
-            ]
+        elif len(op_times) != 7:
+            raise OperationTimeError(
+                "The specified operation time must be a list with 1 or 7 elements.",
+            )
 
-            # names (argparser ensures it is None)
-            # cameras' names will be their serial numbers
-            print_warning("Using serial number as name for all cameras.")
-
-            # create list of camera instances
-            self.cameras = [
-                Camera(sn, st, sc)
-                for sn, st, sc in zip(serial_numbers, stream_types, stream_configs)
-            ]
-
-            # op times (argparser ensures it is None)
-            # cameras will be capturing data all the time
-            print_warning("Cameras will be capturing data all the time.")
-            self.op_times = [(i, 0, 24) for i in range(7)]
-
-        elif self.source == ArgSource.YAML:
-            # output folder
-            if output_folder is None:
-                raise OutputFolderError("The output folder must be specified.")
-
-            output_folder = str(output_folder)
-            output_folder = output_folder.strip()
-            if output_folder == "":
-                raise OutputFolderError("The output folder cannot be a empty string.")
-
-            if not os.path.exists(output_folder):
-                raise OutputFolderError(f"The output folder does not exist ({output_folder}).")
-
-            self.output_folder = output_folder
-
-            # op times
-            if op_times is None:
-                print_warning(
-                    "No operation time specified. Cameras will be capturing data all the time."
+        for i, op_time in enumerate(op_times):
+            if len(op_time) != 2:
+                raise OperationTimeError(
+                    "The operation time must be expressed in the format "
+                    + "(int, int). Ex: (8, 12) => 8:00 - 12:00.",
+                    i,
                 )
-                self.op_times = [(i, 0, 24) for i in range(7)]
-            else:
-                if len(op_times) != 7:
-                    raise OperationTimeError(
-                        "The operation time must be specified for all days of the week."
-                    )
 
-                days = []
-                for i, op_time in enumerate(op_times):
-                    if len(op_time) != 3:
-                        raise OperationTimeError(
-                            f"YAML op_times line {i + 1} -The operation time must be expressed "
-                            + "in the format (int, int, int). Ex: (0, 8, 12) => Mon, 8:00 - 12:00."
-                        )
+            if op_time[0] not in range(24):
+                raise OperationTimeError(
+                    "The start hour must be a value between 0 and 23.",
+                    i,
+                )
 
-                    if op_time[0] not in range(7):
-                        raise OperationTimeError(
-                            f"YAML op_times line {i + 1} - The operation day must be "
-                            + "a value between 0 (Monday) and 6 (Sunday).",
-                        )
+            if op_time[1] not in range(1, 25):
+                raise OperationTimeError(
+                    "The stop hour must be a value between 1 and 24.",
+                    i,
+                )
 
-                    if op_time[0] in days:
-                        raise OperationTimeError(
-                            f"YAML op_times line {i + 1} - The operation time "
-                            + "must be specified only once.",
-                        )
+            if op_time[0] >= op_time[1]:
+                raise OperationTimeError(
+                    "The start hour must be smaller than the stop hour.",
+                    i,
+                )
 
-                    days.append(op_time[0])
+        self.op_times = op_times
 
-                    if op_time[1] not in range(24):
-                        raise OperationTimeError(
-                            f"YAML op_times line {i + 1} - The operation start hour "
-                            + "must be a value between 0 and 23.",
-                        )
+        # TODO
 
-                    if op_time[2] not in range(1, 25):
-                        raise OperationTimeError(
-                            f"YAML op_times line {i + 1} - The operation end hour "
-                            + "must be a value between 1 and 24.",
-                        )
+        # # serial_numbers (argparser ensures it is either None or a list with only one element)
+        # #   if None then all available cameras will be used
+        # #   if list then specified serial number must match an available camera
+        # if serial_numbers is None:
+        #     print_warning("No specific camera specified. Using all connected cameras.")
+        #     serial_numbers = Camera.get_available_cameras()
+        #     if len(serial_numbers) == 0:
+        #         raise CameraUnavailableError("No available cameras.")
+        # elif not Camera.is_camera_available(serial_numbers[0]):
+        #     raise CameraUnavailableError(f"Camera {serial_numbers[0]} is not available.")
 
-                    if op_time[1] >= op_time[2]:
-                        raise OperationTimeError(
-                            f"YAML op_times line {i + 1} - The operation start hour "
-                            + "must be smaller than the operation end hour.",
-                        )
+        # # stream types (argparser ensures it is either None or a list with only one element)
+        # #   if None then depth stream will be used to all cameras
+        # #   if list then specified stream type will be used to all cameras
+        # if stream_types is None:
+        #     print_warning("No stream type specified. Setting depth as stream of all cameras.")
+        #     stream_types = [StreamType.DEPTH] * len(serial_numbers)
+        # else:
+        #     stream_types = stream_types * len(serial_numbers)
 
-                self.op_times = op_times
+        # # stream configs (argparser ensures it is None)
+        # # default configs will be used for all cameras based on their models
+        # print_warning("Using default stream configs for all cameras based on their models.")
+        # stream_configs = [
+        #     Camera.get_default_config(Camera.get_camera_model(sn)) for sn in serial_numbers
+        # ]
+
+        # # names (argparser ensures it is None)
+        # # cameras' names will be their serial numbers
+        # print_warning("Using serial number as name for all cameras.")
+
+        # # create list of camera instances
+        # self.cameras = [
+        #     Camera(sn, st, sc) for sn, st, sc in zip(serial_numbers, stream_types, stream_configs)
+        # ]
 
     # TODO: change to direct access
     def __str__(self) -> str:
