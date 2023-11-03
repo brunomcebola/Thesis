@@ -9,7 +9,7 @@ op_times:
   - [3, 0, 24]
   - [4, 0, 24]
   - [5, 0, 24]
-  - [6, 0, 0]
+  - [10, 10]
 
 # Define the input source for the data to be acquired
 cameras:
