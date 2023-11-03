@@ -21,6 +21,12 @@ class OutputFolderError(Exception):
     """
 
 
+class OperationTimeError(Exception):
+    """
+    Exception raised when the operation time is invalid.
+    """
+
+
 class AquireNamespace(BaseNamespace):
     """
     This class holds the arguments for the aquire mode.
@@ -41,11 +47,11 @@ class AquireNamespace(BaseNamespace):
         self,
         source: ArgSource,
         output_folder: str,
+        op_times: list[tuple[int, int, int]] | None = None,
         serial_numbers: list[str] | None = None,
         stream_types: list[StreamType] | None = None,
         # names: list[str] | None = None,
         # stream_configs: list[dict[str, StreamConfig]] | None = None,
-        # op_times: tuple[int, int] | list[tuple[str, int, int]] | None = None,
         **kwargs,
     ):
         """
@@ -132,6 +138,58 @@ class AquireNamespace(BaseNamespace):
                 raise OutputFolderError(f"The output folder does not exist ({output_folder}).")
 
             self.output_folder = output_folder
+
+            # op times
+            if op_times is None:
+                print_warning(
+                    "No operation time specified. Cameras will be capturing data all the time."
+                )
+                self.op_times = [(i, 0, 24) for i in range(7)]
+            else:
+                if len(op_times) != 7:
+                    raise OperationTimeError(
+                        "The operation time must be specified for all days of the week."
+                    )
+
+                days = []
+                for op_time in op_times:
+                    if len(op_time) != 3:
+                        raise OperationTimeError(
+                            "The operation time must be expressed in the format (int, int, int).",
+                            "Ex: (0, 8, 12) = Monday, 8:00 - 12:00.",
+                        )
+
+                    if op_time[0] not in range(7):
+                        raise OperationTimeError(
+                            "The operation day must be a value between 0 (Monday) and 6 (Sunday).",
+                        )
+
+                    if op_time[0] in days:
+                        raise OperationTimeError(
+                            f"The operation time for {WEEK_DAYS[op_time[0]]} " +
+                            "must be specified only once.",
+                        )
+
+                    days.append(op_time[0])
+
+                    if op_time[1] not in range(24):
+                        raise OperationTimeError(
+                            f"The operation start hour for {WEEK_DAYS[op_time[0]]} " +
+                            "must be a value between 0 and 23.",
+                        )
+
+                    if op_time[2] not in range(1, 25):
+                        raise OperationTimeError(
+                            f"The operation end hour {WEEK_DAYS[op_time[0]]} " +
+                            "must be a value between 1 and 24.",
+                        )
+
+                    if op_time[1] >= op_time[2]:
+                        raise OperationTimeError(
+                            "The operation start hour must be smaller than the operation end hour.",
+                        )
+
+                self.op_times = op_times
 
     # TODO: change to direct access
     def __str__(self) -> str:

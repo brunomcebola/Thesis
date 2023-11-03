@@ -2,8 +2,14 @@ mode: aquire
 
 output_folder: ./
 
-operation_time:
-  -
+op_times:
+  - [0, 0, 24]
+  - [1, 0, 24]
+  - [2, 0, 24]
+  - [3, 0, 24]
+  - [4, 0, 24]
+  - [5, 0, 24]
+  - [6, 0, 0]
 
 # Define the input source for the data to be acquired
 cameras:
