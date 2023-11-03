@@ -3,15 +3,20 @@ This module holds the tools to aquire data from the realsense cameras.
 
 Classes:
 --------
+- AquireNamespace: Holds the arguments for the aquire mode.
 
-
+Exceptions:
+-----------
+- OutputFolderError: Exception raised when errors related to the out_folder occur.
+- OperationTimeError: Exception raised when errors related to the operation time occur.
+- SerialNumberError: Exception raised when errors related to the serial number occur.
 """
 import os
 import calendar
 from types import SimpleNamespace
 
 from utils import print_warning
-from intel import Camera, StreamType, CameraUnavailableError
+from intel import Camera, CameraUnavailableError
 
 WEEK_DAYS = list(calendar.day_name)
 SHORT_WEEK_DAYS = list(calendar.day_abbr)
@@ -19,13 +24,13 @@ SHORT_WEEK_DAYS = list(calendar.day_abbr)
 
 class OutputFolderError(Exception):
     """
-    Exception raised when the output folder does not exist.
+    Exception raised when errors related to the out_folder occur.
     """
 
 
 class OperationTimeError(Exception):
     """
-    Exception raised when the operation time is invalid.
+    Exception raised when errors related to the operation time occur.
 
     It returns a tuple with information about the error.
 
@@ -68,7 +73,7 @@ class AquireNamespace(SimpleNamespace):
         self,
         output_folder: str,
         op_times: list[tuple[int, int]] | None = None,
-        # serial_numbers: list[str] | None = None,
+        serial_numbers: list[str] | None = None,
         # stream_types: list[StreamType] | None = None,
         # names: list[str] | None = None,
         # stream_configs: list[dict[str, StreamConfig]] | None = None,
@@ -84,6 +89,9 @@ class AquireNamespace(SimpleNamespace):
                 - If None then cameras will be capturing data all the time.
                 - If list with 1 element then the specified time interval will be used for all days.
                 - If list with 7 elements then each element will be used for each day.
+            - serial_numbers: The serial numbers of the cameras to be used.
+                - If None then all connected cameras will be used.
+                - If list then the specified cameras will be used.
 
         """
 
@@ -108,10 +116,12 @@ class AquireNamespace(SimpleNamespace):
             print_warning(
                 "No operation time specified. Cameras will be capturing data all the time."
             )
+
             op_times = [(int(0), int(24))] * 7
 
         elif len(op_times) == 1:
             print_warning("Using the same operation time for all days.")
+
             op_times = op_times * 7
 
         elif len(op_times) != 7:
@@ -147,18 +157,18 @@ class AquireNamespace(SimpleNamespace):
 
         self.op_times = op_times
 
-        # TODO
+        # serial_numbers validations
+        if serial_numbers is None:
+            print_warning("No specific camera specified. Using all connected cameras.")
 
-        # # serial_numbers (argparser ensures it is either None or a list with only one element)
-        # #   if None then all available cameras will be used
-        # #   if list then specified serial number must match an available camera
-        # if serial_numbers is None:
-        #     print_warning("No specific camera specified. Using all connected cameras.")
-        #     serial_numbers = Camera.get_available_cameras()
-        #     if len(serial_numbers) == 0:
-        #         raise CameraUnavailableError("No available cameras.")
-        # elif not Camera.is_camera_available(serial_numbers[0]):
-        #     raise CameraUnavailableError(f"Camera {serial_numbers[0]} is not available.")
+            serial_numbers = Camera.get_available_cameras()
+
+            if len(serial_numbers) == 0:
+                raise CameraUnavailableError("No available cameras.")
+
+
+
+        # TODO
 
         # # stream types (argparser ensures it is either None or a list with only one element)
         # #   if None then depth stream will be used to all cameras
@@ -181,6 +191,7 @@ class AquireNamespace(SimpleNamespace):
         # print_warning("Using serial number as name for all cameras.")
 
         # # create list of camera instances
+        # # TODO: handle exceptions
         # self.cameras = [
         #     Camera(sn, st, sc) for sn, st, sc in zip(serial_numbers, stream_types, stream_configs)
         # ]
