@@ -11,13 +11,14 @@ Exceptions:
 - OperationTimeError: Exception raised when errors related to the operation time occur.
 - SerialNumberError: Exception raised when errors related to the serial number occur.
 - StreamTypeError: Exception raised when errors related to the stream type occur.
+- StreamConfigError: Exception raised when errors related to the stream config occur.
 """
 import os
 import calendar
 from types import SimpleNamespace
 
 from utils import print_warning
-from intel import Camera, CameraUnavailableError, StreamType
+from intel import Camera, CameraUnavailableError, StreamType, StreamConfig
 
 WEEK_DAYS = list(calendar.day_name)
 SHORT_WEEK_DAYS = list(calendar.day_abbr)
@@ -65,6 +66,12 @@ class StreamTypeError(Exception):
     """
 
 
+class StreamConfigError(Exception):
+    """
+    Exception raised when errors related to the stream config occur.
+    """
+
+
 class AquireNamespace(SimpleNamespace):
     """
     This class holds the arguments for the aquire mode.
@@ -89,7 +96,7 @@ class AquireNamespace(SimpleNamespace):
         serial_numbers: list[str] | None = None,
         names: list[str] | None = None,
         stream_types: list[StreamType] | None = None,
-        # stream_configs: list[dict[str, StreamConfig]] | None = None,
+        stream_configs: list[dict[StreamType, StreamConfig]] | None = None,
     ):
         """
         AquireNamespace constructor.
@@ -98,7 +105,7 @@ class AquireNamespace(SimpleNamespace):
         -----
             - output_folder: The path to the output folder.
             - op_times: The time interval in which the cameras will be capturing data
-                        for each day of the week (Monday to Sunday).
+              for each day of the week (Monday to Sunday).
                 - If None then cameras will be capturing data all the time.
                 - If list with 1 element then the specified time interval will be used for all days.
                 - If list with 7 elements then each element will be used for each day.
@@ -106,12 +113,14 @@ class AquireNamespace(SimpleNamespace):
                 - If None then all connected cameras will be used.
                 - If list with n elements then the specified cameras will be used.
             - names: The names of the cameras to be used.
-                - If None then the serial numbers will be used as names.
-                - If list with n elements then each element will be used for the matching camera.
+                - If None then the cameras' serial numbers will be used as names.
+                - If list with the same len as the serial_numbers list then the specified names
+                  will be used.
             - stream_types: The stream types of the cameras to be used.
                 - If None then depth stream will be used for all cameras.
                 - If list with 1 element then the specified stream will be used for all cameras.
-                - If list with n elements then each element will be used for the matching camera.
+                - If list with the same len as the serial_numbers list then the specified streams
+                  will be used.
 
         Raises:
         -------
@@ -126,9 +135,14 @@ class AquireNamespace(SimpleNamespace):
             - CameraUnavailableError:
                 - If no cameras are available.
             - NamesError:
-                - If the number of names is not equal to the number of cameras.
+                - If the number of names is not equal to the number of cameras, when cameras are
+                specified.
             - StreamTypeError:
-                - If the number of stream types is not equal to the number of cameras.
+                - If the number of stream types is not equal to the number of cameras, when cameras
+                are specified.
+            - StreamConfigError:
+                - If the number of stream configs is not equal to the number of cameras, when
+                cameras are specified.
 
         Examples:
         ---------
@@ -256,14 +270,37 @@ class AquireNamespace(SimpleNamespace):
                 "The number of stream types must be equal to the number of cameras."
             )
 
-        # TODO
+        # stream configs validations
+        if stream_configs is None:
+            print_warning(
+                "No stream configs specified. Using default stream configs for each camera model."
+            )
 
-        # # stream configs (argparser ensures it is None)
-        # # default configs will be used for all cameras based on their models
-        # print_warning("Using default stream configs for all cameras based on their models.")
-        # stream_configs = [
-        #     Camera.get_default_config(Camera.get_camera_model(sn)) for sn in serial_numbers
-        # ]
+            stream_configs = [
+                Camera.get_default_config(Camera.get_camera_model(sn)) for sn in serial_numbers
+            ]
+
+        elif len(stream_configs) == 1:
+            print_warning("Using the specified stream config for all cameras.")
+
+            stream_configs = stream_configs * len(serial_numbers)
+
+        elif original_nb_serial_numbers == 0:
+            print_warning(
+                "No cameras especified. Ignoring stream configs and using default stream configs "
+                + "for each camera model instead."
+            )
+
+            stream_configs = [
+                Camera.get_default_config(Camera.get_camera_model(sn)) for sn in serial_numbers
+            ]
+
+        elif len(stream_configs) != len(serial_numbers):
+            raise StreamConfigError(
+                "The number of stream configs must be equal to the number of cameras."
+            )
+
+        # TODO
 
         # # create list of camera instances
         # # TODO: handle exceptions
