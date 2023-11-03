@@ -10,13 +10,14 @@ Exceptions:
 - OutputFolderError: Exception raised when errors related to the out_folder occur.
 - OperationTimeError: Exception raised when errors related to the operation time occur.
 - SerialNumberError: Exception raised when errors related to the serial number occur.
+- StreamTypeError: Exception raised when errors related to the stream type occur.
 """
 import os
 import calendar
 from types import SimpleNamespace
 
 from utils import print_warning
-from intel import Camera, CameraUnavailableError
+from intel import Camera, CameraUnavailableError, StreamType
 
 WEEK_DAYS = list(calendar.day_name)
 SHORT_WEEK_DAYS = list(calendar.day_abbr)
@@ -58,6 +59,12 @@ class NamesError(Exception):
     """
 
 
+class StreamTypeError(Exception):
+    """
+    Exception raised when errors related to the stream type occur.
+    """
+
+
 class AquireNamespace(SimpleNamespace):
     """
     This class holds the arguments for the aquire mode.
@@ -81,7 +88,7 @@ class AquireNamespace(SimpleNamespace):
         op_times: list[tuple[int, int]] | None = None,
         serial_numbers: list[str] | None = None,
         names: list[str] | None = None,
-        # stream_types: list[StreamType] | None = None,
+        stream_types: list[StreamType] | None = None,
         # stream_configs: list[dict[str, StreamConfig]] | None = None,
     ):
         """
@@ -97,10 +104,44 @@ class AquireNamespace(SimpleNamespace):
                 - If list with 7 elements then each element will be used for each day.
             - serial_numbers: The serial numbers of the cameras to be used.
                 - If None then all connected cameras will be used.
-                - If list then the specified cameras will be used.
+                - If list with n elements then the specified cameras will be used.
             - names: The names of the cameras to be used.
                 - If None then the serial numbers will be used as names.
-                - If list then the specified names will be used.
+                - If list with n elements then each element will be used for the matching camera.
+            - stream_types: The stream types of the cameras to be used.
+                - If None then depth stream will be used for all cameras.
+                - If list with 1 element then the specified stream will be used for all cameras.
+                - If list with n elements then each element will be used for the matching camera.
+
+        Raises:
+        -------
+            - OutputFolderError:
+                - If the output folder does not exist.
+            - OperationTimeError:
+                - If the operation time is not a list with 1 or 7 elements.
+                - If the operation time is not expressed in the format (int, int).
+                - If the start hour is not a value between 0 and 23.
+                - If the stop hour is not a value between 1 and 24.
+                - If the start hour is greater than the stop hour.
+            - CameraUnavailableError:
+                - If no cameras are available.
+            - NamesError:
+                - If the number of names is not equal to the number of cameras.
+            - StreamTypeError:
+                - If the number of stream types is not equal to the number of cameras.
+
+        Examples:
+        ---------
+            >>> aquire_namespace = AquireNamespace(
+            ...     output_folder="./",
+            ...     op_times=[(8, 12)],
+            ...     serial_numbers=["123456789", "987654321"],
+            ...     names=["front", "back"],
+            ...     stream_types=[StreamType.DEPTH, StreamType.COLOR],
+            ... )
+            >>> print(aquire_namespace)
+            # TODO: add output
+            # TODO: add examples
 
         """
 
@@ -167,6 +208,8 @@ class AquireNamespace(SimpleNamespace):
         self.op_times = op_times
 
         # serial_numbers validations
+        original_nb_serial_numbers = len(serial_numbers) if serial_numbers is not None else 0
+
         if serial_numbers is None:
             print_warning("No specific camera specified. Using all connected cameras.")
 
@@ -175,25 +218,45 @@ class AquireNamespace(SimpleNamespace):
             if len(serial_numbers) == 0:
                 raise CameraUnavailableError("No available cameras.")
 
-        # names
+        # names validations
         if names is None:
-            print_warning("Using serial number as name for all cameras.")
+            print_warning("No names specified. Using serial numbers as camera names.")
+
+            names = serial_numbers
+
+        elif original_nb_serial_numbers == 0:
+            print_warning("No cameras especified. Ignoring names and using serial numbers instead.")
 
             names = serial_numbers
 
         elif len(names) != len(serial_numbers):
             raise NamesError("The number of names must be equal to the number of cameras.")
 
-        # TODO
+        # stream_types validations
+        if stream_types is None:
+            print_warning("No stream type specified. Setting depth as stream of all cameras.")
 
-        # # stream types (argparser ensures it is either None or a list with only one element)
-        # #   if None then depth stream will be used to all cameras
-        # #   if list then specified stream type will be used to all cameras
-        # if stream_types is None:
-        #     print_warning("No stream type specified. Setting depth as stream of all cameras.")
-        #     stream_types = [StreamType.DEPTH] * len(serial_numbers)
-        # else:
-        #     stream_types = stream_types * len(serial_numbers)
+            stream_types = [StreamType.DEPTH] * len(serial_numbers)
+
+        elif len(stream_types) == 1:
+            print_warning("Using the specified stream type for all cameras.")
+
+            stream_types = stream_types * len(serial_numbers)
+
+        elif original_nb_serial_numbers == 0:
+            print_warning(
+                "No cameras especified. Ignoring stream types and using depth for all "
+                + "cameras instead."
+            )
+
+            stream_types = [StreamType.DEPTH] * len(serial_numbers)
+
+        elif len(stream_types) != len(serial_numbers):
+            raise StreamTypeError(
+                "The number of stream types must be equal to the number of cameras."
+            )
+
+        # TODO
 
         # # stream configs (argparser ensures it is None)
         # # default configs will be used for all cameras based on their models
