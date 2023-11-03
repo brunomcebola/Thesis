@@ -12,7 +12,8 @@ import calendar
 from utils import print_warning, BaseNamespace, ArgSource
 from intel import Camera, StreamType, CameraUnavailableError
 
-WEEK_DAYS = list(calendar.day_abbr)
+WEEK_DAYS = list(calendar.day_name)
+SHORT_WEEK_DAYS = list(calendar.day_abbr)
 
 
 class OutputFolderError(Exception):
@@ -152,41 +153,43 @@ class AquireNamespace(BaseNamespace):
                     )
 
                 days = []
-                for op_time in op_times:
+                for i, op_time in enumerate(op_times):
                     if len(op_time) != 3:
                         raise OperationTimeError(
-                            "The operation time must be expressed in the format (int, int, int).",
-                            "Ex: (0, 8, 12) = Monday, 8:00 - 12:00.",
+                            f"YAML op_times line {i + 1} -The operation time must be expressed "
+                            + "in the format (int, int, int). Ex: (0, 8, 12) => Mon, 8:00 - 12:00."
                         )
 
                     if op_time[0] not in range(7):
                         raise OperationTimeError(
-                            "The operation day must be a value between 0 (Monday) and 6 (Sunday).",
+                            f"YAML op_times line {i + 1} - The operation day must be "
+                            + "a value between 0 (Monday) and 6 (Sunday).",
                         )
 
                     if op_time[0] in days:
                         raise OperationTimeError(
-                            f"The operation time for {WEEK_DAYS[op_time[0]]} " +
-                            "must be specified only once.",
+                            f"YAML op_times line {i + 1} - The operation time "
+                            + "must be specified only once.",
                         )
 
                     days.append(op_time[0])
 
                     if op_time[1] not in range(24):
                         raise OperationTimeError(
-                            f"The operation start hour for {WEEK_DAYS[op_time[0]]} " +
-                            "must be a value between 0 and 23.",
+                            f"YAML op_times line {i + 1} - The operation start hour "
+                            + "must be a value between 0 and 23.",
                         )
 
                     if op_time[2] not in range(1, 25):
                         raise OperationTimeError(
-                            f"The operation end hour {WEEK_DAYS[op_time[0]]} " +
-                            "must be a value between 1 and 24.",
+                            f"YAML op_times line {i + 1} - The operation end hour "
+                            + "must be a value between 1 and 24.",
                         )
 
                     if op_time[1] >= op_time[2]:
                         raise OperationTimeError(
-                            "The operation start hour must be smaller than the operation end hour.",
+                            f"YAML op_times line {i + 1} - The operation start hour "
+                            + "must be smaller than the operation end hour.",
                         )
 
                 self.op_times = op_times
@@ -196,9 +199,7 @@ class AquireNamespace(BaseNamespace):
         string = ""
 
         string += f"\tOutput folder: '{self.output_folder}'\n"
-        string += (
-            f"\tOperation time: {[(WEEK_DAYS[op[0]], op[1], op[2]) for op in self.op_times]}\n"
-        )
+        string += f"\tOperation time: {[(SHORT_WEEK_DAYS[op[0]], op[1], op[2]) for op in self.op_times]}\n"
         string += "\tCameras:"
         for camera in self.cameras:
             string += "\n"
