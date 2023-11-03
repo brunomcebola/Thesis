@@ -10,6 +10,7 @@ Exceptions:
 - OutputFolderError: Exception raised when errors related to the out_folder occur.
 - OperationTimeError: Exception raised when errors related to the operation time occur.
 - SerialNumberError: Exception raised when errors related to the serial number occur.
+- NamesError: Exception raised when errors related to the names occur.
 - StreamTypeError: Exception raised when errors related to the stream type occur.
 - StreamConfigError: Exception raised when errors related to the stream config occur.
 """
@@ -17,8 +18,8 @@ import os
 import calendar
 from types import SimpleNamespace
 
-from utils import print_warning
-from intel import Camera, CameraUnavailableError, StreamType, StreamConfig
+import intel
+import utils
 
 WEEK_DAYS = list(calendar.day_name)
 SHORT_WEEK_DAYS = list(calendar.day_abbr)
@@ -54,6 +55,12 @@ class OperationTimeError(Exception):
         super().__init__(error_message, error_index)
 
 
+class SerialNumberError(Exception):
+    """
+    Exception raised when errors related to the serial number occur.
+    """
+
+
 class NamesError(Exception):
     """
     Exception raised when errors related to the names occur.
@@ -85,7 +92,7 @@ class AquireNamespace(SimpleNamespace):
         - op_times (list[tuple[int, int]]):
             The time interval in which the cameras will be capturing data
             for each day of the week (Monday to Sunday).
-        - cameras (list[Camera]):
+        - cameras (list[intel.Camera]):
             The list with the cameras to be used.
     """
 
@@ -95,8 +102,8 @@ class AquireNamespace(SimpleNamespace):
         op_times: list[tuple[int, int]] | None = None,
         serial_numbers: list[str] | None = None,
         names: list[str] | None = None,
-        stream_types: list[StreamType] | None = None,
-        stream_configs: list[dict[StreamType, StreamConfig]] | None = None,
+        stream_types: list[intel.StreamType] | None = None,
+        stream_configs: list[dict[intel.StreamType, intel.StreamConfig]] | None = None,
     ):
         """
         AquireNamespace constructor.
@@ -132,8 +139,8 @@ class AquireNamespace(SimpleNamespace):
                 - If the start hour is not a value between 0 and 23.
                 - If the stop hour is not a value between 1 and 24.
                 - If the start hour is greater than the stop hour.
-            - CameraUnavailableError:
-                - If no cameras are available.
+            - SerialNumberError:
+                - If the serial numbers are not unique.
             - NamesError:
                 - If the number of names is not equal to the number of cameras, when cameras are
                 specified.
@@ -143,6 +150,12 @@ class AquireNamespace(SimpleNamespace):
             - StreamConfigError:
                 - If the number of stream configs is not equal to the number of cameras, when
                 cameras are specified.
+            - intel.CameraUnavailableError:
+                - If no cameras are available.
+                - If the specified cameras are not available.
+            - intel.StreamConfigError:
+                - If the specified stream config is not valid for the specified camera model.
+
 
         Examples:
         ---------
@@ -162,7 +175,7 @@ class AquireNamespace(SimpleNamespace):
         # type definitions
         self.output_folder: str = ""
         self.op_times: list[tuple[int, int]] = []
-        self.cameras: list[Camera] = []
+        self.cameras: list[intel.Camera] = []
 
         # output_folder validations
         output_folder = output_folder.strip()
@@ -177,14 +190,14 @@ class AquireNamespace(SimpleNamespace):
 
         # op_times validations
         if op_times is None:
-            print_warning(
+            utils.print_warning(
                 "No operation time specified. Cameras will be capturing data all the time."
             )
 
             op_times = [(int(0), int(24))] * 7
 
         elif len(op_times) == 1:
-            print_warning("Using the same operation time for all days.")
+            utils.print_warning("Using the same operation time for all days.")
 
             op_times = op_times * 7
 
@@ -225,21 +238,28 @@ class AquireNamespace(SimpleNamespace):
         original_nb_serial_numbers = len(serial_numbers) if serial_numbers is not None else 0
 
         if serial_numbers is None:
-            print_warning("No specific camera specified. Using all connected cameras.")
+            utils.print_warning("No camera specified. Using all connected cameras.")
 
-            serial_numbers = Camera.get_available_cameras()
+            serial_numbers = intel.Camera.get_available_cameras()
 
             if len(serial_numbers) == 0:
-                raise CameraUnavailableError("No available cameras.")
+                raise intel.CameraUnavailableError("No available cameras.")
+
+        if len(set(serial_numbers)) != len(serial_numbers):
+            raise SerialNumberError("Duplicate serial numbers specified.")
+
+        serial_numbers = [sn.strip() for sn in serial_numbers]
 
         # names validations
         if names is None:
-            print_warning("No names specified. Using serial numbers as camera names.")
+            utils.print_warning("No names specified. Using serial numbers as camera names.")
 
             names = serial_numbers
 
         elif original_nb_serial_numbers == 0:
-            print_warning("No cameras especified. Ignoring names and using serial numbers instead.")
+            utils.print_warning(
+                "No cameras especified. Ignoring names and using serial numbers instead."
+            )
 
             names = serial_numbers
 
@@ -248,22 +268,22 @@ class AquireNamespace(SimpleNamespace):
 
         # stream_types validations
         if stream_types is None:
-            print_warning("No stream type specified. Setting depth as stream of all cameras.")
+            utils.print_warning("No stream type specified. Setting depth as stream of all cameras.")
 
-            stream_types = [StreamType.DEPTH] * len(serial_numbers)
+            stream_types = [intel.StreamType.DEPTH] * len(serial_numbers)
 
         elif len(stream_types) == 1:
-            print_warning("Using the specified stream type for all cameras.")
+            utils.print_warning("Using the specified stream type for all cameras.")
 
             stream_types = stream_types * len(serial_numbers)
 
         elif original_nb_serial_numbers == 0:
-            print_warning(
+            utils.print_warning(
                 "No cameras especified. Ignoring stream types and using depth for all "
                 + "cameras instead."
             )
 
-            stream_types = [StreamType.DEPTH] * len(serial_numbers)
+            stream_types = [intel.StreamType.DEPTH] * len(serial_numbers)
 
         elif len(stream_types) != len(serial_numbers):
             raise StreamTypeError(
@@ -272,27 +292,29 @@ class AquireNamespace(SimpleNamespace):
 
         # stream configs validations
         if stream_configs is None:
-            print_warning(
+            utils.print_warning(
                 "No stream configs specified. Using default stream configs for each camera model."
             )
 
             stream_configs = [
-                Camera.get_default_config(Camera.get_camera_model(sn)) for sn in serial_numbers
+                intel.Camera.get_default_config(intel.Camera.get_camera_model(sn))
+                for sn in serial_numbers
             ]
 
         elif len(stream_configs) == 1:
-            print_warning("Using the specified stream config for all cameras.")
+            utils.print_warning("Using the specified stream config for all cameras.")
 
             stream_configs = stream_configs * len(serial_numbers)
 
         elif original_nb_serial_numbers == 0:
-            print_warning(
+            utils.print_warning(
                 "No cameras especified. Ignoring stream configs and using default stream configs "
                 + "for each camera model instead."
             )
 
             stream_configs = [
-                Camera.get_default_config(Camera.get_camera_model(sn)) for sn in serial_numbers
+                intel.Camera.get_default_config(intel.Camera.get_camera_model(sn))
+                for sn in serial_numbers
             ]
 
         elif len(stream_configs) != len(serial_numbers):
@@ -300,20 +322,18 @@ class AquireNamespace(SimpleNamespace):
                 "The number of stream configs must be equal to the number of cameras."
             )
 
-        # TODO
-
-        # # create list of camera instances
-        # # TODO: handle exceptions
-        # self.cameras = [
-        #     Camera(sn, st, sc) for sn, st, sc in zip(serial_numbers, stream_types, stream_configs)
-        # ]
+        # create list of camera instances
+        self.cameras = [
+            intel.Camera(sn, st, sc, nm)
+            for sn, st, sc, nm in zip(serial_numbers, stream_types, stream_configs, names)
+        ]
 
     # TODO: change to direct access
     def __str__(self) -> str:
         string = ""
 
         string += f"\tOutput folder: '{self.output_folder}'\n"
-        string += f"\tOperation time: {[(SHORT_WEEK_DAYS[op[0]], op[1], op[2]) for op in self.op_times]}\n"
+        string += f"\tOperation time: {[(SHORT_WEEK_DAYS[i], op[0], op[1]) for i, op in enumerate(self.op_times)]}\n"  # pylint: disable=line-too-long
         string += "\tCameras:"
         for camera in self.cameras:
             string += "\n"
@@ -364,13 +384,13 @@ class AquireNamespace(SimpleNamespace):
 # if nb_of_cams == 0:
 #     exit("No realsense cameras found.")
 
-# cameras: list[Camera] = []
+# cameras: list[intel.Camera] = []
 # for i in range(nb_of_cams):
 #     dev = devices[i]
 #     serial_number = dev.get_info(rs.camera_info.serial_number)
 #     print("serial number: ", serial_number)
 #     cameras.append(
-#         Camera(serial_number, StreamType.DEPTH, StreamConfig(640, 480, 30, rs.format.z16))
+#         intel.Camera(serial_number, StreamType.DEPTH, StreamConfig(640, 480, 30, rs.format.z16))
 #     )
 
 #     # check if folder exists and if not create it
