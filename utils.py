@@ -1,11 +1,6 @@
 """
 This module contains utility functions.
 
-Classes:
---------
-- ArgSource: An enumeration of the different sources of the arguments.
-- BaseNamespace: The base class for the different modes specific namespaces.
-
 Functions:
 ----------
 - parse_yaml(file_path) -> dict: Validates a YAML file at the given file path.
@@ -16,58 +11,8 @@ Functions:
 - get_user_confirmation(message) -> bool: Asks the user for confirmation.
 """
 
-from enum import IntEnum
-from types import SimpleNamespace
 import yaml
 from colorama import Fore, Style
-
-
-class ArgSource(IntEnum):
-    """
-    An enumeration of the different sources of the arguments.
-
-    Attributes:
-    -----------
-        - CMD (0): The arguments come from the command line.
-        - YAML (1): The arguments come from a YAML file.
-    """
-
-    CMD = 0
-    YAML = 1
-
-
-class _PostNamespaceInitMeta(type):
-    """
-    A metaclass that deletes the source attribute after the namespace is initialized.
-    """
-
-    def __call__(cls, *args, **kwargs):
-        obj = super().__call__(*args, **kwargs)
-        delattr(obj, "source")
-        return obj
-
-
-class BaseNamespace(SimpleNamespace, metaclass=_PostNamespaceInitMeta):
-    """
-    This class serves as the base for the different modes specific namesapces.
-
-    It is not inteded to be instantiated directly, but rather to be inherited from.
-
-    After the namespace is initialized, its source attribute is automatically deleted.
-
-    Attributes:
-    -----------
-        - source:
-            Indicates wheter the args come from the command line of from a YAML file.
-    """
-
-    def __init__(self, source: ArgSource):
-        self.source = ArgSource(source)
-
-    def __new__(cls, *args, **kwargs):
-        if cls is BaseNamespace:
-            raise TypeError(f"Can't instantiate '{cls.__name__}' directly.")
-        return SimpleNamespace.__new__(cls, *args, **kwargs)
 
 
 # TODO: change exit to raise
