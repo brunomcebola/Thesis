@@ -2,11 +2,12 @@
 Module for testing
 """
 
-class Test(Exception):
-    """Base class for exceptions in this module."""
-
+import aquire
+import utils
 
 try:
-    raise Test("This is a test exception.", "ola")
-except Test as e:
-    print(e)
+    aq = aquire.AquireNamespace("./")
+
+    print(aq)
+except Exception as e:
+    utils.print_error(str(e))
