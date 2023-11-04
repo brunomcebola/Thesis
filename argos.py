@@ -34,7 +34,7 @@ if __name__ == "__main__":
         print()
 
         try:
-            aquireNamespace = aquire.AquireNamespace(utils.ArgSource.CMD, **cmd_args.__dict__)
+            aquireNamespace = aquire.AquireNamespace(**cmd_args.__dict__)
         except Exception as e:
             utils.print_error(str(e))
             exit(1)
@@ -75,8 +75,33 @@ if __name__ == "__main__":
         args = utils.parse_yaml(cmd_args.config_file)
         # print(args)
 
+        import intel
+        import pyrealsense2.pyrealsense2 as rs
+
         try:
-            aquireNamespace = aquire.AquireNamespace(utils.ArgSource.YAML, **args)
+            aquireNamespace = aquire.AquireNamespace(
+                args["output_folder"],
+                args["op_times"],
+                [cam["sn"] for cam in args["cameras"]],
+                [cam["name"] for cam in args["cameras"]],
+                None,
+                [
+                    {
+                        intel.StreamType[config.upper()]: intel.StreamConfig(
+                            rs.format.z16
+                            if cam["stream_config"][config]["format"] == "z16"
+                            else rs.format.rgb8,
+                            (
+                                cam["stream_config"][config]["width"],
+                                cam["stream_config"][config]["height"],
+                            ),
+                            cam["stream_config"][config]["fps"],
+                        )
+                        for config in cam["stream_config"]
+                    }
+                    for cam in args["cameras"]
+                ],
+            )
         except Exception as e:
             utils.print_error(str(e))
             exit(1)

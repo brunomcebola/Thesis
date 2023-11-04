@@ -3,19 +3,19 @@ mode: aquire
 output_folder: ./
 
 op_times:
-  - [0, 0, 24]
-  - [1, 0, 24]
-  - [2, 0, 24]
-  - [3, 0, 24]
-  - [4, 0, 24]
-  - [5, 0, 24]
-  - [10, 10]
+  - [0, 24]
+  - [0, 24]
+  - [0, 24]
+  - [0, 24]
+  - [0, 24]
+  - [0, 24]
+  - [0, 24]
 
 # Define the input source for the data to be acquired
 cameras:
-  - sn: 1355220772030
+  - sn: 135522077203
     name: Left camera
-    stream_type: depth
+    stream_type:
     stream_config:
       depth:
         width: 640
@@ -26,4 +26,4 @@ cameras:
         width: 640
         height: 480
         fps: 30
-        format: z16
+        format: rgb8

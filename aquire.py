@@ -104,6 +104,8 @@ class AquireNamespace(SimpleNamespace):
         names: list[str] | None = None,
         stream_types: list[intel.StreamType] | None = None,
         stream_configs: list[dict[intel.StreamType, intel.StreamConfig]] | None = None,
+        *args,
+        **kwargs,
     ):
         """
         AquireNamespace constructor.
@@ -171,6 +173,9 @@ class AquireNamespace(SimpleNamespace):
             # TODO: add examples
 
         """
+
+        del args
+        del kwargs
 
         # type definitions
         self.output_folder: str = ""
@@ -248,7 +253,7 @@ class AquireNamespace(SimpleNamespace):
         if len(set(serial_numbers)) != len(serial_numbers):
             raise SerialNumberError("Duplicate serial numbers specified.")
 
-        serial_numbers = [sn.strip() for sn in serial_numbers]
+        serial_numbers = [str(sn).strip() for sn in serial_numbers]
 
         # names validations
         if names is None:
@@ -272,7 +277,7 @@ class AquireNamespace(SimpleNamespace):
 
             stream_types = [intel.StreamType.DEPTH] * len(serial_numbers)
 
-        elif len(stream_types) == 1:
+        elif len(stream_types) == 1 and not len(serial_numbers) == 1:
             utils.print_warning("Using the specified stream type for all cameras.")
 
             stream_types = stream_types * len(serial_numbers)
@@ -301,7 +306,7 @@ class AquireNamespace(SimpleNamespace):
                 for sn in serial_numbers
             ]
 
-        elif len(stream_configs) == 1:
+        elif len(stream_configs) == 1 and not len(serial_numbers) == 1:
             utils.print_warning("Using the specified stream config for all cameras.")
 
             stream_configs = stream_configs * len(serial_numbers)
@@ -328,7 +333,6 @@ class AquireNamespace(SimpleNamespace):
             for sn, st, sc, nm in zip(serial_numbers, stream_types, stream_configs, names)
         ]
 
-    # TODO: change to direct access
     def __str__(self) -> str:
         string = ""
 
