@@ -378,16 +378,23 @@ class Camera:
         Camera destructor.
         """
 
+        print("del")
         if hasattr(self, "is_running") and self.is_running:
+            print(1)
             try:
+                print(1.1)
                 self.__pipeline.stop()
             except Exception:
+                print(1.2)
                 pass
 
         if hasattr(self, "serial_number"):
+            print(2)
             try:
+                print(2.1)
                 Camera._cameras.remove(self.serial_number)
             except Exception:
+                print(2.2)
                 pass
 
     # Instace public methods
