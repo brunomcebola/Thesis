@@ -15,7 +15,6 @@ import yaml
 from colorama import Fore, Style
 
 
-# TODO: change exit to raise
 def parse_yaml(file_path: str) -> dict:
     """
     Parses a YAML file and returns its contents as a dictionary.
@@ -32,16 +31,14 @@ def parse_yaml(file_path: str) -> dict:
         with open(file_path, "r", encoding="utf-8") as f:
             args = yaml.safe_load(f)
             return dict(args)
-    except FileNotFoundError:
-        print_error(f"Specified YAML file not found ({file_path}).")
-        exit(1)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"Specified YAML file not found ({file_path}).") from e
     except yaml.YAMLError as e:
         if hasattr(e, "problem_mark"):
             line = e.problem_mark.line + 1  # type: ignore
-            print_error(f"Wrong syntax on line {line} of the YAML file.")
+            raise SyntaxError(f"Wrong syntax on line {line} of the YAML file.") from e
         else:
-            print_error("Unknown problem on the specified YAML file.")
-        exit(1)
+            raise RuntimeError("Unknown problem on the specified YAML file.") from e
 
 
 def print_info(message: str) -> None:
