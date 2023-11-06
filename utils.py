@@ -13,6 +13,15 @@ Functions:
 
 import yaml
 from colorama import Fore, Style
+from jsonschema import validate
+
+import intel
+
+
+class ModeError(Exception):
+    """
+    Raised when an invalid mode is specified.
+    """
 
 
 def parse_yaml(file_path: str) -> dict:
@@ -27,9 +36,105 @@ def parse_yaml(file_path: str) -> dict:
     --------
         The contents of the YAML file as a dictionary.
     """
+
+    aquire_schema = {
+        "type": "object",
+        "properties": {
+            "output_folder": {"type": "string"},
+            "op_time": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "uniqueItems": True,
+                "prefixItems": [
+                    {"type": "integer", "minimum": 0, "maximum": 23},
+                    {"type": "integer", "minimum": 1, "maximum": 24},
+                ],
+            },
+            "op_times": {
+                "type": "array",
+                "minItems": 7,
+                "maxItems": 7,
+                "items": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "uniqueItems": True,
+                    "prefixItems": [
+                        {"type": "integer", "minimum": 0, "maximum": 23},
+                        {"type": "integer", "minimum": 1, "maximum": 24},
+                    ],
+                },
+            },
+            "camera": {
+                "anyOf": [{"type": "string"}, {"type": "number", "minimum": 0}]
+            },
+            "stream_type": {"enum": [type.name.lower() for type in intel.StreamType]},
+            "cameras": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "sn": {
+                            "anyOf": [
+                                {"type": "string"},
+                                {"type": "number", "minimum": 0},
+                            ]
+                        },
+                        "name": {"type": "string", "minLength": 1},
+                        "stream_type": {"enum": [type.name.lower() for type in intel.StreamType]},
+                        "stream_config": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                    "width": {"type": "integer", "minimum": 0},
+                                    "height": {"type": "integer", "minimum": 0},
+                                    "format": {"type": "string"},
+                                    "fps": {"type": "number", "minimum": 0},
+                                },
+                                "required": ["width", "height", "format", "fps"],
+                                "additionalProperties": False,
+                            },
+                        },
+                    },
+                    "required": ["sn"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        "required": ["output_folder"],
+        "allOf": [
+            {"not": {"required": ["op_time", "op_times"]}},
+            {"not": {"required": ["camera", "cameras"]}},
+            {"not": {"required": ["stream_type", "cameras"]}},
+        ],
+        "additionalProperties": False,
+    }
+
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             args = yaml.safe_load(f)
+
+            mode = args["mode"]
+            del args["mode"]
+
+            if mode == "aquire":
+                try:
+                    validate(args, aquire_schema)
+
+                    return {}
+                except Exception as e:
+                    raise e
+
+            elif mode == "train":
+                pass
+            elif mode == "online":
+                pass
+            else:
+                raise ModeError("Invalid mode.")
+
             return dict(args)
     except FileNotFoundError as e:
         raise FileNotFoundError(f"Specified YAML file not found ({file_path}).") from e
