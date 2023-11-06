@@ -1,0 +1,42 @@
+mode: aquire
+
+output_folder: ./
+
+######################
+
+op_time: [3, 24]
+
+######
+
+# op_times:
+#   - [0, 6]
+#   - [0, 6]
+#   - [0, 6]
+#   - [0, 6]
+#   - [0, 6]
+#   - [0, 6]
+  # - [0, 6]
+
+######################
+
+camera: 135522077203
+
+stream_type: depth_n_color
+
+######
+
+# cameras:
+#   - sn: 135522077203
+#     name: Left camera
+#     stream_type: depth_n_color
+#     stream_config:
+#       depth:
+#         width: 640
+#         height: 480
+#         fps: 30
+#         format: z16
+#       color:
+#         width: 640
+#         height: 480
+#         fps: 30
+#         format: rgb8
