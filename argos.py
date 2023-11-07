@@ -30,19 +30,7 @@ if __name__ == "__main__":
     cmd_args = parser.get_args()
 
     if cmd_args.mode in ["aquire", "a"]:
-        utils.print_info("Entering aquire mode...")
-        print()
-
-        try:
-            aquireNamespace = aquire.AquireNamespace(**cmd_args.__dict__)
-        except Exception as e:
-            utils.print_error(str(e))
-            exit(1)
-
-        print()
-        utils.print_info("Aquire mode settings:")
-        print(aquireNamespace)
-        print()
+        handler = aquire.Aquire(**cmd_args.__dict__)
 
         prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
             "Do you wish to continue?"
@@ -78,34 +66,26 @@ if __name__ == "__main__":
             utils.print_error(str(e))
             exit(1)
 
-        try:
-            aquireNamespace = aquire.AquireNamespace(**args)
-        except Exception as e:
-            utils.print_error(str(e))
-            exit(1)
+        if args["mode"] == "aquire":
+            handler = aquire.Aquire(**args)
 
-        print()
-        utils.print_info("Aquire mode settings:")
-        print(aquireNamespace)
-        print()
+            prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
+                "Do you wish to continue?"
+            )
+            print()
 
-        prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
-            "Do you wish to continue?"
-        )
-        print()
+            if prompt:
+                pass
+                # t1 = threading.Thread(target=aquire.aquire)
+                # t1.start()
 
-        if prompt:
-            pass
-            # t1 = threading.Thread(target=aquire.aquire)
-            # t1.start()
-
-            # if not get_user_confirmation("Do you wish to continue?"):
-            #     aquire.STOP_FLAG = True
-            #     t1.join()
-            #     exit(0)
-        else:
-            utils.print_info("Exiting aquire mode...")
-            exit(0)
+                # if not get_user_confirmation("Do you wish to continue?"):
+                #     aquire.STOP_FLAG = True
+                #     t1.join()
+                #     exit(0)
+            else:
+                utils.print_info("Exiting aquire mode...")
+                exit(0)
 
         # import intel
         # import pyrealsense2.pyrealsense2 as rs

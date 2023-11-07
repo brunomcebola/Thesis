@@ -40,6 +40,7 @@ def parse_yaml(file_path: str) -> dict:
     aquire_schema = {
         "type": "object",
         "properties": {
+            "mode": {"enum": ["aquire"]},
             "output_folder": {"type": "string"},
             "op_time": {
                 "type": "array",
@@ -109,7 +110,7 @@ def parse_yaml(file_path: str) -> dict:
                 },
             },
         },
-        "required": ["output_folder"],
+        "required": ["mode", "output_folder"],
         "allOf": [
             {"not": {"required": ["op_time", "op_times"]}},
             {"not": {"required": ["camera", "cameras"]}},
@@ -122,14 +123,13 @@ def parse_yaml(file_path: str) -> dict:
         with open(file_path, "r", encoding="utf-8") as f:
             args = yaml.safe_load(f)
 
-            mode = args["mode"]
-            del args["mode"]
-
-            if mode == "aquire":
+            if args["mode"] == "aquire":
                 try:
                     validate(args, aquire_schema)
 
                     aquire_args = {}
+
+                    aquire_args["mode"] = args["mode"]
 
                     aquire_args["output_folder"] = args["output_folder"]
 
@@ -184,9 +184,9 @@ def parse_yaml(file_path: str) -> dict:
                 except Exception as e:
                     raise e
 
-            elif mode == "train":
+            elif args["mode"] == "train":
                 pass
-            elif mode == "online":
+            elif args["mode"] == "online":
                 pass
             else:
                 raise ModeError("Invalid mode.")
