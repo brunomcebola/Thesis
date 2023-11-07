@@ -202,7 +202,9 @@ class AquireNamespace(SimpleNamespace):
             op_times = [(int(0), int(24))] * 7
 
         elif len(op_times) == 1:
-            utils.print_warning("Using the same operation time for all days.")
+            utils.print_warning(
+                f"Using ({op_times[0][0]}h - {op_times[0][1]}h) as operation time for all days."
+            )
 
             op_times = op_times * 7
 

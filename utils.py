@@ -66,9 +66,7 @@ def parse_yaml(file_path: str) -> dict:
                     ],
                 },
             },
-            "camera": {
-                "anyOf": [{"type": "string"}, {"type": "number", "minimum": 0}]
-            },
+            "camera": {"anyOf": [{"type": "string"}, {"type": "number", "minimum": 0}]},
             "stream_type": {"enum": [type.name.lower() for type in intel.StreamType]},
             "cameras": {
                 "type": "array",
@@ -86,20 +84,27 @@ def parse_yaml(file_path: str) -> dict:
                         "stream_type": {"enum": [type.name.lower() for type in intel.StreamType]},
                         "stream_config": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "object",
-                                "properties": {
-                                    "width": {"type": "integer", "minimum": 0},
-                                    "height": {"type": "integer", "minimum": 0},
-                                    "format": {"type": "string"},
-                                    "fps": {"type": "number", "minimum": 0},
+                            "patternProperties": {
+                                f"^({'|'.join(list(filter(lambda v: '_n_' not in v, [type.name.lower() for type in intel.StreamType])))})$": {  # pylint: disable=line-too-long
+                                    "type": "object",
+                                    "properties": {
+                                        "width": {"type": "integer", "minimum": 0},
+                                        "height": {"type": "integer", "minimum": 0},
+                                        "format": {
+                                            "enum": [
+                                                format.name.lower() for format in intel.StreamFormat
+                                            ]
+                                        },
+                                        "fps": {"type": "number", "minimum": 0},
+                                    },
+                                    "required": ["width", "height", "format", "fps"],
+                                    "additionalProperties": False,
                                 },
-                                "required": ["width", "height", "format", "fps"],
-                                "additionalProperties": False,
                             },
+                            "additionalProperties": False,
                         },
                     },
-                    "required": ["sn"],
+                    "required": ["sn", "stream_type", "stream_config"],
                     "additionalProperties": False,
                 },
             },
@@ -124,7 +129,58 @@ def parse_yaml(file_path: str) -> dict:
                 try:
                     validate(args, aquire_schema)
 
-                    return {}
+                    aquire_args = {}
+
+                    aquire_args["output_folder"] = args["output_folder"]
+
+                    if "op_time" in args:
+                        aquire_args["op_times"] = [args["op_time"]]
+                    elif "op_times" in args:
+                        aquire_args["op_times"] = args["op_times"]
+
+                    if "cameras" in args:
+                        aquire_args["serial_numbers"] = []
+                        aquire_args["names"] = []
+                        aquire_args["stream_types"] = []
+                        aquire_args["stream_configs"] = []
+
+                        for camera in args["cameras"]:
+                            aquire_args["serial_numbers"].append(str(camera["sn"]))
+
+                            aquire_args["names"].append(
+                                camera["name"] if "name" in camera else None
+                            )
+
+                            aquire_args["stream_types"].append(
+                                intel.StreamType[camera["stream_type"].upper()]
+                            )
+
+                            aquire_args["stream_configs"].append(
+                                {
+                                    intel.StreamType[config.upper()]: intel.StreamConfig(
+                                        intel.StreamFormat[
+                                            camera["stream_config"][config]["format"].upper()
+                                        ],
+                                        (
+                                            camera["stream_config"][config]["width"],
+                                            camera["stream_config"][config]["height"],
+                                        ),
+                                        camera["stream_config"][config]["fps"],
+                                    )
+                                    for config in camera["stream_config"]
+                                }
+                            )
+                    else:
+                        if "camera" in args:
+                            aquire_args["serial_numbers"] = [args["camera"]]
+
+                        if "stream_type" in args:
+                            aquire_args["stream_types"] = [
+                                intel.StreamType[args["stream_type"].upper()]
+                            ]
+
+                    return aquire_args
+
                 except Exception as e:
                     raise e
 

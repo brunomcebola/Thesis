@@ -4,7 +4,7 @@ output_folder: ./
 
 ######################
 
-op_time: [3, 24]
+# op_time: [3, 24]
 
 ######
 
@@ -19,9 +19,9 @@ op_time: [3, 24]
 
 ######################
 
-camera: 135522077203
+# camera: 135522077203
 
-stream_type: depth_n_color
+# stream_type: depth_n_color
 
 ######
 
