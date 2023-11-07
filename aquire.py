@@ -15,7 +15,10 @@ Exceptions:
 - StreamConfigError: Exception raised when errors related to the stream config occur.
 """
 import os
+import time
+import logging
 import calendar
+import threading
 from types import SimpleNamespace
 
 import intel
@@ -23,6 +26,16 @@ import utils
 
 WEEK_DAYS = list(calendar.day_name)
 SHORT_WEEK_DAYS = list(calendar.day_abbr)
+
+# pylint: disable=pointless-string-statement
+"""
+███████╗██╗  ██╗ ██████╗███████╗██████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
+██╔════╝╚██╗██╔╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+█████╗   ╚███╔╝ ██║     █████╗  ██████╔╝   ██║   ██║██║   ██║██╔██╗ ██║███████╗
+██╔══╝   ██╔██╗ ██║     ██╔══╝  ██╔═══╝    ██║   ██║██║   ██║██║╚██╗██║╚════██║
+███████╗██╔╝ ██╗╚██████╗███████╗██║        ██║   ██║╚██████╔╝██║ ╚████║███████║
+╚══════╝╚═╝  ╚═╝ ╚═════╝╚══════╝╚═╝        ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+"""
 
 
 class OutputFolderError(Exception):
@@ -77,6 +90,23 @@ class StreamConfigError(Exception):
     """
     Exception raised when errors related to the stream config occur.
     """
+
+
+class AquireThread(Exception):
+    """
+    Exception raised when the aquire main thread is already running.
+    """
+
+
+# pylint: disable=pointless-string-statement
+"""
+███╗   ███╗ █████╗ ██╗███╗   ██╗     ██████╗ ██████╗ ███╗   ██╗████████╗███████╗███╗   ██╗████████╗
+████╗ ████║██╔══██╗██║████╗  ██║    ██╔════╝██╔═══██╗████╗  ██║╚══██╔══╝██╔════╝████╗  ██║╚══██╔══╝
+██╔████╔██║███████║██║██╔██╗ ██║    ██║     ██║   ██║██╔██╗ ██║   ██║   █████╗  ██╔██╗ ██║   ██║
+██║╚██╔╝██║██╔══██║██║██║╚██╗██║    ██║     ██║   ██║██║╚██╗██║   ██║   ██╔══╝  ██║╚██╗██║   ██║
+██║ ╚═╝ ██║██║  ██║██║██║ ╚████║    ╚██████╗╚██████╔╝██║ ╚████║   ██║   ███████╗██║ ╚████║   ██║
+╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝   ╚═╝
+"""
 
 
 class AquireNamespace(SimpleNamespace):
@@ -169,9 +199,6 @@ class AquireNamespace(SimpleNamespace):
             ...     stream_types=[StreamType.DEPTH, StreamType.COLOR],
             ... )
             >>> print(aquire_namespace)
-            # TODO: add output
-            # TODO: add examples
-
         """
 
         del args
@@ -366,7 +393,28 @@ class AquireNamespace(SimpleNamespace):
 
 
 class Aquire:
+    """
+    This class holds the tools to aquire data from the realsense cameras.
+
+    Attributes:
+    -----------
+        - args (AquireNamespace):
+            The arguments for the aquire mode.
+        - main_thread (threading.Thread):
+            The main thread of the aquire mode.
+        - sub_threads (list[threading.Thread]):
+            The list with all the sub threads of the aquire mode.
+
+    """
+
     def __init__(self, **args) -> None:
+        """
+        Aquire constructor.
+
+        Args:
+        -----
+            - args: The arguments for the aquire mode (matching the constructor of AquireNamespace).
+        """
         utils.print_info("Entering aquire mode...")
         print()
 
@@ -375,29 +423,105 @@ class Aquire:
         except Exception as e:
             raise e
 
+        self.main_thread = None
+        self.sub_threads = []
+
+        self.__main_thread_stop_flag = False
+        self.__log_file = "logs/aquire.log"
+
+        self.logger = logging.getLogger("Aquire mode")
+        self.logger.setLevel(logging.INFO)
+
+        file_handler = logging.FileHandler(self.__log_file)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
+
+        self.logger.addHandler(file_handler)
+
         print()
         utils.print_info("Aquire mode settings:")
         print(self.args)
         print()
 
+    def __aquire(self) -> None:
+        """
+        The main thread of the aquire mode.
+        """
+
+        logger = logging.getLogger("Main thread")
+        logger.setLevel(logging.INFO)
+
+        file_handler = logging.FileHandler(self.__log_file)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(message)s"))
+
+        logger.addHandler(file_handler)
+
+        i = 1
+        while not self.__main_thread_stop_flag:
+            logger.info(i)
+            i = i + 1
+            time.sleep(1)
+
+    def run(self) -> None:
+        """
+        Runs the aquire mode.
+        """
+
+        if self.main_thread:
+            raise AquireThread("The aquire main thread is already running.")
+
+        prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
+            "Do you wish to continue?"
+        )
+        print()
+
+        if prompt:
+            self.logger.info("Starting aquire mode...")
+            utils.print_info("Starting aquire mode...")
+
+            self.main_thread = threading.Thread(target=self.__aquire)
+            self.main_thread.start()
+
+            self.logger.info("Aquire mode started.")
+            utils.print_success("Aquire mode started.")
+            print()
+
+            # if not utils.get_user_confirmation("Do you wish to continue?"):
+            #     aquire.STOP_FLAG = True
+            #     t1.join()
+            #     exit(0)
+
+            # STOP_FLAG = False
+
+            # def aquire():
+            #
+
+    def stop(self) -> None:
+        """
+        Stops the aquire mode.
+        """
+        if not self.main_thread:
+            raise AquireThread("The aquire main thread is not running.")
+
+        self.logger.info("Stopping aquire mode...")
+        utils.print_info("Stopping aquire mode...")
+
+        self.__main_thread_stop_flag = True
+        self.main_thread.join()
+
+        self.logger.info("Aquire mode stopped.\n")
+        utils.print_success("Aquire mode stopped.")
+        print()
+
+        self.main_thread = None
+        self.__main_thread_stop_flag = False
+
     def __del__(self) -> None:
-        pass
+        utils.print_info("Exiting aquire mode...")
 
-
-# STOP_FLAG = False
-# import time
-# import logging
-
-# def aquire():
-#     logging.basicConfig(
-#         filename="thread_output.log", level=logging.INFO, format="%(asctime)s - %(message)s"
-#     )
-
-#     while not STOP_FLAG:
-#         logging.info("aquire")
-#         time.sleep(1)
-
-#     logging.info("adeus")
+        if self.main_thread:
+            self.stop()
 
 
 # STORAGE_PATH = os.getenv("STORAGE_PATH")
