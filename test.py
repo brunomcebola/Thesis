@@ -2,11 +2,11 @@
 Module for testing
 """
 
-import aquire
+import acquire
 import utils
 
 try:
-    aq = aquire.AquireNamespace("./")
+    aq = acquire.AcquireNamespace("./")
 
     print(aq)
 except Exception as e:

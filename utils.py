@@ -37,10 +37,10 @@ def parse_yaml(file_path: str) -> dict:
         The contents of the YAML file as a dictionary.
     """
 
-    aquire_schema = {
+    acquire_schema = {
         "type": "object",
         "properties": {
-            "mode": {"enum": ["aquire"]},
+            "mode": {"enum": ["acquire"]},
             "output_folder": {"type": "string"},
             "op_time": {
                 "type": "array",
@@ -123,39 +123,39 @@ def parse_yaml(file_path: str) -> dict:
         with open(file_path, "r", encoding="utf-8") as f:
             args = yaml.safe_load(f)
 
-            if args["mode"] == "aquire":
+            if args["mode"] == "acquire":
                 try:
-                    validate(args, aquire_schema)
+                    validate(args, acquire_schema)
 
-                    aquire_args = {}
+                    acquire_args = {}
 
-                    aquire_args["mode"] = args["mode"]
+                    acquire_args["mode"] = args["mode"]
 
-                    aquire_args["output_folder"] = args["output_folder"]
+                    acquire_args["output_folder"] = args["output_folder"]
 
                     if "op_time" in args:
-                        aquire_args["op_times"] = [args["op_time"]]
+                        acquire_args["op_times"] = [args["op_time"]]
                     elif "op_times" in args:
-                        aquire_args["op_times"] = args["op_times"]
+                        acquire_args["op_times"] = args["op_times"]
 
                     if "cameras" in args:
-                        aquire_args["serial_numbers"] = []
-                        aquire_args["names"] = []
-                        aquire_args["stream_types"] = []
-                        aquire_args["stream_configs"] = []
+                        acquire_args["serial_numbers"] = []
+                        acquire_args["names"] = []
+                        acquire_args["stream_types"] = []
+                        acquire_args["stream_configs"] = []
 
                         for camera in args["cameras"]:
-                            aquire_args["serial_numbers"].append(str(camera["sn"]))
+                            acquire_args["serial_numbers"].append(str(camera["sn"]))
 
-                            aquire_args["names"].append(
+                            acquire_args["names"].append(
                                 camera["name"] if "name" in camera else None
                             )
 
-                            aquire_args["stream_types"].append(
+                            acquire_args["stream_types"].append(
                                 intel.StreamType[camera["stream_type"].upper()]
                             )
 
-                            aquire_args["stream_configs"].append(
+                            acquire_args["stream_configs"].append(
                                 {
                                     intel.StreamType[config.upper()]: intel.StreamConfig(
                                         intel.StreamFormat[
@@ -172,14 +172,14 @@ def parse_yaml(file_path: str) -> dict:
                             )
                     else:
                         if "camera" in args:
-                            aquire_args["serial_numbers"] = [args["camera"]]
+                            acquire_args["serial_numbers"] = [args["camera"]]
 
                         if "stream_type" in args:
-                            aquire_args["stream_types"] = [
+                            acquire_args["stream_types"] = [
                                 intel.StreamType[args["stream_type"].upper()]
                             ]
 
-                    return aquire_args
+                    return acquire_args
 
                 except Exception as e:
                     raise e
@@ -258,3 +258,4 @@ def get_user_confirmation(message: str) -> bool:
             return False
         else:
             print_warning("Invalid response. Please enter y or n.")
+            print()

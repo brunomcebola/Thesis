@@ -1,13 +1,13 @@
 """
 This module is the entry point of Argos, a real-time image analysis tool for fraud detection.
 It includes a command-line interface with four modes:
-    - `aquire` mode captures and stores video
+    - `acquire` mode captures and stores video
     - `train` mode trains a model
     - `online` mode runs the model online
     - `yaml` mode runs the model based on a yaml file.
 
 Usage:
-    $ python argos.py [-h] {aquire,train,online,yaml} ...
+    $ python argos.py [-h] {acquire,train,online,yaml} ...
 """
 
 import os
@@ -16,7 +16,7 @@ import sys
 # import threading
 
 import utils
-import aquire
+import acquire
 from arg_parser import ArgParser
 
 if __name__ == "__main__":
@@ -29,8 +29,8 @@ if __name__ == "__main__":
     parser = ArgParser()
     cmd_args = parser.get_args()
 
-    if cmd_args.mode in ["aquire", "a"]:
-        mode = aquire.Aquire(**cmd_args.__dict__)
+    if cmd_args.mode in ["acquire", "a"]:
+        mode = acquire.Acquire(**cmd_args.__dict__)
 
         mode.run()
 
@@ -52,15 +52,35 @@ if __name__ == "__main__":
             utils.print_error(str(e))
             exit(1)
 
-        if args["mode"] == "aquire":
-            mode = aquire.Aquire(**args)
+        if args["mode"] == "acquire":
+            try:
+                mode = acquire.Acquire(**args)
+            except Exception as e:
+                utils.print_error(str(e))
+                print()
+                exit(1)
 
-            mode.run()
+            user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
+                "Do you wish to start acquiring data?"
+            )
+            print()
 
-            import time
+            if user_prompt is True:
+                mode.run()
 
-            time.sleep(10)
+                user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
+                    "Do you wish to stop data acquisition?"
+                )
+                print()
 
-            mode.stop()
+                while user_prompt is False:
+                    user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
+                        "Do you wish to stop data acquisition?"
+                    )
+                    print()
+
+                mode.stop()
+                exit(0)
+
     else:
         exit(0)
