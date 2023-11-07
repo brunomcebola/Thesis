@@ -1,9 +1,9 @@
 """
-This module holds the tools to aquire data from the realsense cameras.
+This module holds the tools to acquire data from the realsense cameras.
 
 Classes:
 --------
-- AquireNamespace: Holds the arguments for the aquire mode.
+- AcquireNamespace: Holds the arguments for the acquire mode.
 
 Exceptions:
 -----------
@@ -92,9 +92,9 @@ class StreamConfigError(Exception):
     """
 
 
-class AquireThread(Exception):
+class AcquireThread(Exception):
     """
-    Exception raised when the aquire main thread is already running.
+    Exception raised when the acquire main thread is already running.
     """
 
 
@@ -109,9 +109,9 @@ class AquireThread(Exception):
 """
 
 
-class AquireNamespace(SimpleNamespace):
+class AcquireNamespace(SimpleNamespace):
     """
-    This class holds the arguments for the aquire mode.
+    This class holds the arguments for the acquire mode.
 
     It can be initialized with explicit arguments or with a dictionary.
 
@@ -138,7 +138,7 @@ class AquireNamespace(SimpleNamespace):
         **kwargs,
     ):
         """
-        AquireNamespace constructor.
+        AcquireNamespace constructor.
 
         Args:
         -----
@@ -191,14 +191,14 @@ class AquireNamespace(SimpleNamespace):
 
         Examples:
         ---------
-            >>> aquire_namespace = AquireNamespace(
+            >>> acquire_namespace = AcquireNamespace(
             ...     output_folder="./",
             ...     op_times=[(8, 12)],
             ...     serial_numbers=["123456789", "987654321"],
             ...     names=["front", "back"],
             ...     stream_types=[StreamType.DEPTH, StreamType.COLOR],
             ... )
-            >>> print(aquire_namespace)
+            >>> print(acquire_namespace)
         """
 
         del args
@@ -392,34 +392,34 @@ class AquireNamespace(SimpleNamespace):
         return (string[0] + "Cameras:" + lines).rstrip()
 
 
-class Aquire:
+class Acquire:
     """
-    This class holds the tools to aquire data from the realsense cameras.
+    This class holds the tools to acquire data from the realsense cameras.
 
     Attributes:
     -----------
-        - args (AquireNamespace):
-            The arguments for the aquire mode.
+        - args (AcquireNamespace):
+            The arguments for the acquire mode.
         - main_thread (threading.Thread):
-            The main thread of the aquire mode.
+            The main thread of the acquire mode.
         - sub_threads (list[threading.Thread]):
-            The list with all the sub threads of the aquire mode.
+            The list with all the sub threads of the acquire mode.
 
     """
 
     def __init__(self, **args) -> None:
         """
-        Aquire constructor.
+        Acquire constructor.
 
         Args:
         -----
-            - args: The arguments for the aquire mode (matching the constructor of AquireNamespace).
+            - args: The arguments for the acquire mode (matching the constructor of AcquireNamespace).
         """
-        utils.print_info("Entering aquire mode...")
+        utils.print_info("Entering acquire mode...")
         print()
 
         try:
-            self.args = AquireNamespace(**args)
+            self.args = AcquireNamespace(**args)
         except Exception as e:
             raise e
 
@@ -427,9 +427,9 @@ class Aquire:
         self.sub_threads = []
 
         self.__main_thread_stop_flag = False
-        self.__log_file = "logs/aquire.log"
+        self.__log_file = "logs/acquire.log"
 
-        self.logger = logging.getLogger("Aquire mode")
+        self.logger = logging.getLogger("Acquire mode")
         self.logger.setLevel(logging.INFO)
 
         file_handler = logging.FileHandler(self.__log_file)
@@ -439,13 +439,13 @@ class Aquire:
         self.logger.addHandler(file_handler)
 
         print()
-        utils.print_info("Aquire mode settings:")
+        utils.print_info("Acquire mode settings:")
         print(self.args)
         print()
 
-    def __aquire(self) -> None:
+    def __acquire_main(self) -> None:
         """
-        The main thread of the aquire mode.
+        The main thread of the acquire mode.
         """
 
         logger = logging.getLogger("Main thread")
@@ -465,100 +465,46 @@ class Aquire:
 
     def run(self) -> None:
         """
-        Runs the aquire mode.
+        Runs the acquire mode.
         """
 
         if self.main_thread:
-            raise AquireThread("The aquire main thread is already running.")
+            raise AcquireThread("The acquire main thread is already running.")
 
-        prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
-            "Do you wish to continue?"
-        )
+        self.logger.info("Starting data acquisition ...")
+        utils.print_info("Starting data acquisition...")
+
+        thread = threading.Thread(target=self.__acquire_main)
+        thread.start()
+
+        self.main_thread = thread
+
+        self.logger.info("Data acquisition started.")
+        utils.print_success("Data acquisition started.")
         print()
-
-        if prompt:
-            self.logger.info("Starting aquire mode...")
-            utils.print_info("Starting aquire mode...")
-
-            self.main_thread = threading.Thread(target=self.__aquire)
-            self.main_thread.start()
-
-            self.logger.info("Aquire mode started.")
-            utils.print_success("Aquire mode started.")
-            print()
-
-            # if not utils.get_user_confirmation("Do you wish to continue?"):
-            #     aquire.STOP_FLAG = True
-            #     t1.join()
-            #     exit(0)
-
-            # STOP_FLAG = False
-
-            # def aquire():
-            #
 
     def stop(self) -> None:
         """
-        Stops the aquire mode.
+        Stops the acquire mode.
         """
         if not self.main_thread:
-            raise AquireThread("The aquire main thread is not running.")
+            raise AcquireThread("The acquire main thread is not running.")
 
-        self.logger.info("Stopping aquire mode...")
-        utils.print_info("Stopping aquire mode...")
+        self.logger.info("Stopping acquire mode...")
+        utils.print_info("Stopping acquire mode...")
 
         self.__main_thread_stop_flag = True
         self.main_thread.join()
 
-        self.logger.info("Aquire mode stopped.\n")
-        utils.print_success("Aquire mode stopped.")
+        self.logger.info("Acquire mode stopped.")
+        utils.print_success("Acquire mode stopped.")
         print()
 
         self.main_thread = None
         self.__main_thread_stop_flag = False
 
     def __del__(self) -> None:
-        utils.print_info("Exiting aquire mode...")
+        utils.print_info("Exiting acquire mode...")
 
-        if self.main_thread:
+        if "main_thread" in self.__dict__ and self.main_thread:
             self.stop()
-
-
-# STORAGE_PATH = os.getenv("STORAGE_PATH")
-
-
-# context = rs.context()
-# devices = context.query_devices()
-# nb_of_cams = devices.size()
-# if nb_of_cams == 0:
-#     exit("No realsense cameras found.")
-
-# cameras: list[intel.Camera] = []
-# for i in range(nb_of_cams):
-#     dev = devices[i]
-#     serial_number = dev.get_info(rs.camera_info.serial_number)
-#     print("serial number: ", serial_number)
-#     cameras.append(
-#         intel.Camera(serial_number, StreamType.DEPTH, StreamConfig(640, 480, 30, rs.format.z16))
-#     )
-
-#     # check if folder exists and if not create it
-#     if not os.path.exists(STORAGE_PATH + serial_number):
-#         os.makedirs(STORAGE_PATH + serial_number)
-#         print("created folder: ", STORAGE_PATH + serial_number)
-#     else:
-#         print("folder already exists: ", STORAGE_PATH + serial_number)
-
-
-# cameras[0].start_pipeline()
-
-# t = []
-
-# for i in range(6000):
-#     ti = time.time()
-#     frames = cameras[0].get_frames()
-#     tf = time.time()
-#     t.append(int(round((tf - ti) * 1000)))
-#     time.sleep(0.1)
-
-# print(np.average(t))

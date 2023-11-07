@@ -125,7 +125,7 @@ class ArgParser:
 
         self._add_subparsers()
 
-    def _add_aquire_mode_subparser(self):
+    def _add_acquire_mode_subparser(self):
         def _camera_type(value: str):
             """
             Checks if a non-empty string was assigned to the camera argument.
@@ -161,13 +161,13 @@ class ArgParser:
             return value
 
         parser = self._subparsers.add_parser(
-            "aquire",
+            "acquire",
             aliases="a",
             description="Argos, Real-time Image Analysis for Fraud Detection",
             help="Mode to capture and store video.",
             allow_abbrev=False,
             formatter_class=self._HelpFormatterModes,
-            usage="argos.py aquire (-o | --output) <path> [(-c | --camera) <sn>]\n"
+            usage="argos.py acquire (-o | --output) <path> [(-c | --camera) <sn>]\n"
             + "                  [(-s | --stream-type) <stream>]",
             add_help=False,
         )
@@ -298,7 +298,7 @@ class ArgParser:
         )
 
     def _add_subparsers(self):
-        self._add_aquire_mode_subparser()
+        self._add_acquire_mode_subparser()
         self._add_train_mode_subparser()
         self._add_online_mode_subparser()
         self._add_yaml_mode_subparser()
