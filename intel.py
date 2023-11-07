@@ -46,6 +46,20 @@ class CameraAlreadyExistsError(Exception):
     """
 
 
+class StreamFormat(Enum):
+    """
+    An enumeration of the different formats of the camera stream.
+
+    Attributes:
+    -----------
+        - Z16: A 16-bit linear depth value.
+        - RGB8: Red, Green, Blue channels with 8-bits per channel.
+    """
+
+    Z16 = rs.format.z16
+    RGB8 = rs.format.rgb8
+
+
 class StreamConfig(NamedTuple):
     """
     Named tuple representing the format of the stream configuration.
@@ -57,7 +71,7 @@ class StreamConfig(NamedTuple):
         - fps: The frames per second of the camera stream.
     """
 
-    format: rs.format
+    format: StreamFormat
     resolution: tuple[int, int]
     fps: int
 
@@ -75,7 +89,13 @@ class StreamType(Enum):
     -----------
         - DEPTH: A stream of depth data.
         - COLOR: A stream of color data.
+        - IR: A stream of infrared data.
         - DEPTH_N_COLOR: A stream of both depth and color data.
+        - DEPTH_N_IR: A stream of both depth and ir data.
+        - COLOR_N_IF: A stream of both color and ir data.
+        - DEPTH_N_COLOR_N_IR: A stream of depth, color and ir data.
+
+
     """
 
     # Base types
@@ -160,14 +180,14 @@ class Camera:
         >>> camera = Camera(
                 "135522077203",
                 StreamType.DEPTH,
-                {StreamType.DEPTH: StreamConfig(rs.format.z16, (640, 480), 30)},
+                {StreamType.DEPTH: StreamConfig(StreamFormat.Z16, (640, 480), 30)},
                 "My camera",
             )
 
     - Keep depth stream, but change resolution and framerate::
 
         >>> camera.change_config(
-                {StreamType.DEPTH: StreamConfig(rs.format.z16, (1280, 720), 5)},
+                {StreamType.DEPTH: StreamConfig(StreamFormat.Z16, (1280, 720), 5)},
             )
     """
 
@@ -346,7 +366,7 @@ class Camera:
                     stream_type.value,
                     stream_config.resolution[0],
                     stream_config.resolution[1],
-                    stream_config.format,
+                    stream_config.format.value,
                     stream_config.fps,
                 )
                 valid = self.__config.can_resolve(self.__pipeline)
@@ -366,7 +386,7 @@ class Camera:
                     stream_type.value,
                     self.stream_configs[stream_type].resolution[0],
                     self.stream_configs[stream_type].resolution[1],
-                    self.stream_configs[stream_type].format,
+                    self.stream_configs[stream_type].format.value,
                     self.stream_configs[stream_type].fps,
                 )
 
@@ -378,23 +398,16 @@ class Camera:
         Camera destructor.
         """
 
-        print("del")
         if hasattr(self, "is_running") and self.is_running:
-            print(1)
             try:
-                print(1.1)
                 self.__pipeline.stop()
             except Exception:
-                print(1.2)
                 pass
 
         if hasattr(self, "serial_number"):
-            print(2)
             try:
-                print(2.1)
                 Camera._cameras.remove(self.serial_number)
             except Exception:
-                print(2.2)
                 pass
 
     # Instace public methods
@@ -564,12 +577,12 @@ class Camera:
 
         defaults = {
             "D435": {
-                StreamType.DEPTH: StreamConfig(rs.format.z16, (640, 480), 30),
-                StreamType.COLOR: StreamConfig(rs.format.rgb8, (640, 480), 30),
+                StreamType.DEPTH: StreamConfig(StreamFormat.Z16, (640, 480), 30),
+                StreamType.COLOR: StreamConfig(StreamFormat.RGB8, (640, 480), 30),
             },
             "D455": {
-                StreamType.DEPTH: StreamConfig(rs.format.z16, (640, 480), 30),
-                StreamType.COLOR: StreamConfig(rs.format.rgb8, (640, 480), 30),
+                StreamType.DEPTH: StreamConfig(StreamFormat.Z16, (640, 480), 30),
+                StreamType.COLOR: StreamConfig(StreamFormat.RGB8, (640, 480), 30),
             },
         }
 

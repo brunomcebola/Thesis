@@ -74,9 +74,38 @@ if __name__ == "__main__":
 
         try:
             args = utils.parse_yaml(cmd_args.config_file)
-            print(args)
         except Exception as e:
             utils.print_error(str(e))
+            exit(1)
+
+        try:
+            aquireNamespace = aquire.AquireNamespace(**args)
+        except Exception as e:
+            utils.print_error(str(e))
+            exit(1)
+
+        print()
+        utils.print_info("Aquire mode settings:")
+        print(aquireNamespace)
+        print()
+
+        prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
+            "Do you wish to continue?"
+        )
+        print()
+
+        if prompt:
+            pass
+            # t1 = threading.Thread(target=aquire.aquire)
+            # t1.start()
+
+            # if not get_user_confirmation("Do you wish to continue?"):
+            #     aquire.STOP_FLAG = True
+            #     t1.join()
+            #     exit(0)
+        else:
+            utils.print_info("Exiting aquire mode...")
+            exit(0)
 
         # import intel
         # import pyrealsense2.pyrealsense2 as rs
