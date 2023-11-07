@@ -98,13 +98,13 @@ class AquireNamespace(SimpleNamespace):
 
     def __init__(
         self,
+        *args,
         output_folder: str,
         op_times: list[tuple[int, int]] | None = None,
         serial_numbers: list[str] | None = None,
         names: list[str] | None = None,
         stream_types: list[intel.StreamType] | None = None,
         stream_configs: list[dict[intel.StreamType, intel.StreamConfig]] | None = None,
-        *args,
         **kwargs,
     ):
         """
@@ -363,6 +363,25 @@ class AquireNamespace(SimpleNamespace):
         lines = "\t\t".join(lines)
 
         return (string[0] + "Cameras:" + lines).rstrip()
+
+
+class Aquire:
+    def __init__(self, **args) -> None:
+        utils.print_info("Entering aquire mode...")
+        print()
+
+        try:
+            self.args = AquireNamespace(**args)
+        except Exception as e:
+            raise e
+
+        print()
+        utils.print_info("Aquire mode settings:")
+        print(self.args)
+        print()
+
+    def __del__(self) -> None:
+        pass
 
 
 # STOP_FLAG = False
