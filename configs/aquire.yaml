@@ -42,6 +42,6 @@ cameras:
       depth:
         width: 640
         height: 480
-        fps: 6
+        fps: 30
         format: z16
 

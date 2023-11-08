@@ -21,8 +21,8 @@ import logging
 import calendar
 import threading
 
-from typing import Callable
 from types import SimpleNamespace
+from typing import Callable, NamedTuple
 
 import intel
 import utils
@@ -401,20 +401,51 @@ class AcquireNamespace(SimpleNamespace):
         return (string[0] + "Cameras:" + lines).rstrip()
 
 
+class _AcquireStatus:
+    """
+    Helper class to flag the Acquire Class that the data
+    acquisition has started in the camera threads.
+
+    Attributes:
+    -----------
+        - status (int):
+            The status of the acquire mode.
+
+    """
+
+    status: bool = False
+
+
 class _AcquireMainThread(threading.Thread):
     """
     This class holds the main thread of the acquire mode.
+
+    Attributes:
+    -----------
+        - args (AcquireNamespace):
+            The arguments for the acquire mode.
+        - log_dest (str):
+            The path to the log file.
+        - acquiring (_AcquireStatus):
+            The status of the acquire mode.
+        - camera_threads (dict[str, _AcquireCameraThread]):
+            The camera threads of the acquire mode.
+        - camera_statuses (dict[str, bool]):
+            The statuses of the camera threads of the acquire mode.
+        - camera_queues (dict[str, list]):
+            The queues of the camera threads of the acquire mode.
     """
 
     __instanciated = False
 
-    def __init__(self, args: AcquireNamespace, log_dest: str):
+    def __init__(self, args: AcquireNamespace, acquiring: _AcquireStatus, log_dest: str):
         """
         AcquireMainThread constructor.
 
         Args:
         -----
             - args: The arguments for the acquire mode.
+            - acquiring: The status of the acquire mode.
             - log_dest: The path to the log file.
 
         Raises:
@@ -434,8 +465,7 @@ class _AcquireMainThread(threading.Thread):
 
         self.args = args
         self.log_dest = log_dest
-
-        self.aquire = False
+        self.acquiring = acquiring
 
         self.camera_threads: dict[str, _AcquireCameraThread] = {}
         self.camera_statuses: dict[str, bool] = {}
@@ -472,7 +502,7 @@ class _AcquireMainThread(threading.Thread):
                         camera,
                         self.camera_queues[camera.serial_number],
                         self.camera_statuses,
-                        (lambda: self.aquire),
+                        (lambda: self.acquiring.status),
                         self.log_dest,
                     )
                 except AcquireCameraThreadError as e1:
@@ -499,13 +529,16 @@ class _AcquireMainThread(threading.Thread):
             self.logger.info("Syncing cameras...")
             time.sleep(2)
 
-            self.aquire = True
+            self.acquiring.status = True
 
             while True:
                 continue
 
         finally:
             # TODO: ensure all values in queue are stored
+
+            for camera in self.args.cameras:
+                print(len(self.camera_queues[camera.serial_number]))
 
             for camera in self.args.cameras:
                 self.logger.info("Stopping %s...", self.camera_threads[camera.serial_number].name)
@@ -556,6 +589,19 @@ class _AcquireMainThread(threading.Thread):
 class _AcquireCameraThread(threading.Thread):
     """
     This class holds the camera threads of the acquire mode.
+
+    Attributes:
+    -----------
+        - camera (intel.Camera):
+            The camera to be used.
+        - queue (list):
+            The queue to store the data.
+        - statuses (dict[str, bool]):
+            The statuses of the cameras.
+        - aquire (Callable[[], bool]):
+            The function to check if the acquire mode is running.
+        - log_dest (str):
+            The path to the log file.
     """
 
     __camera_threads = []
@@ -627,18 +673,18 @@ class _AcquireCameraThread(threading.Thread):
 
             self.logger.info("Starting capture...")
 
-            # i = 1
-            # while True:
-            #     self.camera.capture()
-
-            #     self.logger.info(i)
-            #     i = i + 1
-
+            i = 1
             while True:
-                continue
+                frame = self.camera.capture()
+
+                self.queue.append(frame)
+
+                self.logger.info("Captured frame %d", i)
+
+                i = i + 1
 
         finally:
-            # self.camera.stop()
+            self.camera.stop()
 
             self.logger.info("Stopped")
 
@@ -706,6 +752,7 @@ class Acquire:
         print()
 
         self.main_thread = None
+        self.acquiring = _AcquireStatus()
         self.__log_file = "logs/acquire.log"
 
         try:
@@ -733,7 +780,7 @@ class Acquire:
         """
 
         try:
-            thread = _AcquireMainThread(self.args, self.__log_file)
+            thread = _AcquireMainThread(self.args, self.acquiring, self.__log_file)
         except AcquireMainThreadError as e1:
             raise AcquireMainThreadError("Data aquisition already started") from e1
         except Exception as e2:
@@ -747,9 +794,8 @@ class Acquire:
 
         self.main_thread.start()
 
-        # TODO: add flag to start capture
-        # TODO: add print to indicate user capture started
-        # TODO: log capture started
+        while self.acquiring.status is False:
+            continue
 
     def stop(self) -> None:
         """
