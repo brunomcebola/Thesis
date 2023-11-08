@@ -25,18 +25,13 @@ output_folder: ./
 
 ######
 
-# cameras:
-#   - sn: 135522077203
-#     name: Left camera
-#     stream_type: depth_n_color
-#     stream_config:
-#       depth:
-#         width: 640
-#         height: 480
-#         fps: 30
-#         format: z16
-#       color:
-#         width: 640
-#         height: 480
-#         fps: 30
-#         format: rgb8
+cameras:
+  - sn: 135522071130
+    name: Left camera
+    stream_type: depth
+    stream_config:
+      depth:
+        width: 640
+        height: 480
+        fps: 6
+        format: z16

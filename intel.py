@@ -159,7 +159,7 @@ class Camera:
             Starts the camera stream.
         - stop:
             Stops the camera stream.
-        - get_frames:
+        - capture:
             Returns an object representing a frame from the camera.
 
     Examples:
@@ -498,9 +498,11 @@ class Camera:
 
         return True
 
-    def get_frames(self) -> rs.composite_frame:
+    def capture(self) -> rs.composite_frame:
         """
         Returns an object representing a frame from the camera.
+
+        It blocks the execution until a frame is available, if the camera is running.
 
         In order to access the frame data itself it is necessary to use a subclass of Frame.
         """
