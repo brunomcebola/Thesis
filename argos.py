@@ -68,6 +68,7 @@ if __name__ == "__main__":
             if user_prompt is True:
                 mode.run()
 
+                # FIXME: only show ths when capture already occurring
                 user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
                     "Do you wish to stop data acquisition?"
                 )

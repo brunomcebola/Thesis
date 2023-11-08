@@ -21,6 +21,7 @@ import logging
 import calendar
 import threading
 
+from typing import Callable
 from types import SimpleNamespace
 
 import intel
@@ -434,7 +435,10 @@ class _AcquireMainThread(threading.Thread):
         self.args = args
         self.log_dest = log_dest
 
+        self.aquire = False
+
         self.camera_threads: dict[str, _AcquireCameraThread] = {}
+        self.camera_statuses: dict[str, bool] = {}
         self.camera_queues: dict[str, list] = {}
 
         file_handler = logging.FileHandler(self.log_dest)
@@ -461,11 +465,14 @@ class _AcquireMainThread(threading.Thread):
 
             for camera in self.args.cameras:
                 self.camera_queues[camera.serial_number] = []
+                self.camera_statuses[camera.serial_number] = False
 
                 try:
                     thread = _AcquireCameraThread(
                         camera,
                         self.camera_queues[camera.serial_number],
+                        self.camera_statuses,
+                        (lambda: self.aquire),
                         self.log_dest,
                     )
                 except AcquireCameraThreadError as e1:
@@ -482,11 +489,17 @@ class _AcquireMainThread(threading.Thread):
                 self.camera_threads[camera.serial_number] = thread
 
             for camera in self.args.cameras:
-                self.logger.info(
-                    "Starting %s...", self.camera_threads[camera.serial_number].name
-                )
+                self.logger.info("Starting %s...", self.camera_threads[camera.serial_number].name)
 
                 self.camera_threads[camera.serial_number].start()
+
+            while not all(self.camera_statuses.values()):
+                time.sleep(1)
+
+            self.logger.info("Syncing cameras...")
+            time.sleep(2)
+
+            self.aquire = True
 
             while True:
                 continue
@@ -495,9 +508,7 @@ class _AcquireMainThread(threading.Thread):
             # TODO: ensure all values in queue are stored
 
             for camera in self.args.cameras:
-                self.logger.info(
-                    "Stopping %s...", self.camera_threads[camera.serial_number].name
-                )
+                self.logger.info("Stopping %s...", self.camera_threads[camera.serial_number].name)
 
                 self.camera_threads[camera.serial_number].stop()
 
@@ -549,13 +560,22 @@ class _AcquireCameraThread(threading.Thread):
 
     __camera_threads = []
 
-    def __init__(self, camera: intel.Camera, queue: list, log_dest: str):
+    def __init__(
+        self,
+        camera: intel.Camera,
+        queue: list,
+        statuses: dict[str, bool],
+        aquire: Callable[[], bool],
+        log_dest: str,
+    ):
         """
         AcquireCameraThread constructor.
 
         Args:
         -----
             - camera: The camera to be used.
+            - queue: The queue to store the data.
+            - statuses: The statuses of the cameras.
             - log_dest: The path to the log file.
 
         Raises:
@@ -570,6 +590,8 @@ class _AcquireCameraThread(threading.Thread):
 
         self.camera = camera
         self.queue = queue
+        self.statuses = statuses
+        self.aquire = aquire
 
         self.name = f"{self.camera.name} Thread"
         self.interval = 1
@@ -592,9 +614,18 @@ class _AcquireCameraThread(threading.Thread):
         try:
             self.logger.info("Started")
 
-            # self.camera.start()
+            self.camera.start()
 
-            # TODO: skipp some frames to allow auto exposure to adjust
+            for _ in range(30):
+                self.camera.capture()
+
+            self.logger.info("Ready")
+            self.statuses[self.camera.serial_number] = True
+
+            while not self.aquire():
+                continue
+
+            self.logger.info("Starting capture...")
 
             # i = 1
             # while True:
@@ -728,12 +759,15 @@ class Acquire:
             raise AcquireMainThreadError("The acquire mode is not running.")
 
         self.logger.info("Stopping data acquisition...")
-        utils.print_info("Stopping acquire acquisition...")
+        utils.print_info("Stopping data acquisition...")
+        print()
 
         self.main_thread.stop()
         self.main_thread.join()
 
         self.main_thread = None
+
+        self.logger.info("Data acquisition stopped\n")
 
     def __del__(self) -> None:
         utils.print_info("Exiting acquire mode...")
