@@ -16,9 +16,11 @@ Exceptions:
 """
 import os
 import time
+import ctypes
 import logging
 import calendar
 import threading
+
 from types import SimpleNamespace
 
 import intel
@@ -92,7 +94,7 @@ class StreamConfigError(Exception):
     """
 
 
-class AcquireThread(Exception):
+class AcquireMainThreadError(Exception):
     """
     Exception raised when the acquire main thread is already running.
     """
@@ -392,6 +394,97 @@ class AcquireNamespace(SimpleNamespace):
         return (string[0] + "Cameras:" + lines).rstrip()
 
 
+class _AcquireMainThread(threading.Thread):
+    """
+    This class holds the main thread of the acquire mode.
+    """
+
+    __instanciated = False
+
+    def __init__(self, args: AcquireNamespace, log_dest: str):
+        """
+        AcquireMainThread constructor.
+
+        Args:
+        -----
+            - args: The arguments for the acquire mode.
+            - log_dest: The path to the log file.
+
+        Raises:
+        -------
+            - AcquireMainThreadError: If the acquire main thread is already instanciated.
+        """
+        if self.__instanciated:
+            raise AcquireMainThreadError("The acquire main thread is already instanciated.")
+
+        threading.Thread.__init__(self)
+        self.name = "Main Thread"
+        self.interval = 1
+        self.daemon = True
+        self.__instanciated = True
+
+        self.args = args
+        self.log_dest = log_dest
+
+    def run(self):
+        """
+        Target function of the thread class
+        """
+
+        try:
+            logger = logging.getLogger(self.name)
+            logger.setLevel(logging.INFO)
+
+            file_handler = logging.FileHandler(self.log_dest)
+            file_handler.setLevel(logging.INFO)
+            file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(message)s"))
+
+            logger.addHandler(file_handler)
+
+            self.args.cameras[0].start()
+
+            i = 1
+            while True:
+                self.args.cameras[0].capture()
+
+                logger.info(i)
+                i = i + 1
+
+        finally:
+            self.args.cameras[0].stop()
+
+    def get_id(self) -> int:
+        """
+        Returns id of the respective thread
+        """
+        # returns id of the respective thread
+        if hasattr(self, "_thread_id"):
+            return int(self._thread_id)  # type: ignore
+        for i, thread in threading._active.items():  # type: ignore # pylint: disable=protected-access
+            if thread is self:
+                return int(i)
+        return -1
+
+    def stop(self) -> bool:
+        """
+        Raises an exception in the thread to terminate it.
+
+        Returns:
+        --------
+            - True if the thread was successfully terminated.
+            - False if the thread was not running.
+        """
+        thread_id = self.get_id()
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+            ctypes.c_long(thread_id), ctypes.py_object(SystemExit)
+        )
+        print(f"{self.name} terminated")
+        if res > 1:
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), 0)
+            return False
+        return True
+
+
 class Acquire:
     """
     This class holds the tools to acquire data from the realsense cameras.
@@ -413,21 +506,20 @@ class Acquire:
 
         Args:
         -----
-            - args: The arguments for the acquire mode (matching the constructor of AcquireNamespace).
+            - args: The arguments for the acquire mode (matching the constructor of
+                    AcquireNamespace).
         """
         utils.print_info("Entering acquire mode...")
         print()
+
+        self.main_thread = None
+        self.sub_threads = []
+        self.__log_file = "logs/acquire.log"
 
         try:
             self.args = AcquireNamespace(**args)
         except Exception as e:
             raise e
-
-        self.main_thread = None
-        self.sub_threads = []
-
-        self.__main_thread_stop_flag = False
-        self.__log_file = "logs/acquire.log"
 
         self.logger = logging.getLogger("Acquire mode")
         self.logger.setLevel(logging.INFO)
@@ -443,41 +535,22 @@ class Acquire:
         print(self.args)
         print()
 
-    def __acquire_main(self) -> None:
-        """
-        The main thread of the acquire mode.
-        """
-
-        logger = logging.getLogger("Main thread")
-        logger.setLevel(logging.INFO)
-
-        file_handler = logging.FileHandler(self.__log_file)
-        file_handler.setLevel(logging.INFO)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(message)s"))
-
-        logger.addHandler(file_handler)
-
-        i = 1
-        while not self.__main_thread_stop_flag:
-            logger.info(i)
-            i = i + 1
-            time.sleep(1)
-
     def run(self) -> None:
         """
         Runs the acquire mode.
         """
 
-        if self.main_thread:
-            raise AcquireThread("The acquire main thread is already running.")
+        try:
+            thread = _AcquireMainThread(self.args, self.__log_file)
+        except Exception as e:
+            raise AcquireMainThreadError("The acquire mode is already running.") from e
+
+        self.main_thread = thread
 
         self.logger.info("Starting data acquisition ...")
         utils.print_info("Starting data acquisition...")
 
-        thread = threading.Thread(target=self.__acquire_main)
-        thread.start()
-
-        self.main_thread = thread
+        self.main_thread.start()
 
         self.logger.info("Data acquisition started.")
         utils.print_success("Data acquisition started.")
@@ -488,23 +561,21 @@ class Acquire:
         Stops the acquire mode.
         """
         if not self.main_thread:
-            raise AcquireThread("The acquire main thread is not running.")
+            raise AcquireMainThreadError("The acquire mode is not running.")
 
         self.logger.info("Stopping acquire mode...")
         utils.print_info("Stopping acquire mode...")
 
-        self.__main_thread_stop_flag = True
+        self.main_thread.stop()
         self.main_thread.join()
+        self.main_thread = None
 
         self.logger.info("Acquire mode stopped.")
         utils.print_success("Acquire mode stopped.")
         print()
 
-        self.main_thread = None
-        self.__main_thread_stop_flag = False
-
     def __del__(self) -> None:
         utils.print_info("Exiting acquire mode...")
 
-        if "main_thread" in self.__dict__ and self.main_thread:
+        if self.main_thread:
             self.stop()
