@@ -15,7 +15,7 @@ output_folder: ./
 #   - [0, 6]
 #   - [0, 6]
 #   - [0, 6]
-  # - [0, 6]
+# - [0, 6]
 
 ######################
 
@@ -26,7 +26,7 @@ output_folder: ./
 ######
 
 cameras:
-  - sn: 135522071130
+  - sn: 135522077052
     name: Left camera
     stream_type: depth
     stream_config:
@@ -35,3 +35,13 @@ cameras:
         height: 480
         fps: 6
         format: z16
+  - sn: 135522071130
+    name: Right camera
+    stream_type: depth
+    stream_config:
+      depth:
+        width: 640
+        height: 480
+        fps: 6
+        format: z16
+

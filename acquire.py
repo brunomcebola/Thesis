@@ -421,20 +421,21 @@ class _AcquireMainThread(threading.Thread):
             - AcquireMainThreadError: If the acquire main thread is already instanciated.
             - AcquireCameraThreadError: If the acquire camera thread is already instanciated.
         """
-        if self.__instanciated:
+        if _AcquireMainThread.__instanciated:
             raise AcquireMainThreadError("The acquire main thread is already instanciated.")
 
         threading.Thread.__init__(self)
         self.name = "Main Thread"
         self.interval = 1
         self.daemon = True
-        self.__instanciated = True
+
+        _AcquireMainThread.__instanciated = True
 
         self.args = args
         self.log_dest = log_dest
 
-        self.camera_threads = {}
-        self.camera_queues = {}
+        self.camera_threads: dict[str, _AcquireCameraThread] = {}
+        self.camera_queues: dict[str, list] = {}
 
         file_handler = logging.FileHandler(self.log_dest)
         file_handler.setLevel(logging.INFO)
@@ -456,6 +457,8 @@ class _AcquireMainThread(threading.Thread):
         """
 
         try:
+            self.logger.info("Started")
+
             for camera in self.args.cameras:
                 self.camera_queues[camera.serial_number] = []
 
@@ -465,18 +468,43 @@ class _AcquireMainThread(threading.Thread):
                         self.camera_queues[camera.serial_number],
                         self.log_dest,
                     )
-                except Exception as e:
-                    raise AcquireCameraThreadError("The acquire mode is already running.") from e
+                except AcquireCameraThreadError as e1:
+                    self.camera_queues = {}
+                    self.camera_threads = {}
+
+                    # FIXME: this raise does nothing
+                    raise AcquireCameraThreadError("Data aquisition already started") from e1
+
+                except Exception as e2:
+                    # FIXME: this raise does nothing
+                    raise e2
 
                 self.camera_threads[camera.serial_number] = thread
 
-            i = 1
+            for camera in self.args.cameras:
+                self.logger.info(
+                    "Starting %s...", self.camera_threads[camera.serial_number].name
+                )
+
+                self.camera_threads[camera.serial_number].start()
+
             while True:
-                self.logger.info(i)
-                i = i + 1
+                continue
 
         finally:
-            self.args.cameras[0].stop()
+            # TODO: ensure all values in queue are stored
+
+            for camera in self.args.cameras:
+                self.logger.info(
+                    "Stopping %s...", self.camera_threads[camera.serial_number].name
+                )
+
+                self.camera_threads[camera.serial_number].stop()
+
+            for camera in self.args.cameras:
+                self.camera_threads[camera.serial_number].join()
+
+            self.logger.info("Stopped")
 
     def get_id(self) -> int:
         """
@@ -503,11 +531,15 @@ class _AcquireMainThread(threading.Thread):
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
             ctypes.c_long(thread_id), ctypes.py_object(SystemExit)
         )
-        print(f"{self.name} terminated")
         if res > 1:
             ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), 0)
             return False
         return True
+
+    def __del__(self) -> None:
+        self.stop()
+
+        _AcquireMainThread.__instanciated = False
 
 
 class _AcquireCameraThread(threading.Thread):
@@ -531,7 +563,7 @@ class _AcquireCameraThread(threading.Thread):
             - AcquireCameraThreadError: If the acquire main thread is already instanciated.
         """
 
-        if camera.serial_number in self.__camera_threads:
+        if camera.serial_number in _AcquireCameraThread.__camera_threads:
             raise AcquireCameraThreadError("The acquire main thread is already instanciated.")
 
         threading.Thread.__init__(self)
@@ -539,10 +571,10 @@ class _AcquireCameraThread(threading.Thread):
         self.camera = camera
         self.queue = queue
 
-        self.name = f"Camera Thread ({self.camera.name})"
+        self.name = f"{self.camera.name} Thread"
         self.interval = 1
         self.daemon = True
-        self.__camera_threads.append(self.camera.serial_number)
+        _AcquireCameraThread.__camera_threads.append(self.camera.serial_number)
 
         file_handler = logging.FileHandler(log_dest)
         file_handler.setLevel(logging.INFO)
@@ -558,19 +590,26 @@ class _AcquireCameraThread(threading.Thread):
         """
 
         try:
-            self.camera.start()
+            self.logger.info("Started")
+
+            # self.camera.start()
 
             # TODO: skipp some frames to allow auto exposure to adjust
 
-            i = 1
-            while True:
-                self.camera.capture()
+            # i = 1
+            # while True:
+            #     self.camera.capture()
 
-                self.logger.info(i)
-                i = i + 1
+            #     self.logger.info(i)
+            #     i = i + 1
+
+            while True:
+                continue
 
         finally:
-            self.camera.stop()
+            # self.camera.stop()
+
+            self.logger.info("Stopped")
 
     def get_id(self) -> int:
         """
@@ -597,11 +636,15 @@ class _AcquireCameraThread(threading.Thread):
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
             ctypes.c_long(thread_id), ctypes.py_object(SystemExit)
         )
-        print(f"{self.name} terminated")
         if res > 1:
             ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), 0)
             return False
         return True
+
+    def __del__(self) -> None:
+        self.stop()
+
+        _AcquireCameraThread.__camera_threads.remove(self.camera.serial_number)
 
 
 class Acquire:
@@ -660,20 +703,22 @@ class Acquire:
 
         try:
             thread = _AcquireMainThread(self.args, self.__log_file)
-        except Exception as e:
-            # TODO: handle exception
-            raise e
+        except AcquireMainThreadError as e1:
+            raise AcquireMainThreadError("Data aquisition already started") from e1
+        except Exception as e2:
+            raise e2
 
         self.main_thread = thread
 
         self.logger.info("Starting data acquisition ...")
         utils.print_info("Starting data acquisition...")
+        print()
 
         self.main_thread.start()
 
-        self.logger.info("Data acquisition started.")
-        utils.print_success("Data acquisition started.")
-        print()
+        # TODO: add flag to start capture
+        # TODO: add print to indicate user capture started
+        # TODO: log capture started
 
     def stop(self) -> None:
         """
@@ -682,19 +727,17 @@ class Acquire:
         if not self.main_thread:
             raise AcquireMainThreadError("The acquire mode is not running.")
 
-        self.logger.info("Stopping acquire mode...")
-        utils.print_info("Stopping acquire mode...")
+        self.logger.info("Stopping data acquisition...")
+        utils.print_info("Stopping acquire acquisition...")
 
         self.main_thread.stop()
         self.main_thread.join()
-        self.main_thread = None
 
-        self.logger.info("Acquire mode stopped.")
-        utils.print_success("Acquire mode stopped.")
-        print()
+        self.main_thread = None
 
     def __del__(self) -> None:
         utils.print_info("Exiting acquire mode...")
+        print()
 
         if self.main_thread:
             self.stop()
