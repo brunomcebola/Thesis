@@ -96,7 +96,13 @@ class StreamConfigError(Exception):
 
 class AcquireMainThreadError(Exception):
     """
-    Exception raised when the acquire main thread is already running.
+    Exception raised when errors related to the acquire main thread occur.
+    """
+
+
+class AcquireCameraThreadError(Exception):
+    """
+    Exception raised when errors related to the acquire camera threads occur.
     """
 
 
@@ -413,6 +419,7 @@ class _AcquireMainThread(threading.Thread):
         Raises:
         -------
             - AcquireMainThreadError: If the acquire main thread is already instanciated.
+            - AcquireCameraThreadError: If the acquire camera thread is already instanciated.
         """
         if self.__instanciated:
             raise AcquireMainThreadError("The acquire main thread is already instanciated.")
@@ -426,32 +433,144 @@ class _AcquireMainThread(threading.Thread):
         self.args = args
         self.log_dest = log_dest
 
+        self.camera_threads = {}
+        self.camera_queues = {}
+
+        file_handler = logging.FileHandler(self.log_dest)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(message)s"))
+
+        self.logger = logging.getLogger(self.name)
+        self.logger.setLevel(logging.INFO)
+        self.logger.addHandler(file_handler)
+
+    def run(self):
+        """
+        Target function of the thread class
+        """
+
+        """
+            TODO
+            implement op_times based on flags
+            https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
+        """
+
+        try:
+            for camera in self.args.cameras:
+                self.camera_queues[camera.serial_number] = []
+
+                try:
+                    thread = _AcquireCameraThread(
+                        camera,
+                        self.camera_queues[camera.serial_number],
+                        self.log_dest,
+                    )
+                except Exception as e:
+                    raise AcquireCameraThreadError("The acquire mode is already running.") from e
+
+                self.camera_threads[camera.serial_number] = thread
+
+            i = 1
+            while True:
+                self.logger.info(i)
+                i = i + 1
+
+        finally:
+            self.args.cameras[0].stop()
+
+    def get_id(self) -> int:
+        """
+        Returns id of the respective thread
+        """
+        # returns id of the respective thread
+        if hasattr(self, "_thread_id"):
+            return int(self._thread_id)  # type: ignore
+        for i, thread in threading._active.items():  # type: ignore # pylint: disable=protected-access
+            if thread is self:
+                return int(i)
+        return -1
+
+    def stop(self) -> bool:
+        """
+        Raises an exception in the thread to terminate it.
+
+        Returns:
+        --------
+            - True if the thread was successfully terminated.
+            - False if the thread was not running.
+        """
+        thread_id = self.get_id()
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+            ctypes.c_long(thread_id), ctypes.py_object(SystemExit)
+        )
+        print(f"{self.name} terminated")
+        if res > 1:
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), 0)
+            return False
+        return True
+
+
+class _AcquireCameraThread(threading.Thread):
+    """
+    This class holds the camera threads of the acquire mode.
+    """
+
+    __camera_threads = []
+
+    def __init__(self, camera: intel.Camera, queue: list, log_dest: str):
+        """
+        AcquireCameraThread constructor.
+
+        Args:
+        -----
+            - camera: The camera to be used.
+            - log_dest: The path to the log file.
+
+        Raises:
+        -------
+            - AcquireCameraThreadError: If the acquire main thread is already instanciated.
+        """
+
+        if camera.serial_number in self.__camera_threads:
+            raise AcquireCameraThreadError("The acquire main thread is already instanciated.")
+
+        threading.Thread.__init__(self)
+
+        self.camera = camera
+        self.queue = queue
+
+        self.name = f"Camera Thread ({self.camera.name})"
+        self.interval = 1
+        self.daemon = True
+        self.__camera_threads.append(self.camera.serial_number)
+
+        file_handler = logging.FileHandler(log_dest)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(message)s"))
+
+        self.logger = logging.getLogger(self.name)
+        self.logger.setLevel(logging.INFO)
+        self.logger.addHandler(file_handler)
+
     def run(self):
         """
         Target function of the thread class
         """
 
         try:
-            logger = logging.getLogger(self.name)
-            logger.setLevel(logging.INFO)
+            self.camera.start()
 
-            file_handler = logging.FileHandler(self.log_dest)
-            file_handler.setLevel(logging.INFO)
-            file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(message)s"))
-
-            logger.addHandler(file_handler)
-
-            self.args.cameras[0].start()
+            # TODO: skipp some frames to allow auto exposure to adjust
 
             i = 1
             while True:
-                self.args.cameras[0].capture()
+                self.camera.capture()
 
-                logger.info(i)
+                self.logger.info(i)
                 i = i + 1
 
         finally:
-            self.args.cameras[0].stop()
+            self.camera.stop()
 
     def get_id(self) -> int:
         """
@@ -513,21 +632,20 @@ class Acquire:
         print()
 
         self.main_thread = None
-        self.sub_threads = []
         self.__log_file = "logs/acquire.log"
 
         try:
             self.args = AcquireNamespace(**args)
         except Exception as e:
+            # TODO: handle exception
             raise e
-
-        self.logger = logging.getLogger("Acquire mode")
-        self.logger.setLevel(logging.INFO)
 
         file_handler = logging.FileHandler(self.__log_file)
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
 
+        self.logger = logging.getLogger("Acquire mode")
+        self.logger.setLevel(logging.INFO)
         self.logger.addHandler(file_handler)
 
         print()
@@ -543,7 +661,8 @@ class Acquire:
         try:
             thread = _AcquireMainThread(self.args, self.__log_file)
         except Exception as e:
-            raise AcquireMainThreadError("The acquire mode is already running.") from e
+            # TODO: handle exception
+            raise e
 
         self.main_thread = thread
 
