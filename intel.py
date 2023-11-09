@@ -16,7 +16,7 @@ Exceptions:
 """
 
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Type
 from abc import ABC, abstractmethod
 
 import pyrealsense2.pyrealsense2 as rs
@@ -591,6 +591,7 @@ class Camera:
         return defaults.get(model, {})
 
 
+# TODO: make it possible to upload from ply file
 class Frame(ABC):
     """
     # TODO: missing docstring for Frame
@@ -599,6 +600,7 @@ class Frame(ABC):
     def __init__(
         self,
         frame: rs.composite_frame,
+        location: str,
     ) -> None:
         """
         Frame constructor.
@@ -609,17 +611,75 @@ class Frame(ABC):
         """
 
         self.frame = frame
+        self.location = location
 
+    # TODO: set return type
     @abstractmethod
     def get_data(self):
         """
         Returns the data to be stored.
         """
 
-    def save(self):
-        pass
+    def save(self) -> None:
+        """
+        Saves the frame.
+        """
+        ply = rs.save_to_ply(self.location)
+
+        ply.set_option(rs.save_to_ply.option_ply_binary, False)
+        ply.set_option(rs.save_to_ply.option_ply_normals, True)
+
+        ply.process(self.frame)
 
     @classmethod
-    def create_instance(cls):
-        # TODO: implement
-        pass
+    def create_instance(
+        cls, frame: rs.composite_frame, location: str, stream_type: StreamType | None = None
+    ) -> "Frame":
+        """
+        Creates an instance of the class.
+        """
+
+        if stream_type == StreamType.DEPTH:
+            return DepthFrame(frame, location)
+        elif stream_type == StreamType.COLOR:
+            return ColorFrame(frame, location)
+        elif stream_type == StreamType.IR:
+            return IRFrame(frame, location)
+        else:
+            return GeneralFrame(rs.composite_frame(), "")
+
+
+class GeneralFrame(Frame):
+    """
+    # TODO: missing docstring for GeneralFrame
+    """
+
+    def get_data(self):
+        return self.frame.get_data()
+
+
+class DepthFrame(Frame):
+    """
+    # TODO: missing docstring for DepthFrame
+    """
+
+    def get_data(self):
+        return self.frame.get_depth_frame().get_data()
+
+
+class ColorFrame(Frame):
+    """
+    # TODO: missing docstring for ColorFrame
+    """
+
+    def get_data(self):
+        return self.frame.get_color_frame().get_data()
+
+
+class IRFrame(Frame):
+    """
+    # TODO: missing docstring for IRFrame
+    """
+
+    def get_data(self):
+        return self.frame.get_infrared_frame().get_data()

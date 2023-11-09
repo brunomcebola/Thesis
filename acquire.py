@@ -21,8 +21,8 @@ import logging
 import calendar
 import threading
 
+from typing import Callable
 from types import SimpleNamespace
-from typing import Callable, NamedTuple
 
 import intel
 import utils
@@ -374,7 +374,7 @@ class AcquireNamespace(SimpleNamespace):
     def __str__(self) -> str:
         string = ""
 
-        string += f"\tOutput folder: '{self.output_folder}'\n"
+        string += f"\tOutput folder: {self.output_folder}\n"
         string += f"\tOperation time: {[(SHORT_WEEK_DAYS[i], op[0], op[1]) for i, op in enumerate(self.op_times)]}\n"  # pylint: disable=line-too-long
         string += "\tCameras:"
         for camera in self.cameras:
@@ -531,8 +531,21 @@ class _AcquireMainThread(threading.Thread):
 
             self.acquiring.status = True
 
+            # TODO: had handler to catch if camera thread stops
+
             while True:
-                continue
+                for camera in self.args.cameras:
+                    if len(self.camera_queues[camera.serial_number]) != 0:
+                        frame = self.camera_queues[camera.serial_number].pop(0)
+                        intel.Frame.create_instance(
+                            frame,
+                            os.path.join(
+                                self.args.output_folder,
+                                camera.serial_number,
+                                str(frame.get_timestamp()).replace(".", "_") + ".ply",
+                            ),
+                            camera.stream_type,
+                        ).save()
 
         finally:
             # TODO: ensure all values in queue are stored
@@ -675,13 +688,20 @@ class _AcquireCameraThread(threading.Thread):
 
             i = 1
             while True:
-                frame = self.camera.capture()
+                # TODO: ensure max iter and log when error
+                try:
+                    frame = self.camera.capture()
+                except Exception:
+                    continue
 
                 self.queue.append(frame)
 
                 self.logger.info("Captured frame %d", i)
 
                 i = i + 1
+
+                # TODO: remove. Only her for quick debug
+                break
 
         finally:
             self.camera.stop()
@@ -778,6 +798,18 @@ class Acquire:
         """
         Runs the acquire mode.
         """
+
+        self.logger.info("Setting folders to store data...")
+        utils.print_info("Setting folders to store data...")
+        print()
+
+        for camera in self.args.cameras:
+            path = os.path.join(self.args.output_folder, camera.serial_number)
+            if not os.path.exists(path):
+                os.mkdir(path)
+            self.logger.info("Set '%s' as destination for %s data", path, camera.name)
+            utils.print_info(f"Set '{path}' as destination for {camera.name} data")
+        print()
 
         try:
             thread = _AcquireMainThread(self.args, self.acquiring, self.__log_file)

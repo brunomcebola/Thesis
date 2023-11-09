@@ -1,6 +1,6 @@
 mode: acquire
 
-output_folder: ./
+output_folder: ./data/
 
 ######################
 
@@ -25,23 +25,23 @@ output_folder: ./
 
 ######
 
-cameras:
-  - sn: 135522077052
-    name: Left camera
-    stream_type: depth
-    stream_config:
-      depth:
-        width: 640
-        height: 480
-        fps: 30
-        format: z16
-  - sn: 135522071130
-    name: Right camera
-    stream_type: depth
-    stream_config:
-      depth:
-        width: 640
-        height: 480
-        fps: 30
-        format: z16
+# cameras:
+#   - sn: 135522077052
+#     name: Left camera
+#     stream_type: depth
+#     stream_config:
+#       depth:
+#         width: 640
+#         height: 480
+#         fps: 30
+#         format: z16
+#   - sn: 135522071130
+#     name: Right camera
+#     stream_type: depth
+#     stream_config:
+#       depth:
+#         width: 640
+#         height: 480
+#         fps: 30
+#         format: z16
 
