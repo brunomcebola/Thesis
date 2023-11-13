@@ -141,7 +141,7 @@ class Camera:
 
     Class Methods:
     --------------
-        - get_available_cameras:
+        - get_available_cameras_sn:
             Returns a list with the serial numbers of the available cameras
             or an empty list if no cameras are available.
         - is_camera_available:
@@ -167,7 +167,7 @@ class Camera:
 
     - Get the available cameras::
 
-        >>> Camera.get_available_cameras()
+        >>> Camera.get_available_cameras_sn()
         ['123456789', '987654321']
 
     - Check if a camera is available::
@@ -514,7 +514,7 @@ class Camera:
 
     # Class public methods
     @classmethod
-    def get_available_cameras(cls) -> list[str]:
+    def get_available_cameras_sn(cls) -> list[str]:
         """
         Returns a list with the serial numbers of the available cameras
         or an empty list if no cameras are available.
@@ -594,7 +594,7 @@ class Camera:
 # TODO: make it possible to upload from ply file
 class Frame(ABC):
     """
-    # TODO: missing docstring for Frame
+    Abstract class to represent a frame captured by a camera.
     """
 
     def __init__(
@@ -651,7 +651,7 @@ class Frame(ABC):
 
 class GeneralFrame(Frame):
     """
-    # TODO: missing docstring for GeneralFrame
+    Subclass of Frame to represent a general frame captured by a camera.
     """
 
     def get_data(self):
@@ -660,7 +660,7 @@ class GeneralFrame(Frame):
 
 class DepthFrame(Frame):
     """
-    # TODO: missing docstring for DepthFrame
+    Subclass of Frame to represent a depth frame captured by a camera.
     """
 
     def get_data(self):
@@ -669,7 +669,7 @@ class DepthFrame(Frame):
 
 class ColorFrame(Frame):
     """
-    # TODO: missing docstring for ColorFrame
+    Subclass of Frame to represent a color frame captured by a camera.
     """
 
     def get_data(self):
@@ -678,7 +678,7 @@ class ColorFrame(Frame):
 
 class IRFrame(Frame):
     """
-    # TODO: missing docstring for IRFrame
+    Subclass of Frame to represent an infrared frame captured by a camera.
     """
 
     def get_data(self):

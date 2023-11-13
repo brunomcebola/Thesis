@@ -61,6 +61,10 @@ if __name__ == "__main__":
                 print()
                 exit(1)
 
+            print()
+            mode.print_settings()
+            print()
+
             user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
                 "Do you wish to start acquiring data?"
             )
@@ -69,7 +73,6 @@ if __name__ == "__main__":
             if user_prompt is True:
                 mode.run()
 
-                # FIXME: only show ths when capture already occurring
                 user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
                     "Do you wish to stop data acquisition?"
                 )
