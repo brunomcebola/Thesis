@@ -95,15 +95,9 @@ class StreamConfigError(Exception):
     """
 
 
-class AcquireMainThreadError(Exception):
+class AcquireError(Exception):
     """
-    Exception raised when errors related to the acquire main thread occur.
-    """
-
-
-class AcquireCameraThreadError(Exception):
-    """
-    Exception raised when errors related to the acquire camera threads occur.
+    Exception raised when errors related to the acquire mode occur.
     """
 
 
@@ -283,7 +277,7 @@ class AcquireNamespace(SimpleNamespace):
         if serial_numbers is None:
             utils.print_warning("No camera specified. Using all connected cameras.")
 
-            serial_numbers = intel.Camera.get_available_cameras()
+            serial_numbers = intel.Camera.get_available_cameras_sn()
 
             if len(serial_numbers) == 0:
                 raise intel.CameraUnavailableError("No available cameras.")
@@ -401,19 +395,227 @@ class AcquireNamespace(SimpleNamespace):
         return (string[0] + "Cameras:" + lines).rstrip()
 
 
-class _AcquireStatus:
+class _AcquireMainThreadStatus:
     """
     Helper class to flag the Acquire Class that the data
     acquisition has started in the camera threads.
 
     Attributes:
     -----------
-        - status (int):
-            The status of the acquire mode.
+        - acquiring (bool):
+            Flag to indicate if the data acquisition has started.
+        - error (bool):
+            Flag to indicate if an error occurred.
+        - error_code (int):
+            The error code. List of error codes:
+            - 0: No error
+            - 1: The acquire main thread is already instanciated.
+            - 2: Error creating a camera thread.
+        - error_message (str):
+            The error message.
+    """
+
+    acquiring: bool = False
+    error: bool = False
+    error_code: int = 0
+
+
+class _AcquireCameraThreadStatus:
+    """
+    Helper class to flag the Acquire Class that the data
+    acquisition has started in the camera threads.
+
+    Attributes:
+    -----------
+        - ready (bool):
+            Flag to indicate if the camera is ready to start capturing data.
+        - acquiring (bool):
+            Flag to indicate if the data acquisition has started.
+        - error (bool):
+            Flag to indicate if an error occurred.
+        - error_code (int):
+            The error code. List of error codes:
+            - 0: No error
+            - 1: The acquire camera thread is already instanciated.
+            - 2: Error acquiring data from camera.
+        - error_message (str):
+            The error message.
 
     """
 
-    status: bool = False
+    ready: bool
+    acquiring: Callable[[], bool]
+    error: bool
+    error_code: int
+
+    __ready: bool
+    __acquiring: Callable[[], bool]
+    __error: bool
+    __error_code: int
+
+    def __init__(self, func: Callable[[], bool]) -> None:
+        self.ready = self.__ready = False
+        self.acquiring = self.__acquiring = func
+        self.error = self.__error = False
+        self.error_code = self.__error_code = 0
+
+    def reset(self) -> None:
+        """
+        Resets the status of the camera thread.
+        """
+        self.ready = self.__ready
+        self.acquiring = self.__acquiring
+        self.error = self.__error
+        self.error_code = self.__error_code
+
+
+class _AcquireCameraThread(threading.Thread):
+    """
+    This class holds the camera threads of the acquire mode.
+    """
+
+    __cameras_threads = []
+
+    __camera: intel.Camera
+    __queue: list
+    __status: _AcquireCameraThreadStatus
+    __logger: logging.Logger
+
+    def __init__(
+        self,
+        camera: intel.Camera,
+        queue: list,
+        status: _AcquireCameraThreadStatus,
+        log_dest: str,
+    ):
+        """
+        AcquireCameraThread constructor.
+
+        Args:
+        -----
+            - camera: The camera to be used.
+            - queue: The queue to store the data.
+            - status: The status of the camera thread.
+            - log_dest: The path to the log file.
+        """
+
+        if camera.serial_number in _AcquireCameraThread.__cameras_threads:
+            status.error = True
+            status.error_code = 1
+
+            raise Exception
+
+        threading.Thread.__init__(self)
+
+        self.__camera = camera
+        self.__queue = queue
+        self.__status = status
+
+        self.name = f"{self.__camera.name} Thread"
+        self.interval = 1
+        self.daemon = True
+
+        file_handler = logging.FileHandler(log_dest)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+        )
+
+        self.__logger = logging.getLogger(self.name)
+        self.__logger.setLevel(logging.INFO)
+        self.__logger.addHandler(file_handler)
+
+        _AcquireCameraThread.__cameras_threads.append(self.__camera.serial_number)
+
+        self.__logger.info("Created!")
+
+    def run(self):
+        """
+        Target function of the thread class
+        """
+
+        try:
+            self.__logger.info("Started")
+
+            self.__camera.start()
+
+            for _ in range(30):
+                self.__camera.capture()
+
+            self.__logger.info("Ready to acquire data!")
+            self.__status.ready = True
+
+            while not self.__status.acquiring():
+                continue
+
+            self.__logger.info("Started acquiring data!")
+
+            i = 1
+            while True:
+                try:
+                    frame = self.__camera.capture()
+                except Exception as e:
+                    self.__status.error = True
+                    self.__status.error_code = 2
+
+                    self.__logger.error("Error acquring data")
+                    self.__logger.info("Stopped")
+
+                    raise e
+
+                self.__queue.append(frame)
+
+                self.__logger.info("Captured frame %d", i)
+
+                i = i + 1
+
+                # TODO: remove. Only her for quick debug
+                # break
+
+        except Exception as e:
+            print(e)
+
+        finally:
+            self.__camera.stop()
+
+            self.__logger.info("Stopped")
+
+    def get_id(self) -> int:
+        """
+        Returns id of the respective thread
+        """
+        # returns id of the respective thread
+        if hasattr(self, "_thread_id"):
+            return int(self._thread_id)  # type: ignore
+        for i, thread in threading._active.items():  # type: ignore # pylint: disable=protected-access
+            if thread is self:
+                return int(i)
+        return -1
+
+    def stop(self) -> bool:
+        """
+        Raises an exception in the thread to terminate it.
+
+        Returns:
+        --------
+            - True if the thread was successfully terminated.
+            - False if the thread was not running.
+        """
+        thread_id = self.get_id()
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+            ctypes.c_long(thread_id), ctypes.py_object(SystemExit)
+        )
+        if res > 1:
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), 0)
+            return False
+        return True
+
+    def __del__(self) -> None:
+        self.stop()
+
+        _AcquireCameraThread.__cameras_threads.remove(self.__camera.serial_number)
+
+        self.__logger.info("Deleted!")
 
 
 class _AcquireMainThread(threading.Thread):
@@ -428,56 +630,63 @@ class _AcquireMainThread(threading.Thread):
             The path to the log file.
         - acquiring (_AcquireStatus):
             The status of the acquire mode.
-        - camera_threads (dict[str, _AcquireCameraThread]):
+        - cameras_threads (dict[str, _AcquireCameraThread]):
             The camera threads of the acquire mode.
-        - camera_statuses (dict[str, bool]):
-            The statuses of the camera threads of the acquire mode.
-        - camera_queues (dict[str, list]):
+        - __cameras_statuses (dict[str, bool]):
+            The is_ready of the camera threads of the acquire mode.
+        - __cameras_queues (dict[str, list]):
             The queues of the camera threads of the acquire mode.
     """
 
     __instanciated = False
 
-    def __init__(self, args: AcquireNamespace, acquiring: _AcquireStatus, log_dest: str):
+    __cameras_threads: dict[str, _AcquireCameraThread]
+    __cameras_statuses: dict[str, _AcquireCameraThreadStatus]
+    __cameras_queues: dict[str, list]
+
+    def __init__(self, args: AcquireNamespace, status: _AcquireMainThreadStatus, log_dest: str):
         """
         AcquireMainThread constructor.
 
         Args:
         -----
             - args: The arguments for the acquire mode.
-            - acquiring: The status of the acquire mode.
+            - status: The status of the acquire main thread.
             - log_dest: The path to the log file.
-
-        Raises:
-        -------
-            - AcquireMainThreadError: If the acquire main thread is already instanciated.
-            - AcquireCameraThreadError: If the acquire camera thread is already instanciated.
         """
         if _AcquireMainThread.__instanciated:
-            raise AcquireMainThreadError("The acquire main thread is already instanciated.")
+            status.error = True
+            status.error_code = 1
+
+            raise Exception
 
         threading.Thread.__init__(self)
+
+        self.__args = args
+        self.__log_dest = log_dest
+        self.__status = status
+
+        self.__cameras_threads = {}
+        self.__cameras_statuses = {}
+        self.__cameras_queues = {}
+
         self.name = "Main Thread"
         self.interval = 1
         self.daemon = True
 
+        file_handler = logging.FileHandler(self.__log_dest)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+        )
+
+        self.__logger = logging.getLogger(self.name)
+        self.__logger.setLevel(logging.INFO)
+        self.__logger.addHandler(file_handler)
+
         _AcquireMainThread.__instanciated = True
 
-        self.args = args
-        self.log_dest = log_dest
-        self.acquiring = acquiring
-
-        self.camera_threads: dict[str, _AcquireCameraThread] = {}
-        self.camera_statuses: dict[str, bool] = {}
-        self.camera_queues: dict[str, list] = {}
-
-        file_handler = logging.FileHandler(self.log_dest)
-        file_handler.setLevel(logging.INFO)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(message)s"))
-
-        self.logger = logging.getLogger(self.name)
-        self.logger.setLevel(logging.INFO)
-        self.logger.addHandler(file_handler)
+        self.__logger.info("Created!")
 
     def run(self):
         """
@@ -491,77 +700,135 @@ class _AcquireMainThread(threading.Thread):
         """
 
         try:
-            self.logger.info("Started")
+            self.__logger.info("Started")
 
-            for camera in self.args.cameras:
-                self.camera_queues[camera.serial_number] = []
-                self.camera_statuses[camera.serial_number] = False
-
-                try:
-                    thread = _AcquireCameraThread(
-                        camera,
-                        self.camera_queues[camera.serial_number],
-                        self.camera_statuses,
-                        (lambda: self.acquiring.status),
-                        self.log_dest,
-                    )
-                except AcquireCameraThreadError as e1:
-                    self.camera_queues = {}
-                    self.camera_threads = {}
-
-                    # FIXME: this raise does nothing
-                    raise AcquireCameraThreadError("Data aquisition already started") from e1
-
-                except Exception as e2:
-                    # FIXME: this raise does nothing
-                    raise e2
-
-                self.camera_threads[camera.serial_number] = thread
-
-            for camera in self.args.cameras:
-                self.logger.info("Starting %s...", self.camera_threads[camera.serial_number].name)
-
-                self.camera_threads[camera.serial_number].start()
-
-            while not all(self.camera_statuses.values()):
-                time.sleep(1)
-
-            self.logger.info("Syncing cameras...")
-            time.sleep(2)
-
-            self.acquiring.status = True
-
-            # TODO: had handler to catch if camera thread stops
+            self.start_camera_threads()
 
             while True:
-                for camera in self.args.cameras:
-                    if len(self.camera_queues[camera.serial_number]) != 0:
-                        frame = self.camera_queues[camera.serial_number].pop(0)
-                        intel.Frame.create_instance(
-                            frame,
-                            os.path.join(
-                                self.args.output_folder,
-                                camera.serial_number,
-                                str(frame.get_timestamp()).replace(".", "_") + ".ply",
-                            ),
-                            camera.stream_type,
-                        ).save()
+                for camera in self.__args.cameras:
+                    if (
+                        self.__cameras_statuses[camera.serial_number].error
+                        and self.__cameras_statuses[camera.serial_number].error_code == 2
+                    ):
+                        self.__status.error = True
+                        self.__status.error_code = 2
+
+                        self.__logger.info("Restarting camera threads...")
+
+                        self.stop_camera_threads()
+
+                        time.sleep(10)
+
+                        self.start_camera_threads()
+
+                        break
+
+                    else:
+                        if len(self.__cameras_queues[camera.serial_number]) != 0:
+                            frame = self.__cameras_queues[camera.serial_number].pop(0)
+                            intel.Frame.create_instance(
+                                frame,
+                                os.path.join(
+                                    self.__args.output_folder,
+                                    camera.serial_number,
+                                    str(frame.get_timestamp()).replace(".", "_") + ".ply",
+                                ),
+                                camera.stream_type,
+                            ).save()
+
+        except Exception as e:
+            print(e)
 
         finally:
-            # TODO: ensure all values in queue are stored
+            self.stop_camera_threads()
 
-            for camera in self.args.cameras:
-                print(len(self.camera_queues[camera.serial_number]))
+            self.__logger.info("Stopped")
 
-            for camera in self.args.cameras:
-                self.logger.info("Stopping %s...", self.camera_threads[camera.serial_number].name)
+    def start_camera_threads(self) -> None:
+        """
+        Starts the camera threads.
+        """
+        for camera in self.__args.cameras:
+            self.__logger.info("Creating %s Thread...", camera.name)
 
-                self.camera_threads[camera.serial_number].stop()
+            self.__cameras_queues[camera.serial_number] = []
+            self.__cameras_statuses[camera.serial_number] = _AcquireCameraThreadStatus(
+                lambda: self.__status.acquiring
+            )
 
-            for camera in self.args.cameras:
-                self.camera_threads[camera.serial_number].join()
+            self.__cameras_statuses[camera.serial_number].acquiring = lambda: True
 
-            self.logger.info("Stopped")
+            thread = _AcquireCameraThread(
+                camera,
+                self.__cameras_queues[camera.serial_number],
+                self.__cameras_statuses[camera.serial_number],
+                self.__log_dest,
+            )
+
+            if self.__cameras_statuses[camera.serial_number].error:
+                self.__cameras_queues = {}
+                self.__cameras_threads = {}
+
+                self.__status.error = True
+                self.__status.error_code = 2
+
+                self.__logger.error("Error creating %s Thread...", camera.name)
+
+                raise Exception
+
+            self.__cameras_threads[camera.serial_number] = thread
+
+        for camera in self.__args.cameras:
+            self.__logger.info("Starting %s...", self.__cameras_threads[camera.serial_number].name)
+
+            self.__cameras_threads[camera.serial_number].start()
+
+        time.sleep(1)
+
+        self.__logger.info("Started all camera threads!")
+
+        while not all([status.ready for status in self.__cameras_statuses.values()]):
+            time.sleep(1)
+
+        self.__logger.info("Syncing camera threads...")
+        time.sleep(2)
+        self.__logger.info("Camera threads synced!")
+
+        self.__status.acquiring = True
+
+    def stop_camera_threads(self) -> None:
+        """
+        Stops the camera threads.
+        """
+        for camera in self.__args.cameras:
+            self.__logger.info("Stopping %s...", self.__cameras_threads[camera.serial_number].name)
+
+            self.__cameras_threads[camera.serial_number].stop()
+
+        for camera in self.__args.cameras:
+            self.__cameras_threads[camera.serial_number].join()
+
+        self.__logger.info("Stopped all camera threads!")
+        self.__logger.info("Deleting all camera threads...")
+
+        self.__cameras_threads = {}
+
+        self.__logger.info("Flushing all acquired data...")
+
+        for camera in self.__args.cameras:
+            while len(self.__cameras_queues[camera.serial_number]) != 0:
+                frame = self.__cameras_queues[camera.serial_number].pop(0)
+                intel.Frame.create_instance(
+                    frame,
+                    os.path.join(
+                        self.__args.output_folder,
+                        camera.serial_number,
+                        str(frame.get_timestamp()).replace(".", "_") + ".ply",
+                    ),
+                    camera.stream_type,
+                ).save()
+
+        self.__logger.info("Flushed all acquired data!")
 
     def get_id(self) -> int:
         """
@@ -598,150 +865,7 @@ class _AcquireMainThread(threading.Thread):
 
         _AcquireMainThread.__instanciated = False
 
-
-class _AcquireCameraThread(threading.Thread):
-    """
-    This class holds the camera threads of the acquire mode.
-
-    Attributes:
-    -----------
-        - camera (intel.Camera):
-            The camera to be used.
-        - queue (list):
-            The queue to store the data.
-        - statuses (dict[str, bool]):
-            The statuses of the cameras.
-        - aquire (Callable[[], bool]):
-            The function to check if the acquire mode is running.
-        - log_dest (str):
-            The path to the log file.
-    """
-
-    __camera_threads = []
-
-    def __init__(
-        self,
-        camera: intel.Camera,
-        queue: list,
-        statuses: dict[str, bool],
-        aquire: Callable[[], bool],
-        log_dest: str,
-    ):
-        """
-        AcquireCameraThread constructor.
-
-        Args:
-        -----
-            - camera: The camera to be used.
-            - queue: The queue to store the data.
-            - statuses: The statuses of the cameras.
-            - log_dest: The path to the log file.
-
-        Raises:
-        -------
-            - AcquireCameraThreadError: If the acquire main thread is already instanciated.
-        """
-
-        if camera.serial_number in _AcquireCameraThread.__camera_threads:
-            raise AcquireCameraThreadError("The acquire main thread is already instanciated.")
-
-        threading.Thread.__init__(self)
-
-        self.camera = camera
-        self.queue = queue
-        self.statuses = statuses
-        self.aquire = aquire
-
-        self.name = f"{self.camera.name} Thread"
-        self.interval = 1
-        self.daemon = True
-        _AcquireCameraThread.__camera_threads.append(self.camera.serial_number)
-
-        file_handler = logging.FileHandler(log_dest)
-        file_handler.setLevel(logging.INFO)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(message)s"))
-
-        self.logger = logging.getLogger(self.name)
-        self.logger.setLevel(logging.INFO)
-        self.logger.addHandler(file_handler)
-
-    def run(self):
-        """
-        Target function of the thread class
-        """
-
-        try:
-            self.logger.info("Started")
-
-            self.camera.start()
-
-            for _ in range(30):
-                self.camera.capture()
-
-            self.logger.info("Ready")
-            self.statuses[self.camera.serial_number] = True
-
-            while not self.aquire():
-                continue
-
-            self.logger.info("Starting capture...")
-
-            i = 1
-            while True:
-                # TODO: ensure max iter and log when error
-                try:
-                    frame = self.camera.capture()
-                except Exception:
-                    continue
-
-                self.queue.append(frame)
-
-                self.logger.info("Captured frame %d", i)
-
-                i = i + 1
-
-                # TODO: remove. Only her for quick debug
-                break
-
-        finally:
-            self.camera.stop()
-
-            self.logger.info("Stopped")
-
-    def get_id(self) -> int:
-        """
-        Returns id of the respective thread
-        """
-        # returns id of the respective thread
-        if hasattr(self, "_thread_id"):
-            return int(self._thread_id)  # type: ignore
-        for i, thread in threading._active.items():  # type: ignore # pylint: disable=protected-access
-            if thread is self:
-                return int(i)
-        return -1
-
-    def stop(self) -> bool:
-        """
-        Raises an exception in the thread to terminate it.
-
-        Returns:
-        --------
-            - True if the thread was successfully terminated.
-            - False if the thread was not running.
-        """
-        thread_id = self.get_id()
-        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
-            ctypes.c_long(thread_id), ctypes.py_object(SystemExit)
-        )
-        if res > 1:
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), 0)
-            return False
-        return True
-
-    def __del__(self) -> None:
-        self.stop()
-
-        _AcquireCameraThread.__camera_threads.remove(self.camera.serial_number)
+        self.__logger.info("Deleted!")
 
 
 class Acquire:
@@ -767,89 +891,93 @@ class Acquire:
         -----
             - args: The arguments for the acquire mode (matching the constructor of
                     AcquireNamespace).
+
         """
-        utils.print_info("Entering acquire mode...")
-        print()
+        self.__args = AcquireNamespace(**args)
 
-        self.main_thread = None
-        self.acquiring = _AcquireStatus()
+        self.__main_thread = None
+        self.__acquire_main_thread_status = _AcquireMainThreadStatus()
         self.__log_file = "logs/acquire.log"
-
-        try:
-            self.args = AcquireNamespace(**args)
-        except Exception as e:
-            # TODO: handle exception
-            raise e
 
         file_handler = logging.FileHandler(self.__log_file)
         file_handler.setLevel(logging.INFO)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 
-        self.logger = logging.getLogger("Acquire mode")
-        self.logger.setLevel(logging.INFO)
-        self.logger.addHandler(file_handler)
+        self.__logger = logging.getLogger("Acquire mode")
+        self.__logger.setLevel(logging.INFO)
+        self.__logger.addHandler(file_handler)
 
-        print()
+    def print_settings(self) -> None:
+        """
+        Prints the settings of the acquire mode.
+        """
         utils.print_info("Acquire mode settings:")
-        print(self.args)
-        print()
+        print(self.__args)
 
     def run(self) -> None:
         """
         Runs the acquire mode.
         """
 
-        self.logger.info("Setting folders to store data...")
-        utils.print_info("Setting folders to store data...")
-        print()
+        if self.__main_thread:
+            raise AcquireError("The acquire mode is already running.")
 
-        for camera in self.args.cameras:
-            path = os.path.join(self.args.output_folder, camera.serial_number)
+        self.__logger.info("Started aquire mode!")
+        utils.print_info("Started acquire mode!\n")
+
+        self.__logger.info("Setting folders to store data...")
+        utils.print_info("Setting folders to store data...\n")
+
+        for camera in self.__args.cameras:
+            path = os.path.join(self.__args.output_folder, camera.serial_number)
+
+            self.__logger.info("Setting '%s' as destination for %s data...", path, camera.name)
+            utils.print_info(f"Setting '{path}' as destination for {camera.name} data...")
+
             if not os.path.exists(path):
                 os.mkdir(path)
-            self.logger.info("Set '%s' as destination for %s data", path, camera.name)
-            utils.print_info(f"Set '{path}' as destination for {camera.name} data")
+
+            self.__logger.info("Set '%s' as destination for %s data!", path, camera.name)
+            utils.print_success(f"Set '{path}' as destination for {camera.name} data!")
         print()
 
-        try:
-            thread = _AcquireMainThread(self.args, self.acquiring, self.__log_file)
-        except AcquireMainThreadError as e1:
-            raise AcquireMainThreadError("Data aquisition already started") from e1
-        except Exception as e2:
-            raise e2
+        self.__logger.info("All folders set!")
+        utils.print_info("All folders set!")
 
-        self.main_thread = thread
+        self.__logger.info("Creating Main Thread...")
 
-        self.logger.info("Starting data acquisition ...")
-        utils.print_info("Starting data acquisition...")
-        print()
+        self.__main_thread = _AcquireMainThread(
+            self.__args, self.__acquire_main_thread_status, self.__log_file
+        )
 
-        self.main_thread.start()
+        self.__logger.info("Starting %s...", self.__main_thread.name)
 
-        while self.acquiring.status is False:
+        self.__main_thread.start()
+
+        while self.__acquire_main_thread_status.acquiring is False:
             continue
+
+        utils.print_info("Started acquiring data!\n")
 
     def stop(self) -> None:
         """
         Stops the acquire mode.
         """
-        if not self.main_thread:
-            raise AcquireMainThreadError("The acquire mode is not running.")
+        if not self.__main_thread:
+            raise AcquireError("The acquire mode is not running.")
 
-        self.logger.info("Stopping data acquisition...")
-        utils.print_info("Stopping data acquisition...")
-        print()
+        self.__logger.info("Stopping %s...", self.__main_thread.name)
 
-        self.main_thread.stop()
-        self.main_thread.join()
+        self.__main_thread.stop()
+        self.__main_thread.join()
 
-        self.main_thread = None
+        self.__logger.info("Deleting Main Thread...")
 
-        self.logger.info("Data acquisition stopped\n")
+        self.__main_thread = None
+
+        self.__logger.info("Stopped acquire mode!")
+        utils.print_info("Stopped acquire mode!\n")
 
     def __del__(self) -> None:
-        utils.print_info("Exiting acquire mode...")
-        print()
-
-        if self.main_thread:
+        if self.__main_thread:
             self.stop()
