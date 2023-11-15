@@ -14,23 +14,60 @@ Exceptions:
 - StreamTypeError: Exception raised when errors related to the stream type occur.
 - StreamConfigError: Exception raised when errors related to the stream config occur.
 """
+
+# pylint: disable=pointless-string-statement
+
 import os
 import time
+import copy
 import ctypes
 import logging
 import calendar
 import threading
 
 from typing import Callable
-from types import SimpleNamespace
 
 import intel
 import utils
 
+# Constants
+"""
+ ██████╗ ██████╗ ███╗   ██╗███████╗████████╗ █████╗ ███╗   ██╗████████╗███████╗
+██╔════╝██╔═══██╗████╗  ██║██╔════╝╚══██╔══╝██╔══██╗████╗  ██║╚══██╔══╝██╔════╝
+██║     ██║   ██║██╔██╗ ██║███████╗   ██║   ███████║██╔██╗ ██║   ██║   ███████╗
+██║     ██║   ██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║╚██╗██║   ██║   ╚════██║
+╚██████╗╚██████╔╝██║ ╚████║███████║   ██║   ██║  ██║██║ ╚████║   ██║   ███████║
+ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
+"""
+
 WEEK_DAYS = list(calendar.day_name)
 SHORT_WEEK_DAYS = list(calendar.day_abbr)
 
-# pylint: disable=pointless-string-statement
+LOG_FILE = "/logs/aquire.log"
+
+# Functions
+"""
+███████╗██╗   ██╗███╗   ██╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
+██╔════╝██║   ██║████╗  ██║██╔════╝╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+█████╗  ██║   ██║██╔██╗ ██║██║        ██║   ██║██║   ██║██╔██╗ ██║███████╗
+██╔══╝  ██║   ██║██║╚██╗██║██║        ██║   ██║██║   ██║██║╚██╗██║╚════██║
+██║     ╚██████╔╝██║ ╚████║╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║███████║
+╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+
+"""
+
+def _get_logger(name: str) -> logging.Logger:
+    file_handler = logging.FileHandler(LOG_FILE)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s"))
+
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    logger.addHandler(file_handler)
+
+    return logger
+
+# Exceptions
 """
 ███████╗██╗  ██╗ ██████╗███████╗██████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
 ██╔════╝╚██╗██╔╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
@@ -39,8 +76,6 @@ SHORT_WEEK_DAYS = list(calendar.day_abbr)
 ███████╗██╔╝ ██╗╚██████╗███████╗██║        ██║   ██║╚██████╔╝██║ ╚████║███████║
 ╚══════╝╚═╝  ╚═╝ ╚═════╝╚══════╝╚═╝        ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
 """
-
-
 class OutputFolderError(Exception):
     """
     Exception raised when errors related to the out_folder occur.
@@ -101,18 +136,17 @@ class AcquireError(Exception):
     """
 
 
-# pylint: disable=pointless-string-statement
+# Main content
 """
-███╗   ███╗ █████╗ ██╗███╗   ██╗     ██████╗ ██████╗ ███╗   ██╗████████╗███████╗███╗   ██╗████████╗
-████╗ ████║██╔══██╗██║████╗  ██║    ██╔════╝██╔═══██╗████╗  ██║╚══██╔══╝██╔════╝████╗  ██║╚══██╔══╝
-██╔████╔██║███████║██║██╔██╗ ██║    ██║     ██║   ██║██╔██╗ ██║   ██║   █████╗  ██╔██╗ ██║   ██║
-██║╚██╔╝██║██╔══██║██║██║╚██╗██║    ██║     ██║   ██║██║╚██╗██║   ██║   ██╔══╝  ██║╚██╗██║   ██║
-██║ ╚═╝ ██║██║  ██║██║██║ ╚████║    ╚██████╗╚██████╔╝██║ ╚████║   ██║   ███████╗██║ ╚████║   ██║
-╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝   ╚═╝
+ ██████╗██╗      █████╗ ███████╗███████╗███████╗███████╗
+██╔════╝██║     ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝
+██║     ██║     ███████║███████╗███████╗█████╗  ███████╗
+██║     ██║     ██╔══██║╚════██║╚════██║██╔══╝  ╚════██║
+╚██████╗███████╗██║  ██║███████║███████║███████╗███████║
+ ╚═════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝
 """
 
-
-class AcquireNamespace(SimpleNamespace):
+class AcquireNamespace(utils.ModeNamespace):
     """
     This class holds the arguments for the acquire mode.
 
@@ -554,14 +588,14 @@ class _AcquireCameraThread(threading.Thread):
             while True:
                 try:
                     frame = self.__camera.capture()
-                except Exception as e:
+                except Exception:
                     self.__status.error = True
                     self.__status.error_code = 2
 
-                    self.__logger.error("Error acquring data")
-                    self.__logger.info("Stopped")
+                    self.__logger.error("Error acquring data!")
+                    self.__logger.info("Stopped due to Error!")
 
-                    raise e
+                    raise
 
                 self.__queue.append(frame)
 
@@ -643,6 +677,7 @@ class _AcquireMainThread(threading.Thread):
     __cameras_threads: dict[str, _AcquireCameraThread]
     __cameras_statuses: dict[str, _AcquireCameraThreadStatus]
     __cameras_queues: dict[str, list]
+    __nb_restarts: int
 
     def __init__(self, args: AcquireNamespace, status: _AcquireMainThreadStatus, log_dest: str):
         """
@@ -665,6 +700,7 @@ class _AcquireMainThread(threading.Thread):
         self.__args = args
         self.__log_dest = log_dest
         self.__status = status
+        self.__nb_restarts = 0
 
         self.__cameras_threads = {}
         self.__cameras_statuses = {}
@@ -710,8 +746,7 @@ class _AcquireMainThread(threading.Thread):
                         self.__cameras_statuses[camera.serial_number].error
                         and self.__cameras_statuses[camera.serial_number].error_code == 2
                     ):
-                        self.__status.error = True
-                        self.__status.error_code = 2
+                        self.__nb_restarts += 1
 
                         self.__logger.info("Restarting camera threads...")
 
@@ -868,7 +903,7 @@ class _AcquireMainThread(threading.Thread):
         self.__logger.info("Deleted!")
 
 
-class Acquire:
+class Acquire(utils.Mode):
     """
     This class holds the tools to acquire data from the realsense cameras.
 
@@ -883,7 +918,7 @@ class Acquire:
 
     """
 
-    def __init__(self, **args) -> None:
+    def __init__(self, args: AcquireNamespace) -> None:
         """
         Acquire constructor.
 
@@ -893,26 +928,9 @@ class Acquire:
                     AcquireNamespace).
 
         """
-        self.__args = AcquireNamespace(**args)
+        self.__args = copy.deepcopy(args)
 
-        self.__main_thread = None
-        self.__acquire_main_thread_status = _AcquireMainThreadStatus()
-        self.__log_file = "logs/acquire.log"
-
-        file_handler = logging.FileHandler(self.__log_file)
-        file_handler.setLevel(logging.INFO)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-
-        self.__logger = logging.getLogger("Acquire mode")
-        self.__logger.setLevel(logging.INFO)
-        self.__logger.addHandler(file_handler)
-
-    def print_settings(self) -> None:
-        """
-        Prints the settings of the acquire mode.
-        """
-        utils.print_info("Acquire mode settings:")
-        print(self.__args)
+        print(_main_thread)
 
     def run(self) -> None:
         """
@@ -942,7 +960,7 @@ class Acquire:
         print()
 
         self.__logger.info("All folders set!")
-        utils.print_info("All folders set!")
+        utils.print_info("All folders set!\n")
 
         self.__logger.info("Creating Main Thread...")
 
@@ -975,9 +993,17 @@ class Acquire:
 
         self.__main_thread = None
 
+        time.sleep(5)
+
         self.__logger.info("Stopped acquire mode!")
         utils.print_info("Stopped acquire mode!\n")
 
     def __del__(self) -> None:
         if self.__main_thread:
             self.stop()
+
+if __name__ == "__main__":
+    raise RuntimeError("This file is not meant to be executed directly.")
+else:
+    _main_thread = None
+    _camera_threads = 1

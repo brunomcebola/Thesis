@@ -16,7 +16,7 @@ Exceptions:
 """
 
 from enum import Enum
-from typing import NamedTuple, Type
+from typing import NamedTuple
 from abc import ABC, abstractmethod
 
 import pyrealsense2.pyrealsense2 as rs

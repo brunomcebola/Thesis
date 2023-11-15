@@ -11,14 +11,55 @@ Functions:
 - get_user_confirmation(message) -> bool: Asks the user for confirmation.
 """
 
+
+from types import SimpleNamespace
+from abc import ABC, abstractmethod
 import yaml
-from colorama import Fore, Style
 from jsonschema import validate
+from colorama import Fore, Style
 
 import intel
 
 
-class ModeError(Exception):
+class ModeNamespace(SimpleNamespace):
+    """
+    Namespace for modes.
+    """
+
+
+class Mode(ABC):
+    """
+    Abstract class for modes.
+
+    Subclasses must implement the following methods:
+        - run(): Runs the mode.
+        - stop(): Stops the mode.
+    """
+
+    @abstractmethod
+    def run(self) -> None:
+        """
+        Runs the mode.
+        """
+
+    @abstractmethod
+    def stop(self) -> None:
+        """
+        Stops the mode.
+        """
+
+    def __del__(self) -> None:
+        """
+        Cleans up the mode.
+        """
+        self.stop()
+
+
+class Logger:
+    pass
+
+
+class YAMLError(Exception):
     """
     Raised when an invalid mode is specified.
     """
@@ -189,7 +230,7 @@ def parse_yaml(file_path: str) -> dict:
             elif args["mode"] == "online":
                 pass
             else:
-                raise ModeError("Invalid mode.")
+                raise YAMLError("Invalid mode.")
 
             return dict(args)
     except FileNotFoundError as e:
