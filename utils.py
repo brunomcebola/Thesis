@@ -11,7 +11,7 @@ Functions:
 - get_user_confirmation(message) -> bool: Asks the user for confirmation.
 """
 
-
+import logging
 from types import SimpleNamespace
 from abc import ABC, abstractmethod
 import yaml
@@ -42,21 +42,25 @@ class Mode(ABC):
         Runs the mode.
         """
 
-    @abstractmethod
-    def stop(self) -> None:
-        """
-        Stops the mode.
-        """
-
-    def __del__(self) -> None:
-        """
-        Cleans up the mode.
-        """
-        self.stop()
 
 
-class Logger:
-    pass
+
+class Logger(logging.Logger):
+    """
+    Logger class.
+    """
+
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+    level = logging.INFO
+
+    def __init__(self, name: str, file: str) -> None:
+        super().__init__(name, Logger.level)
+
+        file_handler = logging.FileHandler(file)
+        file_handler.setLevel(Logger.level)
+        file_handler.setFormatter(Logger.formatter)
+
+        self.addHandler(file_handler)
 
 
 class YAMLError(Exception):
