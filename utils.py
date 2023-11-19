@@ -11,6 +11,7 @@ Functions:
 - get_user_confirmation(message) -> bool: Asks the user for confirmation.
 """
 
+import os
 import logging
 from types import SimpleNamespace
 from abc import ABC, abstractmethod
@@ -43,8 +44,6 @@ class Mode(ABC):
         """
 
 
-
-
 class Logger(logging.Logger):
     """
     Logger class.
@@ -55,6 +54,8 @@ class Logger(logging.Logger):
 
     def __init__(self, name: str, file: str) -> None:
         super().__init__(name, Logger.level)
+
+        os.makedirs(os.path.dirname(file), exist_ok=True)
 
         file_handler = logging.FileHandler(file)
         file_handler.setLevel(Logger.level)

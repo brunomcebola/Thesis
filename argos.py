@@ -12,7 +12,6 @@ Usage:
 
 import os
 import sys
-import time
 
 # import threading
 
@@ -38,14 +37,11 @@ if __name__ == "__main__":
         # mode.stop()
 
     elif cmd_args.mode in ["train", "t"]:
-        utils.print_info("Entering train mode...")
-        print()
+        utils.print_info("Entering train mode...\n")
     elif cmd_args.mode in ["online", "o"]:
-        utils.print_info("Entering online mode...")
-        print()
+        utils.print_info("Entering online mode...\n")
     elif cmd_args.mode in ["yaml", "y"]:
-        utils.print_info("Entering yaml mode...")
-        print()
+        utils.print_info("Entered YAML mode!\n")
 
         try:
             args = utils.parse_yaml(cmd_args.config_file)
@@ -54,38 +50,29 @@ if __name__ == "__main__":
             exit(1)
 
         if args["mode"] == "acquire":
+            utils.print_info("Switched to acquire mode!\n")
+
             try:
-                mode = acquire.Acquire(**args)
-            except Exception as e:
-                utils.print_error(str(e))
+                acquire_args = acquire.AcquireNamespace(**args)
                 print()
+                utils.print_info("Aquire mode settings:\n")
+                print(acquire_args)
+                print()
+            except Exception as e:
+                print(e)
                 exit(1)
 
-            print()
-            mode.print_settings()
-            print()
+            mode = acquire.Acquire(acquire_args)
 
             user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
-                "Do you wish to start acquiring data?"
+                "Do you wish to start the data acquisition?"
             )
             print()
 
             if user_prompt is True:
                 mode.run()
 
-                user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
-                    "Do you wish to stop data acquisition?"
-                )
-                print()
-
-                while user_prompt is False:
-                    user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
-                        "Do you wish to stop data acquisition?"
-                    )
-                    print()
-
-                mode.stop()
-                exit(0)
+            exit(0)
 
     else:
         exit(0)
