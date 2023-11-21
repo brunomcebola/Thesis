@@ -19,6 +19,8 @@ Exceptions:
 from enum import Enum
 from typing import NamedTuple
 
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -621,7 +623,15 @@ class Frame:
         """
 
         if self.data is not None:
-            path = folder + name + "_" + type(self).__name__.replace("Frame", "").lower() + ".npy"
+            path = (
+                folder
+                + "/"
+                + name
+                + "_"
+                + type(self).__name__.replace("Frame", "").lower()
+                + ".npy"
+            )
+
 
             np.save(path, self.data)
 
