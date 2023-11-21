@@ -17,6 +17,8 @@ Exceptions:
 
 # pylint: disable=pointless-string-statement
 
+from datetime import datetime, timedelta
+
 import os
 import calendar
 import threading
@@ -393,33 +395,32 @@ class Acquire(utils.Mode):
     """
     This class holds the tools to acquire data from the realsense cameras.
 
-    Attributes:
-    -----------
-        - args (AcquireNamespace):
-            The arguments for the acquire mode.
-        - main_thread (threading.Thread):
-            The main thread of the acquire mode.
-        - sub_threads (list[threading.Thread]):
-            The list with all the sub threads of the acquire mode.
+    Methods:
+    --------
+        - run: Runs the acquire mode (in a blocking way).
 
     """
 
     MAX_RESTART_ATTEMPTS = 3
+    IDLE_THRESHOLD_MINUTES = 5
 
     # type hints
 
     __args: AcquireNamespace
+
     __cameras_storage: dict[str, str]
 
     __storage_thread: threading.Thread | None
     __acquisition_threads: dict[str, threading.Thread | None]
 
-    __data_queues: dict[str, list[intel.Frame]]
+    __data_queues: dict[str, list[tuple[int, intel.Frame]]]
 
     __cameras_ready: dict[str, bool]
     __stop_acquiring: bool
-    __pause_storage: bool
     __terminate: bool
+    __root_idle: threading.Event
+    __acquire_threads_idle: threading.Event
+    __storage_thread_idle: threading.Event
     __nb_restart_attempts: int
 
     __capture_error: bool
@@ -437,48 +438,22 @@ class Acquire(utils.Mode):
 
         self.__args = args
 
-        # storage directories
-
-        self.__cameras_storage = {
-            camera.serial_number: os.path.abspath(
-                os.path.join(self.__args.output_folder, camera.serial_number)
-            )
-            for camera in self.__args.cameras
-        }
-
-        # threads
-
-        self.__storage_thread = None
-        self.__acquisition_threads = {camera.serial_number: None for camera in self.__args.cameras}
-
-        # data
-
-        self.__data_queues = {camera.serial_number: [] for camera in self.__args.cameras}
-
-        # control flags
-
-        self.__cameras_ready = {camera.serial_number: False for camera in self.__args.cameras}
-        self.__stop_acquiring = False
-        self.__pause_storage = False
-        self.__terminate = False
-        self.__nb_restart_attempts = 0
-
-        # error flags
-
-        self.__capture_error = False
+        self.__set_default_values()
 
     # set default values
 
-    def __reset_default_values(self) -> None:
+    def __set_default_values(self) -> None:
         """
         Sets the default values of the threads manager.
         """
 
         # storage directories
 
+        today = datetime.now().strftime("%d%m%Y_%H%M%S")
+
         self.__cameras_storage = {
             camera.serial_number: os.path.abspath(
-                os.path.join(self.__args.output_folder, camera.serial_number)
+                os.path.join(self.__args.output_folder, camera.serial_number, today)
             )
             for camera in self.__args.cameras
         }
@@ -496,9 +471,14 @@ class Acquire(utils.Mode):
 
         self.__cameras_ready = {camera.serial_number: False for camera in self.__args.cameras}
         self.__stop_acquiring = False
-        self.__pause_storage = False
         self.__terminate = False
+        self.__root_idle = threading.Event()
+        self.__acquire_threads_idle = threading.Event()
+        self.__storage_thread_idle = threading.Event()
         self.__nb_restart_attempts = 0
+
+        self.__root_idle.set()
+        self.__storage_thread_idle.set()
 
         # error flags
 
@@ -539,6 +519,38 @@ class Acquire(utils.Mode):
         camera.start()
         logger.info("Camera started.")
 
+        now = datetime.now()
+
+        # when before operation time or in middle of it
+        if now.hour < self.__args.op_times[now.weekday()][1]:
+            start = now.replace(
+                hour=self.__args.op_times[now.weekday()][0] - 1,
+                minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
+                second=0,
+            )
+
+            finish = now.replace(
+                hour=self.__args.op_times[now.weekday()][1],
+                minute=0,
+                second=0,
+            )
+
+        # when after operation time
+        else:
+            start = now.replace(
+                day=now.day + 1,
+                hour=self.__args.op_times[now.weekday() + 1 if now.weekday() + 1 < 6 else 0][0] - 1,
+                minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
+                second=0,
+            )
+
+            finish = now.replace(
+                day=now.day + 1,
+                hour=self.__args.op_times[now.weekday() + 1 if now.weekday() + 1 < 6 else 0][1],
+                minute=0,
+                second=0,
+            )
+
         # allow for some auto exposure to happen
         for _ in range(30):
             camera.capture()
@@ -551,10 +563,62 @@ class Acquire(utils.Mode):
 
         i = 1
         while not self.__terminate and not self.__stop_acquiring:
+            now = datetime.now()
+
+            if not start <= now < finish:
+                # when before operation time or in middle of it
+                if now.hour < self.__args.op_times[now.weekday()][1]:
+                    start = now.replace(
+                        hour=self.__args.op_times[now.weekday()][0] - 1,
+                        minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
+                        second=0,
+                    )
+
+                    finish = now.replace(
+                        hour=self.__args.op_times[now.weekday()][1],
+                        minute=0,
+                        second=0,
+                    )
+
+                # when after operation time
+                else:
+                    start = now.replace(
+                        day=now.day + 1,
+                        hour=self.__args.op_times[
+                            now.weekday() + 1 if now.weekday() + 1 < 6 else 0
+                        ][0]
+                        - 1,
+                        minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
+                        second=0,
+                    )
+
+                    finish = now.replace(
+                        day=now.day + 1,
+                        hour=self.__args.op_times[
+                            now.weekday() + 1 if now.weekday() + 1 < 6 else 0
+                        ][1],
+                        minute=0,
+                        second=0,
+                    )
+
+                idle_time = (start - now).total_seconds() + Acquire.IDLE_THRESHOLD_MINUTES * 60
+
+                logger.info("Idling for %s seconds.", timedelta(seconds=idle_time))
+
+                self.__storage_thread_idle.clear()
+                self.__root_idle.clear()
+
+                self.__acquire_threads_idle.wait(idle_time)
+
+                self.__root_idle.set()
+                self.__storage_thread_idle.set()
+
+                logger.info("Woke up!")
+
+                continue
+
             try:
                 frame = camera.capture()
-                logger.info("Frame %d captured.", i)
-                i += 1
             except Exception:
                 logger.error("Error capturing frame.")
 
@@ -567,7 +631,11 @@ class Acquire(utils.Mode):
 
                 return
 
-            self.__data_queues[camera.serial_number].append(frame)
+            logger.info("Frame %d captured.", i)
+
+            self.__data_queues[camera.serial_number].append((i, frame))
+
+            i += 1
 
         camera.stop()
         logger.info("Camera stopped.")
@@ -586,28 +654,29 @@ class Acquire(utils.Mode):
         while not all(self.__cameras_ready.values()):
             continue
 
-        i = 1
         while True:
+            self.__storage_thread_idle.wait()
+
             has_data_to_store = all([len(queue) != 0 for queue in self.__data_queues.values()])
 
             if self.__terminate and not has_data_to_store:
                 break
 
-            elif has_data_to_store and not self.__pause_storage:
+            elif has_data_to_store:
                 for camera in self.__args.cameras:
-                    frame = self.__data_queues[camera.serial_number].pop(0)
+                    i, frame = self.__data_queues[camera.serial_number].pop(0)
 
-                    i_frames = intel.Frame.create_instances(frame, camera.stream_type)
+                    timestamp = frame.get_timestamp()  # type: ignore
 
-                    for i_frame in i_frames:
-                        i_frame.save_as_npy(
+                    frames = intel.Frame.create_instances(frame, camera.stream_type)
+
+                    for frame in frames:
+                        frame.save_as_npy(
                             self.__cameras_storage[camera.serial_number],
-                            str(frame.get_timestamp()).replace(".", "_"),  # type: ignore
+                            str(i) + "_" + str(timestamp).replace(".", "_"),
                         )
 
                     logger.info("Frame %d from %s Thread stored.", i, camera.name)
-
-                i += 1
 
         logger.info("Stopped.")
 
@@ -615,7 +684,7 @@ class Acquire(utils.Mode):
 
     def run(self) -> None:
         """
-        Runs the acquire mode.
+        Runs the acquire mode (in a blocking way).
         """
 
         logger = utils.Logger("Root", _LOG_FILE)
@@ -626,7 +695,7 @@ class Acquire(utils.Mode):
 
         # perform reset of internal values
 
-        self.__reset_default_values()
+        self.__set_default_values()
         logger.info("Performed reset of internal values.")
 
         # create storage folders
@@ -654,10 +723,12 @@ class Acquire(utils.Mode):
         while not all(self.__cameras_ready.values()):
             continue
 
-        print("To stop data acquisition press Ctrl + C.\n")
+        utils.print_info("To stop data acquisition press Ctrl + C!\n")
 
         try:
             while True:
+                self.__root_idle.wait()
+
                 if self.__capture_error:
                     if self.__nb_restart_attempts == Acquire.MAX_RESTART_ATTEMPTS:
                         logger.info("Maximum number of restart attempts reached.")
@@ -665,7 +736,7 @@ class Acquire(utils.Mode):
                         break
 
                     self.__stop_acquiring = True
-                    self.__pause_storage = True
+                    self.__storage_thread_idle.clear()
 
                     self.__capture_error = False
                     self.__nb_restart_attempts += 1
@@ -689,6 +760,12 @@ class Acquire(utils.Mode):
                     )
 
                     for camera in self.__args.cameras:
+                        l = len(self.__data_queues[camera.serial_number])
+
+                        logger.info(
+                            "Droping %d frames from %s Thread.", l - max_data_len, camera.name
+                        )
+
                         self.__data_queues[camera.serial_number] = self.__data_queues[
                             camera.serial_number
                         ][:max_data_len]
@@ -697,7 +774,7 @@ class Acquire(utils.Mode):
                         camera.serial_number: False for camera in self.__args.cameras
                     }
                     self.__stop_acquiring = False
-                    self.__pause_storage = False
+                    self.__storage_thread_idle.set()
 
                     for camera in self.__args.cameras:
                         thread = threading.Thread(target=self.__acquisition_target, args=(camera,))
@@ -708,11 +785,15 @@ class Acquire(utils.Mode):
                         self.__acquisition_threads[camera.serial_number].start()  # type: ignore
 
         except KeyboardInterrupt:
-            print("\rCtrl + C pressed.\n")
+            print("\rCtrl + C pressed\n")
 
             logger.info("Ctrl + C pressed.")
 
         self.__terminate = True
+        
+        self.__root_idle.set()
+        self.__storage_thread_idle.set()
+        self.__acquire_threads_idle.set()
 
         logger.info("Stopping acquire mode...")
 
@@ -729,6 +810,12 @@ class Acquire(utils.Mode):
             logger.info("Storage Thread deleted.")
 
         logger.info("Acquire mode terminated.\n")
+
+        utils.print_info("Acquire mode terminated!")
+
+        # TODO: print number of captured frames per camera
+        # TODO: print number of stored frames per camera
+        # TODO: print number of dropped frames per camera
 
 
 # pylint: disable=invalid-name

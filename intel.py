@@ -623,15 +623,9 @@ class Frame:
         """
 
         if self.data is not None:
-            path = (
-                folder
-                + "/"
-                + name
-                + "_"
-                + type(self).__name__.replace("Frame", "").lower()
-                + ".npy"
+            path = os.path.join(
+                folder, name + "_" + type(self).__name__.replace("Frame", "").lower() + ".npy"
             )
-
 
             np.save(path, self.data)
 
@@ -665,21 +659,18 @@ class Frame:
         Return a list of Frame objects based on the stream type.
         """
 
-        r_list: list[Frame] = []
-        t_list = stream_type.value
+        instances_list: list[Frame] = []
+        types_list = stream_type.value if isinstance(stream_type.value, list) else [stream_type]
 
-        if not isinstance(t_list, list):
-            t_list = [t_list]
-
-        for t in t_list:
+        for t in types_list:
             if t == StreamType.DEPTH:
-                r_list.append(DepthFrame(frame))
+                instances_list.append(DepthFrame(frame))
             elif t == StreamType.COLOR:
-                r_list.append(ColorFrame(frame))
+                instances_list.append(ColorFrame(frame))
             else:
-                r_list.append(IRFrame(frame))
+                instances_list.append(IRFrame(frame))
 
-        return r_list
+        return instances_list
 
 
 class DepthFrame(Frame):
