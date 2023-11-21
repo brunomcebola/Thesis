@@ -3,7 +3,7 @@ This module allows the abstract use of the realsense cameras.
 
 Classes:
 --------
-    - Camera: Class to abstract the use of the realsense cameras
+    - RealSenseCamera: Class to abstract the use of the realsense cameras
     - StreamType: Enum to represent the type of video stream
     - StreamConfig: Named tuple to represent the configuration of the video stream
 
@@ -15,9 +15,12 @@ Exceptions:
     - CameraAlreadyExistsError: Raised when the camera is already instantiated.
 """
 
+
 from enum import Enum
 from typing import NamedTuple
-from abc import ABC, abstractmethod
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 import pyrealsense2.pyrealsense2 as rs
 
@@ -127,7 +130,7 @@ class StreamType(Enum):
 
 
 # TODO: store StreamType besides the list of base types
-class Camera:
+class RealSenseCamera:
     """
     A class to abstract the interaction with Intel Realsense cameras.
 
@@ -167,17 +170,17 @@ class Camera:
 
     - Get the available cameras::
 
-        >>> Camera.get_available_cameras_sn()
+        >>> RealSenseCamera.get_available_cameras_sn()
         ['123456789', '987654321']
 
     - Check if a camera is available::
 
-        >>> Camera.is_camera_available('123456789')
+        >>> RealSenseCamera.is_camera_available('123456789')
         True
 
     - Create a camera object::
 
-        >>> camera = Camera(
+        >>> camera = RealSenseCamera(
                 "135522077203",
                 StreamType.DEPTH,
                 {StreamType.DEPTH: StreamConfig(StreamFormat.Z16, (640, 480), 30)},
@@ -214,7 +217,7 @@ class Camera:
         name: str | None = None,
     ) -> None:
         """
-        Camera constructor.
+        RealSenseCamera constructor.
 
         Args:
         -----
@@ -230,7 +233,7 @@ class Camera:
             - CameraAlreadyExistsError: If the camera is already instanciated.
         """
 
-        if serial_number in Camera._cameras:
+        if serial_number in RealSenseCamera._cameras:
             raise CameraAlreadyExistsError(
                 f"Camera with serial number {serial_number} already exists."
             )
@@ -247,7 +250,7 @@ class Camera:
         self.__config = rs.config()
 
         # checks if camera is available
-        if Camera.is_camera_available(self.serial_number):
+        if RealSenseCamera.is_camera_available(self.serial_number):
             self.__config.enable_device(self.serial_number)
         else:
             raise CameraUnavailableError(f"Camera {self.serial_number} is not available.")
@@ -268,7 +271,7 @@ class Camera:
         self.__apply_stream_configs()
 
         # adds camera sn to the list of cameras
-        Camera._cameras.append(self.serial_number)
+        RealSenseCamera._cameras.append(self.serial_number)
 
     @property
     def name(self) -> str:
@@ -395,7 +398,7 @@ class Camera:
 
     def __del__(self):
         """
-        Camera destructor.
+        RealSenseCamera destructor.
         """
 
         if hasattr(self, "is_running") and self.is_running:
@@ -406,7 +409,7 @@ class Camera:
 
         if hasattr(self, "serial_number"):
             try:
-                Camera._cameras.remove(self.serial_number)
+                RealSenseCamera._cameras.remove(self.serial_number)
             except Exception:
                 pass
 
@@ -591,17 +594,14 @@ class Camera:
         return defaults.get(model, {})
 
 
-# TODO: make it possible to upload from ply file
-class Frame(ABC):
+class Frame:
     """
     Abstract class to represent a frame captured by a camera.
+
+    Not to be instantiated directly.
     """
 
-    def __init__(
-        self,
-        frame: rs.composite_frame,
-        location: str,
-    ) -> None:
+    def __init__(self, frame: rs.composite_frame | None = None) -> None:
         """
         Frame constructor.
 
@@ -610,52 +610,66 @@ class Frame(ABC):
             - frame: The actual frame captured by a camera.
         """
 
-        self.frame = frame
-        self.location = location
+        if frame is not None:
+            self.data = np.array(frame.get_data())
+        else:
+            self.data = None
 
-    # TODO: set return type
-    @abstractmethod
-    def get_data(self):
-        """
-        Returns the data to be stored.
-        """
-
-    def save(self) -> None:
+    def save_as_npy(self, folder: str, name: str) -> str:
         """
         Saves the frame.
         """
-        ply = rs.save_to_ply(self.location)
 
-        ply.set_option(rs.save_to_ply.option_ply_binary, False)
-        ply.set_option(rs.save_to_ply.option_ply_normals, True)
+        if self.data is not None:
+            path = folder + name + "_" + type(self).__name__.replace("Frame", "").lower() + ".npy"
 
-        ply.process(self.frame)
+            np.save(path, self.data)
+
+            return path
+
+        else:
+            return ""
+
+    def load_from_npy(self, path: str) -> None:
+        """
+        Loads the frame.
+        """
+
+        try:
+            self.data = np.load(path)
+        except Exception:
+            pass
+
+    def show(self) -> None:
+        """
+        Show the frame.
+        """
+        if self.data is not None:
+            plt.figure()
+            plt.imshow(self.data)
+            plt.show()
 
     @classmethod
-    def create_instance(
-        cls, frame: rs.composite_frame, location: str, stream_type: StreamType | None = None
-    ) -> "Frame":
+    def create_instances(cls, frame: rs.composite_frame, stream_type: StreamType) -> list["Frame"]:
         """
-        Creates an instance of the class.
+        Return a list of Frame objects based on the stream type.
         """
 
-        if stream_type == StreamType.DEPTH:
-            return DepthFrame(frame, location)
-        elif stream_type == StreamType.COLOR:
-            return ColorFrame(frame, location)
-        elif stream_type == StreamType.IR:
-            return IRFrame(frame, location)
-        else:
-            return GeneralFrame(rs.composite_frame(), "")
+        r_list: list[Frame] = []
+        t_list = stream_type.value
 
+        if not isinstance(t_list, list):
+            t_list = [t_list]
 
-class GeneralFrame(Frame):
-    """
-    Subclass of Frame to represent a general frame captured by a camera.
-    """
+        for t in t_list:
+            if t == StreamType.DEPTH:
+                r_list.append(DepthFrame(frame))
+            elif t == StreamType.COLOR:
+                r_list.append(ColorFrame(frame))
+            else:
+                r_list.append(IRFrame(frame))
 
-    def get_data(self):
-        return self.frame.get_data()
+        return r_list
 
 
 class DepthFrame(Frame):
@@ -663,8 +677,8 @@ class DepthFrame(Frame):
     Subclass of Frame to represent a depth frame captured by a camera.
     """
 
-    def get_data(self):
-        return self.frame.get_depth_frame().get_data()
+    def __init__(self, frame: rs.composite_frame) -> None:
+        super().__init__(frame.get_depth_frame())
 
 
 class ColorFrame(Frame):
@@ -672,8 +686,8 @@ class ColorFrame(Frame):
     Subclass of Frame to represent a color frame captured by a camera.
     """
 
-    def get_data(self):
-        return self.frame.get_color_frame().get_data()
+    def __init__(self, frame: rs.composite_frame) -> None:
+        super().__init__(frame.get_color_frame())
 
 
 class IRFrame(Frame):
@@ -681,5 +695,5 @@ class IRFrame(Frame):
     Subclass of Frame to represent an infrared frame captured by a camera.
     """
 
-    def get_data(self):
-        return self.frame.get_infrared_frame().get_data()
+    def __init__(self, frame: rs.composite_frame) -> None:
+        super().__init__(frame.get_infrared_frame())

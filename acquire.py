@@ -18,12 +18,8 @@ Exceptions:
 # pylint: disable=pointless-string-statement
 
 import os
-import logging
 import calendar
 import threading
-import keyboard
-import pyrealsense2.pyrealsense2 as rs
-
 
 import intel
 import utils
@@ -125,7 +121,7 @@ class AcquireNamespace(utils.ModeNamespace):
         - op_times (list[tuple[int, int]]):
             The time interval in which the cameras will be capturing data
             for each day of the week (Monday to Sunday).
-        - cameras (list[intel.Camera]):
+        - cameras (list[intel.RealSenseCamera]):
             The list with the cameras to be used.
     """
 
@@ -208,7 +204,7 @@ class AcquireNamespace(utils.ModeNamespace):
         # type definitions
         self.output_folder: str = ""
         self.op_times: list[tuple[int, int]] = []
-        self.cameras: list[intel.Camera] = []
+        self.cameras: list[intel.RealSenseCamera] = []
 
         # output_folder validations
         output_folder = output_folder.strip()
@@ -275,7 +271,7 @@ class AcquireNamespace(utils.ModeNamespace):
         if serial_numbers is None:
             utils.print_warning("No camera specified. Using all connected cameras.")
 
-            serial_numbers = intel.Camera.get_available_cameras_sn()
+            serial_numbers = intel.RealSenseCamera.get_available_cameras_sn()
 
             if len(serial_numbers) == 0:
                 raise intel.CameraUnavailableError("No available cameras.")
@@ -307,7 +303,7 @@ class AcquireNamespace(utils.ModeNamespace):
 
             stream_types = [intel.StreamType.DEPTH] * len(serial_numbers)
 
-        elif len(stream_types) == 1 and not len(serial_numbers) == 1:
+        elif len(stream_types) == 1:
             utils.print_warning("Using the specified stream type for all cameras.")
 
             stream_types = stream_types * len(serial_numbers)
@@ -332,11 +328,11 @@ class AcquireNamespace(utils.ModeNamespace):
             )
 
             stream_configs = [
-                intel.Camera.get_default_config(intel.Camera.get_camera_model(sn))
+                intel.RealSenseCamera.get_default_config(intel.RealSenseCamera.get_camera_model(sn))
                 for sn in serial_numbers
             ]
 
-        elif len(stream_configs) == 1 and not len(serial_numbers) == 1:
+        elif len(stream_configs) == 1:
             utils.print_warning("Using the specified stream config for all cameras.")
 
             stream_configs = stream_configs * len(serial_numbers)
@@ -348,7 +344,7 @@ class AcquireNamespace(utils.ModeNamespace):
             )
 
             stream_configs = [
-                intel.Camera.get_default_config(intel.Camera.get_camera_model(sn))
+                intel.RealSenseCamera.get_default_config(intel.RealSenseCamera.get_camera_model(sn))
                 for sn in serial_numbers
             ]
 
@@ -359,7 +355,7 @@ class AcquireNamespace(utils.ModeNamespace):
 
         # create list of camera instances
         self.cameras = [
-            intel.Camera(sn, st, sc, nm)
+            intel.RealSenseCamera(sn, st, sc, nm)
             for sn, st, sc, nm in zip(serial_numbers, stream_types, stream_configs, names)
         ]
 
@@ -393,23 +389,19 @@ class AcquireNamespace(utils.ModeNamespace):
         return (string[0] + "Cameras:" + lines).rstrip()
 
 
-class AcquireThreadsManager:
+class Acquire(utils.Mode):
     """
-    This class manages the threads of the acquire mode.
+    This class holds the tools to acquire data from the realsense cameras.
 
     Attributes:
     -----------
-        - MAX_RESTART_ATTEMPTS (int):
-            The maximum number of restart attempts.
-        - captured_frames (dict[str, int]):
-            The number of captured frames for each camera.
-        - stored_frames (dict[str, int]):
-            The number of stored frames for each camera.
+        - args (AcquireNamespace):
+            The arguments for the acquire mode.
+        - main_thread (threading.Thread):
+            The main thread of the acquire mode.
+        - sub_threads (list[threading.Thread]):
+            The list with all the sub threads of the acquire mode.
 
-    Methods:
-    --------
-        - launch: Lauhes the acquire mode threads.
-        - terminate: Stops the acquire mode threads.
     """
 
     MAX_RESTART_ATTEMPTS = 3
@@ -417,8 +409,9 @@ class AcquireThreadsManager:
     # type hints
 
     __args: AcquireNamespace
+    __cameras_storage: dict[str, str]
+
     __storage_thread: threading.Thread | None
-    __error_thread: threading.Thread | None
     __acquisition_threads: dict[str, threading.Thread | None]
 
     __data_queues: dict[str, list[intel.Frame]]
@@ -431,16 +424,31 @@ class AcquireThreadsManager:
 
     __capture_error: bool
 
-    # class constructor
+    def __init__(self, args: AcquireNamespace) -> None:
+        """
+        Acquire constructor.
 
-    def __init__(self, args: AcquireNamespace):
+        Args:
+        -----
+            - args: The arguments for the acquire mode (matching the constructor of
+                    AcquireNamespace).
+
+        """
+
         self.__args = args
-        self.__logger = utils.Logger("Threads Manager", _LOG_FILE)
+
+        # storage directories
+
+        self.__cameras_storage = {
+            camera.serial_number: os.path.abspath(
+                os.path.join(self.__args.output_folder, camera.serial_number)
+            )
+            for camera in self.__args.cameras
+        }
 
         # threads
 
         self.__storage_thread = None
-        self.__error_thread = None
         self.__acquisition_threads = {camera.serial_number: None for camera in self.__args.cameras}
 
         # data
@@ -466,10 +474,18 @@ class AcquireThreadsManager:
         Sets the default values of the threads manager.
         """
 
+        # storage directories
+
+        self.__cameras_storage = {
+            camera.serial_number: os.path.abspath(
+                os.path.join(self.__args.output_folder, camera.serial_number)
+            )
+            for camera in self.__args.cameras
+        }
+
         # threads
 
         self.__storage_thread = None
-        self.__error_thread = None
         self.__acquisition_threads = {camera.serial_number: None for camera in self.__args.cameras}
 
         # data
@@ -488,56 +504,37 @@ class AcquireThreadsManager:
 
         self.__capture_error = False
 
-    # start threads
-
-    def __start_storage_thread(self) -> None:
+    def __create_storage_folders(self) -> str:
         """
-        Starts the storage thread.
-        """
-        if self.__storage_thread:
-            raise AcquireError("The storage thread is already running.")
+        Creates the output folders for the cameras.
 
-        self.__storage_thread = threading.Thread(target=self.__storage_target)
-        self.__storage_thread.start()
-
-        self.__logger.info("Storage Thread started.")
-
-    def __start_error_thread(self) -> None:
-        """
-        Starts the error thread.
-        """
-        if self.__error_thread:
-            raise AcquireError("The storage thread is already running.")
-
-        self.__error_thread = threading.Thread(target=self.__error_target)
-        self.__error_thread.start()
-
-        self.__logger.info("Error Thread started.")
-
-    def __start_acquisition_threads(self) -> None:
-        """
-        Starts the acquisition threads.
+        Returns:
+        --------
+        A string with the paths to the output folders.
         """
 
-        if any(self.__acquisition_threads.values()):
-            raise AcquireError("The acquisition threads are already running.")
+        string = ""
 
         for camera in self.__args.cameras:
-            thread = threading.Thread(target=self.__acquisition_target, args=(camera,))
-            self.__acquisition_threads[camera.serial_number] = thread
-            self.__cameras_ready[camera.serial_number] = False
-            thread.start()
+            path = self.__cameras_storage[camera.serial_number]
 
-            self.__logger.info("%s Thread started.", camera.name)
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+            string += "\t" + path + "\n"
+
+        return string.rstrip()
 
     # targets for the threads
 
-    def __acquisition_target(self, camera: intel.Camera) -> None:
+    def __acquisition_target(self, camera: intel.RealSenseCamera) -> None:
         """
         Target function of the acquisition threads.
         """
 
         logger = utils.Logger(f"{camera.name} Thread", _LOG_FILE)
+
+        logger.info("Started.")
 
         camera.start()
         logger.info("Camera started.")
@@ -546,33 +543,37 @@ class AcquireThreadsManager:
         for _ in range(30):
             camera.capture()
 
-        self.__cameras_ready[camera.serial_number] = True
         logger.info("Camera ready.")
+        self.__cameras_ready[camera.serial_number] = True
 
         while not all(self.__cameras_ready.values()):
             continue
 
+        i = 1
         while not self.__terminate and not self.__stop_acquiring:
             try:
+                raise Exception
                 frame = camera.capture()
-
-                ply = rs.save_to_ply(str(frame.get_timestamp()).replace(".", "_") + ".ply")
-
-                ply.set_option(rs.save_to_ply.option_ply_binary, False)
-                ply.set_option(rs.save_to_ply.option_ply_normals, True)
-
-                ply.process(frame)
-
-                print("Frame captured.")
-            except Exception as e:
-                self.__capture_error = True
+                logger.info("Frame %d captured.", i)
+                i += 1
+            except Exception:
                 logger.error("Error capturing frame.")
-                raise e
 
-            # self.__data_queues[camera.serial_number].append(frame)
+                camera.stop()
+                logger.info("Camera stopped.")
+
+                logger.info("Stopped.")
+
+                self.__capture_error = True
+                
+                return
+
+            self.__data_queues[camera.serial_number].append(frame)
 
         camera.stop()
         logger.info("Camera stopped.")
+
+        logger.info("Stopped.")
 
     def __storage_target(self) -> None:
         """
@@ -581,6 +582,12 @@ class AcquireThreadsManager:
 
         logger = utils.Logger("Storage Thread", _LOG_FILE)
 
+        logger.info("Started.")
+
+        while not all(self.__cameras_ready.values()):
+            continue
+
+        i = 1
         while True:
             has_data_to_store = all([len(queue) != 0 for queue in self.__data_queues.values()])
 
@@ -590,62 +597,90 @@ class AcquireThreadsManager:
             elif has_data_to_store and not self.__pause_storage:
                 for camera in self.__args.cameras:
                     frame = self.__data_queues[camera.serial_number].pop(0)
-                    intel.Frame.create_instance(
-                        frame,
-                        os.path.join(
-                            self.__args.output_folder,
-                            camera.serial_number,
-                            str(frame.get_timestamp()).replace(".", "_") + ".ply",  # type: ignore
-                        ),
-                        camera.stream_type,
-                    ).save()
-                    # logger.info("Frame from %s Thread stored.", camera.name)
 
-    def __error_target(self) -> None:
+                    i_frames = intel.Frame.create_instances(frame, camera.stream_type)
+
+                    for i_frame in i_frames:
+                        i_frame.save_as_npy(
+                            self.__cameras_storage[camera.serial_number],
+                            str(frame.get_timestamp()).replace(".", "_"),  # type: ignore
+                        )
+
+                    logger.info("Frame %d from %s Thread stored.", i, camera.name)
+
+                i += 1
+
+        logger.info("Stopped.")
+
+    # main function of the class
+
+    def run(self) -> None:
         """
-        Target function of the error thread.
+        Runs the acquire mode.
         """
 
-        logger = utils.Logger("Error Thread", _LOG_FILE)
+        logger = utils.Logger("Root", _LOG_FILE)
 
-        while (
-            not self.__terminate
-            or self.__storage_thread
-            or any(self.__acquisition_threads.values())
-        ):
-            if not self.__terminate:
-                if self.__nb_restart_attempts >= AcquireThreadsManager.MAX_RESTART_ATTEMPTS:
-                    self.__terminate = True
+        logger.info("Starting acquire mode.")
 
-                    if self.__storage_thread:
-                        self.__storage_thread.join()
-                        self.__storage_thread = None
+        logger.info("Acquire mode started with following args:\n%s", self.__args)
 
-                    for camera in self.__args.cameras:
-                        thread = self.__acquisition_threads[camera.serial_number]
-                        if thread:
-                            thread.join()
-                        self.__acquisition_threads[camera.serial_number] = None
+        # perform reset of internal values
 
-                    self.__error_thread = None
+        self.__reset_default_values()
+        logger.info("Performed reset of internal values.")
 
-                    self.__terminate = False
+        # create storage folders
 
-                    break
+        path = self.__create_storage_folders()
+        logger.info("Defined storage folders:\n%s", path)
 
+        # instantiate threads
+
+        self.__storage_thread = threading.Thread(target=self.__storage_target)
+        logger.info("Storage Thread created.")
+
+        for camera in self.__args.cameras:
+            thread = threading.Thread(target=self.__acquisition_target, args=(camera,))
+            self.__acquisition_threads[camera.serial_number] = thread
+            logger.info("%s Thread created.", camera.name)
+
+        # start threads
+
+        self.__storage_thread.start()
+
+        for camera in self.__args.cameras:
+            self.__acquisition_threads[camera.serial_number].start()  # type: ignore
+
+        while not all(self.__cameras_ready.values()):
+            continue
+
+        print("To stop data acquisition press Ctrl + C.\n")
+
+        try:
+            while True:
                 if self.__capture_error:
-                    logger.info("Catched error. Restarting acquisition threads...")
+                    if self.__nb_restart_attempts == Acquire.MAX_RESTART_ATTEMPTS:
+                        logger.info("Maximum number of restart attempts reached.")
 
-                    self.__capture_error = False
+                        break
 
                     self.__stop_acquiring = True
                     self.__pause_storage = True
 
+                    self.__capture_error = False
+                    self.__nb_restart_attempts += 1
+
+                    logger.info(
+                        "Catched capture error. Restarting acquisition threads [%d].",
+                        self.__nb_restart_attempts,
+                    )
+
                     for camera in self.__args.cameras:
-                        thread = self.__acquisition_threads[camera.serial_number]
-                        if thread:
-                            thread.join()
+                        self.__acquisition_threads[camera.serial_number].join()  # type: ignore
                         self.__acquisition_threads[camera.serial_number] = None
+
+                        logger.info("%s Thread deleted.", camera.name)
 
                     max_data_len = min(
                         [
@@ -659,128 +694,42 @@ class AcquireThreadsManager:
                             camera.serial_number
                         ][:max_data_len]
 
+                    self.__cameras_ready = {
+                        camera.serial_number: False for camera in self.__args.cameras
+                    }
                     self.__stop_acquiring = False
                     self.__pause_storage = False
 
-                    self.__start_acquisition_threads()
-                    self.__nb_restart_attempts += 1
+                    for camera in self.__args.cameras:
+                        thread = threading.Thread(target=self.__acquisition_target, args=(camera,))
+                        self.__acquisition_threads[camera.serial_number] = thread
+                        logger.info("%s Thread created.", camera.name)
 
-    # lauch and terminate threads
+                    for camera in self.__args.cameras:
+                        self.__acquisition_threads[camera.serial_number].start()  # type: ignore
 
-    def launch(self) -> None:
-        """
-        Lauhes the acquire mode threads.
-        """
+        except KeyboardInterrupt:
+            print("\rCtrl + C pressed.\n")
 
-        self.__logger.info("Launching acquire mode threads.")
-
-        self.__reset_default_values()
-
-        # self.__start_error_thread()
-        # self.__start_storage_thread()
-        self.__start_acquisition_threads()
-
-    def terminate(self) -> None:
-        """
-        Stops the acquire mode threads.
-        """
+            logger.info("Ctrl + C pressed.")
 
         self.__terminate = True
 
-        self.__logger.info("Terminating acquire mode threads.")
+        logger.info("Stopping acquire mode...")
 
         for camera in self.__args.cameras:
-            thread = self.__acquisition_threads[camera.serial_number]
-            if thread:
-                thread.join()
+            self.__acquisition_threads[camera.serial_number].join()  # type: ignore
             self.__acquisition_threads[camera.serial_number] = None
+
+            logger.info("%s Thread deleted.", camera.name)
 
         if self.__storage_thread:
             self.__storage_thread.join()
             self.__storage_thread = None
 
-        if self.__error_thread:
-            self.__error_thread.join()
-            self.__error_thread = None
+            logger.info("Storage Thread deleted.")
 
-        self.__terminate = False
-
-        self.__logger.info("Acquire mode threads terminated.")
-
-    # class destructor
-
-    def __del__(self) -> None:
-        self.terminate()
-
-
-class Acquire(utils.Mode):
-    """
-    This class holds the tools to acquire data from the realsense cameras.
-
-    Attributes:
-    -----------
-        - args (AcquireNamespace):
-            The arguments for the acquire mode.
-        - main_thread (threading.Thread):
-            The main thread of the acquire mode.
-        - sub_threads (list[threading.Thread]):
-            The list with all the sub threads of the acquire mode.
-
-    """
-
-    def __init__(self, args: AcquireNamespace) -> None:
-        """
-        Acquire constructor.
-
-        Args:
-        -----
-            - args: The arguments for the acquire mode (matching the constructor of
-                    AcquireNamespace).
-
-        """
-        self.__args = args
-        self.__thread_manager = AcquireThreadsManager(self.__args)
-        self.__logger = utils.Logger("Root", _LOG_FILE)
-
-        self.__logger.info("Acquire mode initialized:\n%s", self.__args)
-
-    def __set_storage_folders(self) -> None:
-        string = ""
-
-        for camera in self.__args.cameras:
-            path = os.path.join(self.__args.output_folder, camera.serial_number)
-
-            if not os.path.exists(path):
-                os.makedirs(path)
-            string += "\t" + os.path.abspath(path) + "\n"
-
-        self.__logger.info("Output folders:\n%s", string.rstrip())
-
-    def run(self) -> None:
-        """
-        Runs the acquire mode.
-        """
-
-        self.__logger.info("Acquire mode terminated.")
-
-        utils.print_info("Creating output folders...")
-        self.__set_storage_folders()
-        utils.print_success("Output folders created successfully!\n")
-
-        self.__thread_manager.launch()
-
-        print("To stop data acquisition press Ctrl + C.\n")
-
-        try:
-            while True:
-                pass
-
-        except KeyboardInterrupt:
-            print("\rCtrl + C pressed.\n")
-
-        self.__thread_manager.terminate()
-
-        self.__logger.info("Acquire mode terminated.")
+        logger.info("Acquire mode terminated.\n")
 
 
 # pylint: disable=invalid-name

@@ -21,7 +21,7 @@ output_folder: ./data/
 
 # camera: 135522077203
 
-# stream_type: depth_n_color
+stream_type: depth_n_color
 
 ######
 

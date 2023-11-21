@@ -1,7 +1,9 @@
-"""
-Module for testing
-"""
+import cv2
+import intel
 
-import acquire
-
-acquire.print_ola()
+camera = intel.Camera(
+    intel.CameraType.D435i,
+    intel.CameraMode.Depth,
+    intel.CameraResolution.Depth1280x720,
+    intel.CameraFrameRate.Depth30,
+)

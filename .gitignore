@@ -166,3 +166,4 @@ data/
 *.ply
 *.pkl
 *.bag
+*test*
