@@ -552,7 +552,6 @@ class Acquire(utils.Mode):
         i = 1
         while not self.__terminate and not self.__stop_acquiring:
             try:
-                raise Exception
                 frame = camera.capture()
                 logger.info("Frame %d captured.", i)
                 i += 1
@@ -565,7 +564,7 @@ class Acquire(utils.Mode):
                 logger.info("Stopped.")
 
                 self.__capture_error = True
-                
+
                 return
 
             self.__data_queues[camera.serial_number].append(frame)
