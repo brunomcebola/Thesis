@@ -410,7 +410,8 @@ class Acquire(utils.Mode):
     __storage_thread: threading.Thread | None
     __acquisition_threads: dict[str, threading.Thread | None]
 
-    __data_queues: dict[str, list[tuple[int, intel.Frame]]]
+    __data_queues: dict[str, list[tuple[int, list[intel.Frame], str]]]
+    __captured_frames: dict[str, int]
 
     __cameras_ready: dict[str, bool]
     __stop_acquiring: bool
@@ -463,6 +464,7 @@ class Acquire(utils.Mode):
         # data
 
         self.__data_queues = {camera.serial_number: [] for camera in self.__args.cameras}
+        self.__captured_frames = {camera.serial_number: 0 for camera in self.__args.cameras}
 
         # control flags
 
@@ -509,6 +511,50 @@ class Acquire(utils.Mode):
         Target function of the acquisition threads.
         """
 
+        def get_start_hour(now: datetime) -> datetime:
+            if now.hour < self.__args.op_times[now.weekday()][1]:
+                ref_weekday = now.weekday()
+                ref_day = now.day
+            else:
+                ref_weekday = now.weekday() + 1 if now.weekday() < 6 else 0
+                ref_day = now.day + 1
+
+            if self.__args.op_times[ref_weekday][0] == 0:
+                day = ref_day - 1
+                hour = 23
+            else:
+                day = ref_day
+                hour = self.__args.op_times[ref_weekday][0] - 1
+
+            return now.replace(
+                day=day,
+                hour=hour,
+                minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
+                second=0,
+            )
+
+        def get_finish_hour(now: datetime) -> datetime:
+            if now.hour < self.__args.op_times[now.weekday()][1]:
+                ref_weekday = now.weekday()
+                ref_day = now.day
+            else:
+                ref_weekday = now.weekday() + 1 if now.weekday() < 6 else 0
+                ref_day = now.day + 1
+
+            if self.__args.op_times[ref_weekday][1] == 24:
+                day = ref_day + 1
+                hour = 0
+            else:
+                day = ref_day
+                hour = self.__args.op_times[ref_weekday][1]
+
+            return now.replace(
+                day=day,
+                hour=hour,
+                minute=0,
+                second=0,
+            )
+
         logger = utils.Logger(f"{camera.name} Thread", _LOG_FILE)
 
         logger.info("Started.")
@@ -516,37 +562,11 @@ class Acquire(utils.Mode):
         camera.start()
         logger.info("Camera started.")
 
+        # do calculation shere to avoid time drift between cameras
         now = datetime.now()
 
-        # when before operation time or in middle of it
-        if now.hour < self.__args.op_times[now.weekday()][1]:
-            start = now.replace(
-                hour=self.__args.op_times[now.weekday()][0] - 1,
-                minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
-                second=0,
-            )
-
-            finish = now.replace(
-                hour=self.__args.op_times[now.weekday()][1],
-                minute=0,
-                second=0,
-            )
-
-        # when after operation time
-        else:
-            start = now.replace(
-                day=now.day + 1,
-                hour=self.__args.op_times[now.weekday() + 1 if now.weekday() + 1 < 6 else 0][0] - 1,
-                minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
-                second=0,
-            )
-
-            finish = now.replace(
-                day=now.day + 1,
-                hour=self.__args.op_times[now.weekday() + 1 if now.weekday() + 1 < 6 else 0][1],
-                minute=0,
-                second=0,
-            )
+        start = get_start_hour(now)
+        finish = get_finish_hour(now)
 
         # allow for some auto exposure to happen
         for _ in range(30):
@@ -558,45 +578,14 @@ class Acquire(utils.Mode):
         while not all(self.__cameras_ready.values()):
             continue
 
-        i = 1
         while not self.__terminate and not self.__stop_acquiring:
             now = datetime.now()
 
             if not start <= now < finish:
-                # when before operation time or in middle of it
-                if now.hour < self.__args.op_times[now.weekday()][1]:
-                    start = now.replace(
-                        hour=self.__args.op_times[now.weekday()][0] - 1,
-                        minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
-                        second=0,
-                    )
+                start = get_start_hour(now)
 
-                    finish = now.replace(
-                        hour=self.__args.op_times[now.weekday()][1],
-                        minute=0,
-                        second=0,
-                    )
-
-                # when after operation time
-                else:
-                    start = now.replace(
-                        day=now.day + 1,
-                        hour=self.__args.op_times[
-                            now.weekday() + 1 if now.weekday() + 1 < 6 else 0
-                        ][0]
-                        - 1,
-                        minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
-                        second=0,
-                    )
-
-                    finish = now.replace(
-                        day=now.day + 1,
-                        hour=self.__args.op_times[
-                            now.weekday() + 1 if now.weekday() + 1 < 6 else 0
-                        ][1],
-                        minute=0,
-                        second=0,
-                    )
+                start = get_start_hour(now)
+                finish = get_finish_hour(now)
 
                 idle_time = (start - now).total_seconds() + Acquire.IDLE_THRESHOLD_MINUTES * 60
 
@@ -628,11 +617,17 @@ class Acquire(utils.Mode):
 
                 return
 
-            logger.info("Frame %d captured.", i)
+            self.__captured_frames[camera.serial_number] += 1
 
-            self.__data_queues[camera.serial_number].append((i, frame))
+            logger.info("Frame %d captured.", self.__captured_frames[camera.serial_number])
 
-            i += 1
+            self.__data_queues[camera.serial_number].append(
+                (
+                    self.__captured_frames[camera.serial_number],
+                    intel.Frame.create_instances(frame, camera.stream_type),
+                    frame.get_timestamp(),  # type: ignore
+                )
+            )
 
         camera.stop()
         logger.info("Camera stopped.")
@@ -661,11 +656,7 @@ class Acquire(utils.Mode):
 
             elif has_data_to_store:
                 for camera in self.__args.cameras:
-                    i, frame = self.__data_queues[camera.serial_number].pop(0)
-
-                    timestamp = frame.get_timestamp()  # type: ignore
-
-                    frames = intel.Frame.create_instances(frame, camera.stream_type)
+                    i, frames, timestamp = self.__data_queues[camera.serial_number].pop(0)
 
                     for frame in frames:
                         frame.save_as_npy(
