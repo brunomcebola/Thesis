@@ -64,6 +64,9 @@ class StreamFormat(Enum):
     Z16 = rs.format.z16
     RGB8 = rs.format.rgb8
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class StreamConfig(NamedTuple):
     """

@@ -10,24 +10,12 @@ Usage:
     $ python argos.py [-h] {acquire,train,online,yaml} ...
 """
 
-import os
-
-# import sys
-
-# import threading
-
+import arg_parser
 import utils
 import acquire
-from arg_parser import ArgParser
 
 if __name__ == "__main__":
-    abspath = os.path.abspath(__file__)
-    dname = os.path.dirname(abspath)
-    os.chdir(dname)
-
-    # sys.tracebacklimit = -1
-
-    parser = ArgParser()
+    parser = arg_parser.ArgParser()
     parsed_args = parser.get_args()
 
     try:
