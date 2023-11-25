@@ -106,7 +106,7 @@ class AcquireError(Exception):
 ██╔████╔██║███████║██║██╔██╗ ██║    ██║     ██║   ██║██╔██╗ ██║   ██║   █████╗  ██╔██╗ ██║   ██║
 ██║╚██╔╝██║██╔══██║██║██║╚██╗██║    ██║     ██║   ██║██║╚██╗██║   ██║   ██╔══╝  ██║╚██╗██║   ██║
 ██║ ╚═╝ ██║██║  ██║██║██║ ╚████║    ╚██████╗╚██████╔╝██║ ╚████║   ██║   ███████╗██║ ╚████║   ██║
-╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝   ╚═╝   
+╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝   ╚═╝
 """
 
 
@@ -135,7 +135,6 @@ class AcquireNamespace(utils.ModeNamespace):
         names: list[str] | None = None,
         stream_types: list[intel.StreamType] | None = None,
         stream_configs: list[dict[intel.StreamType, intel.StreamConfig]] | None = None,
-        **kwargs,
     ):
         """
         AcquireNamespace constructor.
@@ -200,8 +199,6 @@ class AcquireNamespace(utils.ModeNamespace):
             ... )
             >>> print(acquire_namespace)
         """
-
-        del kwargs
 
         # type definitions
         self.output_folder: str = ""

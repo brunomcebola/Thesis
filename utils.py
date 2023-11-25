@@ -3,7 +3,7 @@ This module contains utility functions.
 
 Functions:
 ----------
-- parse_yaml(file_path) -> dict: Validates a YAML file at the given file path.
+- parse_yaml(file) -> dict: Validates a YAML file at the given file path.
 - print_info(message): Prints an info message.
 - print_success(message): Prints a success message.
 - print_warning(message): Prints a warning message.
@@ -70,13 +70,13 @@ class YAMLError(Exception):
     """
 
 
-def parse_yaml(file_path: str) -> dict:
+def parse_acquire_yaml(file: str) -> dict:
     """
     Parses a YAML file and returns its contents as a dictionary.
 
     Args:
     -----
-        - file_path: The path to the YAML file to be parsed.
+        - file: The path to the YAML file to be parsed.
 
     Returns:
     --------
@@ -86,7 +86,6 @@ def parse_yaml(file_path: str) -> dict:
     acquire_schema = {
         "type": "object",
         "properties": {
-            "mode": {"enum": ["acquire"]},
             "output_folder": {"type": "string"},
             "op_time": {
                 "type": "array",
@@ -156,7 +155,7 @@ def parse_yaml(file_path: str) -> dict:
                 },
             },
         },
-        "required": ["mode", "output_folder"],
+        "required": ["output_folder"],
         "allOf": [
             {"not": {"required": ["op_time", "op_times"]}},
             {"not": {"required": ["camera", "cameras"]}},
@@ -166,80 +165,61 @@ def parse_yaml(file_path: str) -> dict:
     }
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file, "r", encoding="utf-8") as f:
             args = yaml.safe_load(f)
 
-            if args["mode"] == "acquire":
-                try:
-                    validate(args, acquire_schema)
+            validate(args, acquire_schema)
 
-                    acquire_args = {}
+            acquire_args = {}
 
-                    acquire_args["mode"] = args["mode"]
+            acquire_args["output_folder"] = args["output_folder"]
 
-                    acquire_args["output_folder"] = args["output_folder"]
+            if "op_time" in args:
+                acquire_args["op_times"] = [args["op_time"]]
+            elif "op_times" in args:
+                acquire_args["op_times"] = args["op_times"]
 
-                    if "op_time" in args:
-                        acquire_args["op_times"] = [args["op_time"]]
-                    elif "op_times" in args:
-                        acquire_args["op_times"] = args["op_times"]
+            if "cameras" in args:
+                acquire_args["serial_numbers"] = []
+                acquire_args["names"] = []
+                acquire_args["stream_types"] = []
+                acquire_args["stream_configs"] = []
 
-                    if "cameras" in args:
-                        acquire_args["serial_numbers"] = []
-                        acquire_args["names"] = []
-                        acquire_args["stream_types"] = []
-                        acquire_args["stream_configs"] = []
+                for camera in args["cameras"]:
+                    acquire_args["serial_numbers"].append(str(camera["sn"]))
 
-                        for camera in args["cameras"]:
-                            acquire_args["serial_numbers"].append(str(camera["sn"]))
+                    acquire_args["names"].append(camera["name"] if "name" in camera else None)
 
-                            acquire_args["names"].append(
-                                camera["name"] if "name" in camera else None
+                    acquire_args["stream_types"].append(
+                        intel.StreamType[camera["stream_type"].upper()]
+                    )
+
+                    acquire_args["stream_configs"].append(
+                        {
+                            intel.StreamType[config.upper()]: intel.StreamConfig(
+                                intel.StreamFormat[
+                                    camera["stream_config"][config]["format"].upper()
+                                ],
+                                (
+                                    camera["stream_config"][config]["width"],
+                                    camera["stream_config"][config]["height"],
+                                ),
+                                camera["stream_config"][config]["fps"],
                             )
-
-                            acquire_args["stream_types"].append(
-                                intel.StreamType[camera["stream_type"].upper()]
-                            )
-
-                            acquire_args["stream_configs"].append(
-                                {
-                                    intel.StreamType[config.upper()]: intel.StreamConfig(
-                                        intel.StreamFormat[
-                                            camera["stream_config"][config]["format"].upper()
-                                        ],
-                                        (
-                                            camera["stream_config"][config]["width"],
-                                            camera["stream_config"][config]["height"],
-                                        ),
-                                        camera["stream_config"][config]["fps"],
-                                    )
-                                    for config in camera["stream_config"]
-                                }
-                            )
-                    else:
-                        if "camera" in args:
-                            acquire_args["serial_numbers"] = [args["camera"]]
-
-                        if "stream_type" in args:
-                            acquire_args["stream_types"] = [
-                                intel.StreamType[args["stream_type"].upper()]
-                            ]
-
-                    return acquire_args
-
-                except Exception as e:
-                    raise e
-
-            elif args["mode"] == "train":
-                pass
-            elif args["mode"] == "online":
-                pass
+                            for config in camera["stream_config"]
+                        }
+                    )
             else:
-                raise YAMLError("Invalid mode.")
+                if "camera" in args:
+                    acquire_args["serial_numbers"] = [args["camera"]]
 
-            return dict(args)
+                if "stream_type" in args:
+                    acquire_args["stream_types"] = [intel.StreamType[args["stream_type"].upper()]]
+
+            return acquire_args
+
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Specified YAML file not found ({file_path}).") from e
+        raise FileNotFoundError(f"Specified YAML file not found ({file}).") from e
     except yaml.YAMLError as e:
         if hasattr(e, "problem_mark"):
             line = e.problem_mark.line + 1  # type: ignore
