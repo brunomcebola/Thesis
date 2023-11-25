@@ -11,7 +11,8 @@ Usage:
 """
 
 import os
-import sys
+
+# import sys
 
 # import threading
 
@@ -24,33 +25,26 @@ if __name__ == "__main__":
     dname = os.path.dirname(abspath)
     os.chdir(dname)
 
-    sys.tracebacklimit = -1
+    # sys.tracebacklimit = -1
 
     parser = ArgParser()
-    cmd_args = parser.get_args()
+    parsed_args = parser.get_args()
 
-    if cmd_args.mode in ["acquire", "a"]:
-        mode = acquire.Acquire(**cmd_args.__dict__)
+    try:
+        print()
+        if parsed_args.mode in ["acquire", "a"]:
+            utils.print_info("Entered acquire mode!\n")
 
-        mode.run()
-
-        # mode.stop()
-
-    elif cmd_args.mode in ["train", "t"]:
-        utils.print_info("Entering train mode...\n")
-    elif cmd_args.mode in ["online", "o"]:
-        utils.print_info("Entering online mode...\n")
-    elif cmd_args.mode in ["yaml", "y"]:
-        utils.print_info("Entered YAML mode!\n")
-
-        try:
-            args = utils.parse_yaml(cmd_args.config_file)
-        except Exception as e:
-            utils.print_error(str(e))
-            exit(1)
-
-        if args["mode"] == "acquire":
-            utils.print_info("Switched to acquire mode!\n")
+            if parsed_args.source in ["yaml", "y"]:
+                try:
+                    args = utils.parse_acquire_yaml(parsed_args.file)
+                except Exception as e:
+                    utils.print_error(str(e))
+                    exit(1)
+            else:
+                args = parsed_args.__dict__
+                del args["mode"]
+                del args["source"]
 
             try:
                 acquire_args = acquire.AcquireNamespace(**args)
@@ -59,7 +53,7 @@ if __name__ == "__main__":
                 print(acquire_args)
                 print()
             except Exception as e:
-                print(e)
+                utils.print_error(str(e) + "\n")
                 exit(1)
 
             mode = acquire.Acquire(acquire_args)
@@ -72,7 +66,14 @@ if __name__ == "__main__":
             if user_prompt is True:
                 mode.run()
 
-            exit(0)
+        elif parsed_args.mode in ["train", "t"]:
+            utils.print_info("Entering train mode...\n")
+        elif parsed_args.mode in ["online", "o"]:
+            utils.print_info("Entering online mode...\n")
 
-    else:
-        exit(0)
+    except Exception as e:
+        print(e)
+
+        exit(1)
+
+    exit(0)

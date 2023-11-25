@@ -13,7 +13,6 @@ from utils import print_error
 from intel import StreamType
 
 
-# TODO: add option in parser to access thread output
 class ArgParser:
     """
     A class for parsing command line arguments into Python objects.
@@ -36,7 +35,7 @@ class ArgParser:
                     Style.BRIGHT
                     + self.description
                     + (
-                        (" - " + self.prog.strip().capitalize() + " mode")
+                        (" - " + self.usage.split(" ")[1].strip().capitalize() + " mode")  # type: ignore # pylint: disable=line-too-long
                         if self.prog != "argos.py"
                         else ""
                     )
@@ -105,7 +104,7 @@ class ArgParser:
         self._parser = self._ArgumentParser(
             description="Argos, Real-time Image Analysis for Fraud Detection",
             formatter_class=self._HelpFormatter,
-            usage="argos.py <mode> [<args>]",
+            usage="argos.py <mode> [<args>] [-h | --help]",
             add_help=False,
         )
 
@@ -126,9 +125,9 @@ class ArgParser:
         self._add_subparsers()
 
     def _add_acquire_mode_subparser(self):
-        def _camera_type(value: str):
+        def _non_empty_string_type(value: str):
             """
-            Checks if a non-empty string was assigned to the camera argument.
+            Checks if value is not an empty string.
             """
             value = value.strip()
             if len(value) == 0:
@@ -151,14 +150,7 @@ class ArgParser:
                     f"invalid choice: '{value}' (choose from {options})"
                 )
 
-        def _output_folder_type(value: str):
-            """
-            Checks if a non-empty string was assigned to the output folder argument.
-            """
-            value = value.strip()
-            if len(value) == 0:
-                raise argparse.ArgumentTypeError("Empty string")
-            return value
+        # create acquire parser
 
         parser = self._subparsers.add_parser(
             "acquire",
@@ -167,8 +159,7 @@ class ArgParser:
             help="Mode to capture and store video.",
             allow_abbrev=False,
             formatter_class=self._HelpFormatterModes,
-            usage="argos.py acquire (-o | --output) <path> [(-c | --camera) <sn>]\n"
-            + "                  [(-s | --stream-type) <stream>]",
+            usage="argos.py acquire <source> [<args>] [-h | --help]",
             add_help=False,
         )
 
@@ -180,38 +171,97 @@ class ArgParser:
             help="Show this help message and exit.",
         )
 
-        parser.add_argument(
+        subparsers = parser.add_subparsers(
+            title="Source",
+            dest="source",
+            required=True,
+        )
+
+        # create cmd subparser
+
+        cmd = subparsers.add_parser(
+            "cmd",
+            aliases="c",
+            description="Argos, Real-time Image Analysis for Fraud Detection",
+            help="Define the arguments in the command line.",
+            allow_abbrev=False,
+            formatter_class=self._HelpFormatterModes,
+            usage="argos.py acquire cmd (-o | --output) <path> [(-c | --camera) <sn>]\n"
+            + "                       [(-s | --stream-type) <stream>] [-h | --help]",
+            add_help=False,
+        )
+
+        cmd.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="Show this help message and exit.",
+        )
+
+        cmd.add_argument(
             "-c",
             "--camera",
             nargs="?",
             help="Specify the camera to use by passing its serial number.",
             metavar="sn",
             dest="serial_numbers",
-            type=_camera_type,
+            type=_non_empty_string_type,
             action="append",
         )
 
-        options = ", ".join([f"{type.name}" for type in StreamType])
-        parser.add_argument(
+        cmd.add_argument(
             "-s",
             "--stream-type",
             nargs="?",
-            help=f"Specify the stream type to use ({options}).",
+            help=f"Specify the stream type to use ({', '.join([tp.name for tp in StreamType])}).",
             dest="stream_types",
             metavar="stream",
             type=_stream_type_type,
             action="append",
         )
 
-        parser_required = parser.add_argument_group("Required arguments")
+        cmd_required = cmd.add_argument_group("Required arguments")
 
-        parser_required.add_argument(
+        cmd_required.add_argument(
             "-o",
             "--output-folder",
             required=True,
             help="Folder where sub folders for each camera will be created to store the images.",
             metavar="path",
-            type=_output_folder_type,
+            type=_non_empty_string_type,
+        )
+
+        # create yaml subparser
+
+        yaml = subparsers.add_parser(
+            "yaml",
+            aliases="y",
+            description="Argos, Real-time Image Analysis for Fraud Detection",
+            help="Define the arguments in a yaml file.",
+            allow_abbrev=False,
+            formatter_class=self._HelpFormatterModes,
+            usage="argos.py acquire yaml (-f | --file) <path> [-h | --help]",
+            add_help=False,
+        )
+
+        yaml.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="Show this help message and exit.",
+        )
+
+        yaml_required = yaml.add_argument_group("Required arguments")
+
+        yaml_required.add_argument(
+            "-f",
+            "--file",
+            required=True,
+            help="Path to the yaml file containing the configuration.",
+            metavar="path",
+            type=_non_empty_string_type,
         )
 
     # TODO
@@ -256,52 +306,10 @@ class ArgParser:
             help="Show this help message and exit.",
         )
 
-    # TODO
-    def _add_yaml_mode_subparser(self):
-        def _config_file(value: str):
-            """
-            Checks if a non-empty string was assigned to the output folder argument.
-            """
-            value = value.strip()
-            if len(value) == 0:
-                raise argparse.ArgumentTypeError("Empty string")
-            return value
-
-        parser = self._subparsers.add_parser(
-            "yaml",
-            aliases="y",
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            help="Mode to run the model based on a yaml file.",
-            allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
-            usage="argos.py yaml (-f | --config-file) <path>",
-            add_help=False,
-        )
-
-        parser.add_argument(
-            "-h",
-            "--help",
-            action="help",
-            default=argparse.SUPPRESS,
-            help="Show this help message and exit.",
-        )
-
-        parser_required = parser.add_argument_group("Required arguments")
-
-        parser_required.add_argument(
-            "-f",
-            "--config-file",
-            required=True,
-            help="Path to the yaml file containing the camera's configuration.",
-            metavar="path",
-            type=_config_file,
-        )
-
     def _add_subparsers(self):
         self._add_acquire_mode_subparser()
         self._add_train_mode_subparser()
         self._add_online_mode_subparser()
-        self._add_yaml_mode_subparser()
 
     def get_args(self):
         """

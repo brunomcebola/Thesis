@@ -1,5 +1,3 @@
-mode: acquire
-
 output_folder: ./data/
 
 ######################
