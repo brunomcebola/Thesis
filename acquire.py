@@ -26,7 +26,7 @@ import threading
 import intel
 import utils
 
-_LOG_FILE = "logs/aquire.log"
+_LOG_FILE = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/logs/aquire.log")
 
 # Exceptions
 """
@@ -212,9 +212,9 @@ class AcquireNamespace(utils.ModeNamespace):
             raise OutputFolderError("The output folder cannot be a empty string.")
 
         if not os.path.exists(output_folder):
-            raise OutputFolderError(f"The output folder '{output_folder}' does not exist.")
+            os.makedirs(output_folder)
 
-        self.output_folder = output_folder
+        self.output_folder = os.path.abspath(output_folder)
 
         # op_times validations
         if op_times is None:
