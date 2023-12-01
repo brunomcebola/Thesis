@@ -412,6 +412,7 @@ class Acquire(utils.Mode):
 
     __data_queues: dict[str, list[tuple[int, list[intel.Frame], str]]]
     __captured_frames: dict[str, int]
+    __stored_frames: dict[str, int]
 
     __cameras_ready: dict[str, bool]
     __stop_acquiring: bool
@@ -465,6 +466,7 @@ class Acquire(utils.Mode):
 
         self.__data_queues = {camera.serial_number: [] for camera in self.__args.cameras}
         self.__captured_frames = {camera.serial_number: 0 for camera in self.__args.cameras}
+        self.__stored_frames = {camera.serial_number: 0 for camera in self.__args.cameras}
 
         # control flags
 
@@ -512,44 +514,46 @@ class Acquire(utils.Mode):
         """
 
         def get_start_hour(now: datetime) -> datetime:
-            if now.hour < self.__args.op_times[now.weekday()][1]:
+            dt = now
+
+            # current operation time
+            if dt.hour < self.__args.op_times[now.weekday()][1]:
                 ref_weekday = now.weekday()
-                ref_day = now.day
+            # next operation time
             else:
                 ref_weekday = now.weekday() + 1 if now.weekday() < 6 else 0
-                ref_day = now.day + 1
+                dt += timedelta(days=1)
 
             if self.__args.op_times[ref_weekday][0] == 0:
-                day = ref_day - 1
+                dt += timedelta(days=-1)
                 hour = 23
             else:
-                day = ref_day
                 hour = self.__args.op_times[ref_weekday][0] - 1
 
-            return now.replace(
-                day=day,
+            return dt.replace(
                 hour=hour,
                 minute=60 - Acquire.IDLE_THRESHOLD_MINUTES,
                 second=0,
             )
 
         def get_finish_hour(now: datetime) -> datetime:
+            dt = now
+
+            # current operation time
             if now.hour < self.__args.op_times[now.weekday()][1]:
                 ref_weekday = now.weekday()
-                ref_day = now.day
+            # next operation time
             else:
                 ref_weekday = now.weekday() + 1 if now.weekday() < 6 else 0
-                ref_day = now.day + 1
+                dt += timedelta(days=1)
 
             if self.__args.op_times[ref_weekday][1] == 24:
-                day = ref_day + 1
+                dt += timedelta(days=1)
                 hour = 0
             else:
-                day = ref_day
                 hour = self.__args.op_times[ref_weekday][1]
 
-            return now.replace(
-                day=day,
+            return dt.replace(
                 hour=hour,
                 minute=0,
                 second=0,
@@ -578,61 +582,51 @@ class Acquire(utils.Mode):
         while not all(self.__cameras_ready.values()):
             continue
 
-        while not self.__terminate and not self.__stop_acquiring:
-            now = datetime.now()
+        try:
+            while not self.__terminate and not self.__stop_acquiring:
+                now = datetime.now()
 
-            if not start <= now < finish:
-                start = get_start_hour(now)
+                if not start <= now < finish:
+                    start = get_start_hour(now)
+                    finish = get_finish_hour(now)
 
-                start = get_start_hour(now)
-                finish = get_finish_hour(now)
+                    idle_time = (start - now).total_seconds() + Acquire.IDLE_THRESHOLD_MINUTES * 60
 
-                idle_time = (start - now).total_seconds() + Acquire.IDLE_THRESHOLD_MINUTES * 60
+                    logger.info("Idling for %s seconds.", timedelta(seconds=idle_time))
 
-                logger.info("Idling for %s seconds.", timedelta(seconds=idle_time))
+                    self.__storage_thread_idle.clear()
+                    self.__root_idle.clear()
 
-                self.__storage_thread_idle.clear()
-                self.__root_idle.clear()
+                    self.__acquire_threads_idle.wait(idle_time)
 
-                self.__acquire_threads_idle.wait(idle_time)
+                    self.__root_idle.set()
+                    self.__storage_thread_idle.set()
 
-                self.__root_idle.set()
-                self.__storage_thread_idle.set()
+                    logger.info("Woke up!")
 
-                logger.info("Woke up!")
+                    continue
 
-                continue
-
-            try:
                 frame = camera.capture()
-            except Exception:
-                logger.error("Error capturing frame.")
 
-                camera.stop()
-                logger.info("Camera stopped.")
+                self.__captured_frames[camera.serial_number] += 1
 
-                logger.info("Stopped.")
-
-                self.__capture_error = True
-
-                return
-
-            self.__captured_frames[camera.serial_number] += 1
-
-            logger.info("Frame %d captured.", self.__captured_frames[camera.serial_number])
-
-            self.__data_queues[camera.serial_number].append(
-                (
-                    self.__captured_frames[camera.serial_number],
-                    intel.Frame.create_instances(frame, camera.stream_type),
-                    frame.get_timestamp(),  # type: ignore
+                self.__data_queues[camera.serial_number].append(
+                    (
+                        self.__captured_frames[camera.serial_number],
+                        intel.Frame.create_instances(frame, camera.stream_type),
+                        frame.get_timestamp(),  # type: ignore
+                    )
                 )
-            )
+        except Exception:
+            self.__capture_error = True
 
-        camera.stop()
-        logger.info("Camera stopped.")
+            logger.error("Error capturing frame.")
 
-        logger.info("Stopped.")
+        finally:
+            camera.stop()
+            logger.info("Camera stopped.")
+
+            logger.info("Stopped.")
 
     def __storage_target(self) -> None:
         """
@@ -664,7 +658,7 @@ class Acquire(utils.Mode):
                             str(i) + "_" + str(timestamp).replace(".", "_"),
                         )
 
-                    logger.info("Frame %d from %s Thread stored.", i, camera.name)
+                    self.__stored_frames[camera.serial_number] += 1
 
         logger.info("Stopped.")
 
@@ -779,9 +773,20 @@ class Acquire(utils.Mode):
 
         self.__terminate = True
 
-        self.__root_idle.set()
-        self.__storage_thread_idle.set()
-        self.__acquire_threads_idle.set()
+        try:
+            self.__root_idle.set()
+        except Exception:
+            pass
+
+        try:
+            self.__storage_thread_idle.set()
+        except Exception:
+            pass
+
+        try:
+            self.__acquire_threads_idle.set()
+        except Exception:
+            pass
 
         logger.info("Stopping acquire mode...")
 
@@ -797,13 +802,45 @@ class Acquire(utils.Mode):
 
             logger.info("Storage Thread deleted.")
 
+        stats = "Acquire statistics:\n\n"
+
+        for camera in self.__args.cameras:
+            logger.info(
+                "%s captured %d frames.",
+                camera.name,
+                self.__captured_frames[camera.serial_number],
+            )
+
+            logger.info(
+                "%s stored %d frames.",
+                camera.name,
+                self.__stored_frames[camera.serial_number],
+            )
+
+            dropped = (
+                self.__captured_frames[camera.serial_number]
+                - self.__stored_frames[camera.serial_number]
+            )
+
+            logger.info(
+                "%s dropped %d frames.",
+                camera.name,
+                dropped,
+            )
+
+            stats += "\t - " + camera.name + ":\n"
+
+            stats += f"\t\t Captured {self.__captured_frames[camera.serial_number]} frames.\n"
+
+            stats += f"\t\t Stored {self.__stored_frames[camera.serial_number]} frames.\n"
+
+            stats += f"\t\t Dropped {dropped} frames.\n"
+
+        utils.print_info(stats)
+
         logger.info("Acquire mode terminated.\n")
 
-        utils.print_info("Acquire mode terminated!")
-
-        # TODO: print number of captured frames per camera
-        # TODO: print number of stored frames per camera
-        # TODO: print number of dropped frames per camera
+        utils.print_info("Acquire mode terminated!\n")
 
 
 # pylint: disable=invalid-name
