@@ -22,10 +22,10 @@ import calendar
 import threading
 import datetime
 
-import intel
-import utils
+import helpers.intel as intel
+import helpers.utils as utils
 
-_LOG_FILE = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/logs/aquire.log")
+_LOG_FILE = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../logs/aquire.log")
 
 # Exceptions
 """

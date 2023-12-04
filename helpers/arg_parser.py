@@ -9,8 +9,8 @@ import argparse
 import sys
 
 from colorama import Style
-from utils import print_error
-from intel import StreamType
+from helpers.utils import print_error
+from helpers.intel import StreamType
 
 
 class ArgParser:
@@ -333,7 +333,28 @@ class ArgParser:
             help="Show this help message and exit.",
         )
 
+    def _add_calibrate_mode_subparser(self):
+        parser = self._subparsers.add_parser(
+            "calibrate",
+            aliases="c",
+            description="Argos, Real-time Image Analysis for Fraud Detection",
+            help="Mode to calibrate the cameras.",
+            allow_abbrev=False,
+            formatter_class=self._HelpFormatterModes,
+            usage="argos.py calibrate [-h | --help]",
+            add_help=False,
+        )
+
+        parser.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="Show this help message and exit.",
+        )
+
     def _add_subparsers(self):
+        self._add_calibrate_mode_subparser()
         self._add_acquire_mode_subparser()
         self._add_train_mode_subparser()
         self._add_online_mode_subparser()
