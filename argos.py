@@ -10,16 +10,18 @@ Usage:
     $ python argos.py [-h] {acquire,train,online,yaml} ...
 """
 
-import arg_parser
-import utils
-import acquire
+import helpers.arg_parser as arg_parser
+import helpers.utils as utils
+import modes.acquire as acquire
 
 if __name__ == "__main__":
     parser = arg_parser.ArgParser()
     parsed_args = parser.get_args()
 
+    print()
+
     try:
-        print()
+        # acquire mode
         if parsed_args.mode in ["acquire", "a"]:
             if parsed_args.sub_mode in ["log", "l"]:
                 if parsed_args.export_path is None:
@@ -56,10 +58,16 @@ if __name__ == "__main__":
 
                 if user_prompt is True:
                     acquire_handler.run()
-
+        # train mode
         elif parsed_args.mode in ["train", "t"]:
-            pass
+            utils.print_warning("This mode is not yet implemented!\n")
+
+        # online mode
         elif parsed_args.mode in ["online", "o"]:
+            utils.print_warning("This mode is not yet implemented!\n")
+
+        # calibration mode
+        elif parsed_args.mode in ["calibrate", "cal"]:
             pass
 
     except Exception as e:

@@ -19,7 +19,7 @@ import yaml
 from jsonschema import validate
 from colorama import Fore, Style
 
-import intel
+import helpers.intel as intel
 
 
 class ModeNamespace(SimpleNamespace):
