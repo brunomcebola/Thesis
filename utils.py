@@ -272,6 +272,36 @@ def print_error(message: str) -> None:
     print(f"{Fore.RED + Style.BRIGHT}Error:{Style.RESET_ALL} {message}")
 
 
+def print_log(
+    message: str, date: str | None = None, source: str | None = None, level: str | None = None
+) -> None:
+    """
+    Prints a log message.
+
+    Args:
+    -----
+        - message: The log message to be printed.
+    """
+
+    if date is None:
+        print(f"{Fore.LIGHTGREEN_EX + Style.BRIGHT}{message}{Style.RESET_ALL}")
+        print()
+
+    else:
+        text = Fore.GREEN + date + Style.RESET_ALL + " - "
+        text += (
+            (Fore.LIGHTRED_EX if level == "ERROR" else Fore.LIGHTCYAN_EX)
+            + Style.BRIGHT
+            + str(level)
+            + Style.RESET_ALL
+            + " - "
+        )
+        text += str(source) + " - "
+        text += message
+
+        print(text)
+
+
 def get_user_confirmation(message: str) -> bool:
     """
     Asks the user for confirmation.

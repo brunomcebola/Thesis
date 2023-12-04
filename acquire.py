@@ -16,12 +16,11 @@ Exceptions:
 """
 
 # pylint: disable=pointless-string-statement
-
-from datetime import datetime, timedelta
-
 import os
+import re
 import calendar
 import threading
+import datetime
 
 import intel
 import utils
@@ -437,22 +436,20 @@ class Acquire(utils.Mode):
 
         self.__args = args
 
-        self.__set_default_values()
+        self.__set_default_values(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
 
     # set default values
 
-    def __set_default_values(self) -> None:
+    def __set_default_values(self, date: str) -> None:
         """
         Sets the default values of the threads manager.
         """
 
         # storage directories
 
-        today = datetime.now().strftime("%d%m%Y_%H%M%S")
-
         self.__cameras_storage = {
             camera.serial_number: os.path.abspath(
-                os.path.join(self.__args.output_folder, camera.serial_number, today)
+                os.path.join(self.__args.output_folder, camera.serial_number, date)
             )
             for camera in self.__args.cameras
         }
@@ -513,7 +510,7 @@ class Acquire(utils.Mode):
         Target function of the acquisition threads.
         """
 
-        def get_start_hour(now: datetime) -> datetime:
+        def get_start_hour(now: datetime.datetime) -> datetime.datetime:
             dt = now
 
             # current operation time
@@ -522,10 +519,10 @@ class Acquire(utils.Mode):
             # next operation time
             else:
                 ref_weekday = now.weekday() + 1 if now.weekday() < 6 else 0
-                dt += timedelta(days=1)
+                dt += datetime.timedelta(days=1)
 
             if self.__args.op_times[ref_weekday][0] == 0:
-                dt += timedelta(days=-1)
+                dt += datetime.timedelta(days=-1)
                 hour = 23
             else:
                 hour = self.__args.op_times[ref_weekday][0] - 1
@@ -536,7 +533,7 @@ class Acquire(utils.Mode):
                 second=0,
             )
 
-        def get_finish_hour(now: datetime) -> datetime:
+        def get_finish_hour(now: datetime.datetime) -> datetime.datetime:
             dt = now
 
             # current operation time
@@ -545,10 +542,10 @@ class Acquire(utils.Mode):
             # next operation time
             else:
                 ref_weekday = now.weekday() + 1 if now.weekday() < 6 else 0
-                dt += timedelta(days=1)
+                dt += datetime.timedelta(days=1)
 
             if self.__args.op_times[ref_weekday][1] == 24:
-                dt += timedelta(days=1)
+                dt += datetime.timedelta(days=1)
                 hour = 0
             else:
                 hour = self.__args.op_times[ref_weekday][1]
@@ -567,7 +564,7 @@ class Acquire(utils.Mode):
         logger.info("Camera started.")
 
         # do calculation shere to avoid time drift between cameras
-        now = datetime.now()
+        now = datetime.datetime.now()
 
         start = get_start_hour(now)
         finish = get_finish_hour(now)
@@ -584,7 +581,7 @@ class Acquire(utils.Mode):
 
         try:
             while not self.__terminate and not self.__stop_acquiring:
-                now = datetime.now()
+                now = datetime.datetime.now()
 
                 if not start <= now < finish:
                     start = get_start_hour(now)
@@ -592,7 +589,7 @@ class Acquire(utils.Mode):
 
                     idle_time = (start - now).total_seconds() + Acquire.IDLE_THRESHOLD_MINUTES * 60
 
-                    logger.info("Idling for %s seconds.", timedelta(seconds=idle_time))
+                    logger.info("Idling for %s seconds.", datetime.timedelta(seconds=idle_time))
 
                     self.__storage_thread_idle.clear()
                     self.__root_idle.clear()
@@ -671,13 +668,15 @@ class Acquire(utils.Mode):
 
         logger = utils.Logger("Root", _LOG_FILE)
 
-        logger.info("Starting acquire mode.")
+        today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        logger.info("\nStarting acquire mode (%s).", today)
 
         logger.info("Acquire mode started with following args:\n%s", self.__args)
 
         # perform reset of internal values
 
-        self.__set_default_values()
+        self.__set_default_values(today)
         logger.info("Performed reset of internal values.")
 
         # create storage folders
@@ -838,9 +837,51 @@ class Acquire(utils.Mode):
 
         utils.print_info(stats)
 
-        logger.info("Acquire mode terminated.\n")
+        logger.info("Acquire mode terminated.")
 
         utils.print_info("Acquire mode terminated!\n")
+
+    @classmethod
+    def print_logs(cls) -> None:
+        """
+        Prints the acquire mode logs.
+        """
+
+        with open(_LOG_FILE, encoding="utf-8") as f:
+            file = f.read()
+
+        session_logs = file.split("\n\n")
+
+        for session_log in session_logs:
+            lines = re.split(r"\n(?=\d{4}-\d{2}-\d{2})", session_log)
+
+            if lines[0] == "":
+                lines.pop(0)
+
+            utils.print_log(f"Session {lines[0].split('(')[1][:-2]}")
+
+            for line in lines:
+                date, level, source, message = line.split(" - ", 3)
+                utils.print_log(message, date, source, level)
+
+            print()
+
+    @classmethod
+    def export_logs(cls, file: str) -> None:
+        """
+        Exports the acquire mode logs to a file.
+        """
+
+        with open(
+            _LOG_FILE,
+            "r",
+            encoding="utf-8",
+        ) as origin, open(
+            file,
+            "w",
+            encoding="utf-8",
+        ) as destination:
+            destination.write("".join(origin.readlines()[1:]))
 
 
 # pylint: disable=invalid-name

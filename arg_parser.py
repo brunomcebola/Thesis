@@ -172,8 +172,8 @@ class ArgParser:
         )
 
         subparsers = parser.add_subparsers(
-            title="Source",
-            dest="source",
+            title="Mode",
+            dest="sub_mode",
             required=True,
         )
 
@@ -202,23 +202,21 @@ class ArgParser:
         cmd.add_argument(
             "-c",
             "--camera",
-            nargs="?",
+            nargs=1,
             help="Specify the camera to use by passing its serial number.",
             metavar="sn",
             dest="serial_numbers",
             type=_non_empty_string_type,
-            action="append",
         )
 
         cmd.add_argument(
             "-s",
             "--stream-type",
-            nargs="?",
+            nargs=1,
             help=f"Specify the stream type to use ({', '.join([tp.name for tp in StreamType])}).",
             dest="stream_types",
             metavar="stream",
             type=_stream_type_type,
-            action="append",
         )
 
         cmd_required = cmd.add_argument_group("Required arguments")
@@ -262,6 +260,35 @@ class ArgParser:
             help="Path to the yaml file containing the configuration.",
             metavar="path",
             type=_non_empty_string_type,
+        )
+
+        # create log parser
+
+        log = subparsers.add_parser(
+            "log",
+            aliases="l",
+            description="Argos, Real-time Image Analysis for Fraud Detection",
+            help="Access the logs of the acquire mode.",
+            allow_abbrev=False,
+            formatter_class=self._HelpFormatterModes,
+            usage="argos.py acquire log [(-e | --export) <file>] [-h | --help]",
+            add_help=False,
+        )
+
+        log.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="Show this help message and exit.",
+        )
+
+        log.add_argument(
+            "-e",
+            "--export",
+            help="Export the logs to a file.",
+            metavar="file",
+            dest="export_path",
         )
 
     # TODO
