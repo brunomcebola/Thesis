@@ -11,16 +11,19 @@ Functions:
 - get_user_confirmation(message) -> bool: Asks the user for confirmation.
 """
 
+from __future__ import annotations
+
 import os
 import logging
+
 from types import SimpleNamespace
 from abc import ABC, abstractmethod
-import yaml
 from jsonschema import validate
 from colorama import Fore, Style
 
-import helpers.intel as intel
+import yaml
 
+import helpers.intel as intel
 
 class ModeNamespace(SimpleNamespace):
     """
