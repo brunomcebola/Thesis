@@ -1,7 +1,4 @@
-colorama==0.4.4
-jsonschema==4.19.2
-matplotlib==3.8.1
-pyrealsense2==2.54.2.5684
+colorama==0.4.6
 PyYAML==6.0.1
-PyYAML==5.4.1
-PyYAML==6.0.1
+jsonschema==4.20.0
+matplotlib==3.8.2
