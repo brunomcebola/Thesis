@@ -25,7 +25,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pyrealsense2.pyrealsense2 as rs
+import pyrealsense2 as rs
 
 
 class StreamConfigError(Exception):
@@ -62,8 +62,8 @@ class StreamFormat(Enum):
         - RGB8: Red, Green, Blue channels with 8-bits per channel.
     """
 
-    Z16 = rs.format.z16
-    RGB8 = rs.format.rgb8
+    Z16 = rs.format.z16  # type: ignore
+    RGB8 = rs.format.rgb8  # type: ignore
 
     def __str__(self) -> str:
         return self.name
@@ -108,9 +108,9 @@ class StreamType(Enum):
     """
 
     # Base types
-    DEPTH = rs.stream.depth
-    COLOR = rs.stream.color
-    IR = rs.stream.infrared
+    DEPTH = rs.stream.depth  # type: ignore
+    COLOR = rs.stream.color  # type: ignore
+    IR = rs.stream.infrared  # type: ignore
 
     # Composed types
     DEPTH_N_COLOR = None
@@ -211,9 +211,9 @@ class RealSenseCamera:
     _stream_types: list[StreamType]
     _stream_configs: dict[StreamType, StreamConfig]
 
-    __pipeline: rs.pipeline
-    __config: rs.config
-    __device: rs.device
+    __pipeline: rs.pipeline  # type: ignore
+    __config: rs.config  # type: ignore
+    __device: rs.device  # type: ignore
 
     def __init__(
         self,
@@ -252,8 +252,8 @@ class RealSenseCamera:
 
         # initializes independent attributes
         self._is_running = False
-        self.__pipeline = rs.pipeline()
-        self.__config = rs.config()
+        self.__pipeline = rs.pipeline()  # type: ignore
+        self.__config = rs.config()  # type: ignore
 
         # checks if camera is available
         if RealSenseCamera.is_camera_available(self.serial_number):
@@ -262,11 +262,11 @@ class RealSenseCamera:
             raise CameraUnavailableError(f"Camera {self.serial_number} is not available.")
 
         # save device object
-        context = rs.context()
+        context = rs.context()  # type: ignore
         devices = context.query_devices()
 
         for device in devices:
-            if device.get_info(rs.camera_info.serial_number) == self.serial_number:
+            if device.get_info(rs.camera_info.serial_number) == self.serial_number:  # type: ignore
                 self.__device = device
                 break
 
@@ -507,7 +507,7 @@ class RealSenseCamera:
 
         return True
 
-    def capture(self) -> rs.composite_frame:
+    def capture(self) -> rs.composite_frame:  # type: ignore
         """
         Returns an object representing a frame from the camera.
 
@@ -530,11 +530,11 @@ class RealSenseCamera:
         """
         cameras_sn = []
 
-        context = rs.context()
+        context = rs.context()  # type: ignore
         devices = context.query_devices()
 
         for device in devices:
-            cameras_sn.append(device.get_info(rs.camera_info.serial_number))
+            cameras_sn.append(device.get_info(rs.camera_info.serial_number)) # type: ignore
 
         return cameras_sn
 
@@ -548,11 +548,11 @@ class RealSenseCamera:
             - sn: The serial number of the camera.
         """
 
-        context = rs.context()
+        context = rs.context()  # type: ignore
         devices = context.query_devices()
 
         for device in devices:
-            if device.get_info(rs.camera_info.serial_number) == sn:
+            if device.get_info(rs.camera_info.serial_number) == sn: # type: ignore
                 return True
 
         return False
@@ -567,12 +567,12 @@ class RealSenseCamera:
             - sn: The serial number of the camera.
         """
 
-        context = rs.context()
+        context = rs.context()  # type: ignore
         devices = context.query_devices()
 
         for device in devices:
-            if device.get_info(rs.camera_info.serial_number) == sn:
-                return device.get_info(rs.camera_info.name).split(" ")[-1][:4]
+            if device.get_info(rs.camera_info.serial_number) == sn:  # type: ignore
+                return device.get_info(rs.camera_info.name).split(" ")[-1][:4] # type: ignore
 
         return ""
 
@@ -607,7 +607,7 @@ class Frame:
     Not to be instantiated directly.
     """
 
-    def __init__(self, frame: rs.composite_frame | None = None) -> None:
+    def __init__(self, frame: rs.composite_frame | None = None) -> None:  # type: ignore
         """
         Frame constructor.
 
@@ -658,7 +658,7 @@ class Frame:
             plt.show()
 
     @classmethod
-    def create_instances(cls, frame: rs.composite_frame, stream_type: StreamType) -> list["Frame"]:
+    def create_instances(cls, frame: rs.composite_frame, stream_type: StreamType) -> list["Frame"]: # type: ignore
         """
         Return a list of Frame objects based on the stream type.
         """
@@ -682,7 +682,7 @@ class DepthFrame(Frame):
     Subclass of Frame to represent a depth frame captured by a camera.
     """
 
-    def __init__(self, frame: rs.composite_frame) -> None:
+    def __init__(self, frame: rs.composite_frame) -> None: # type: ignore
         super().__init__(frame.get_depth_frame())
 
 
@@ -691,7 +691,7 @@ class ColorFrame(Frame):
     Subclass of Frame to represent a color frame captured by a camera.
     """
 
-    def __init__(self, frame: rs.composite_frame) -> None:
+    def __init__(self, frame: rs.composite_frame) -> None: # type: ignore
         super().__init__(frame.get_color_frame())
 
 
@@ -700,5 +700,5 @@ class IRFrame(Frame):
     Subclass of Frame to represent an infrared frame captured by a camera.
     """
 
-    def __init__(self, frame: rs.composite_frame) -> None:
+    def __init__(self, frame: rs.composite_frame) -> None: # type: ignore
         super().__init__(frame.get_infrared_frame())
