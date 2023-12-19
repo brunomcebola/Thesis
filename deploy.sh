@@ -1,7 +1,8 @@
 #!/bin/bash
 
 source_folder="build"
-dest_folder="/home/thales/Desktop/Argos"
+master_dest_folder="/prog/Argos"
+node_dest_folder="~/Argos"
 ssh_addr="thales@argos-master"
 
 blue='\033[1;34m'
@@ -36,8 +37,8 @@ echo
 echo -e "$blue"Removing unnecessary files and folders..."$reset"
 echo
 
-echo "$ GLOBIGNORE=argos.py:helpers:modes:configs:realsense_so:requirements.txt:broadcast.sh"
-GLOBIGNORE=argos.py:helpers:modes:configs:realsense_so:requirements.txt:broadcast.sh
+echo "$ GLOBIGNORE=argos.py:helpers:modes:configs:realsense_so:requirements.txt"
+GLOBIGNORE=argos.py:helpers:modes:configs:realsense_so:requirements.txt
 
 echo "$ rm -r -f *"
 rm -r -f *
@@ -78,28 +79,32 @@ cd ../..
 
 # deploy to host
 echo
-echo -e "$blue"Deploying to host..."$reset"
+echo -e "$blue"Deploying to machines..."$reset"
 echo
 
-echo "$ ssh $ssh_addr \"rm -r -f $dest_folder\""
-ssh $ssh_addr "rm -r -f $dest_folder"
+echo "$ ssh $ssh_addr \"rm -r -f $master_dest_folder\""
+ssh $ssh_addr "rm -r -f $master_dest_folder"
 
-echo "$ ssh $ssh_addr \"mkdir $dest_folder\""
-ssh $ssh_addr "mkdir $dest_folder"
+echo "$ ssh $ssh_addr \"mkdir $master_dest_folder\""
+ssh $ssh_addr "mkdir $master_dest_folder"
 
-echo "$ scp -T -r ./$source_folder/* $ssh_addr:$dest_folder"
-scp -T -r ./$source_folder/* "$ssh_addr:$dest_folder"
+echo "$ scp -T -r ./$source_folder/* $ssh_addr:$master_dest_folder"
+scp -T -r ./$source_folder/* "$ssh_addr:$master_dest_folder"
 
-echo
-echo -e "$blue"Broadcasting to nodes..."$reset"
-echo
+echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts rm -r -f $node_dest_folder\""
+ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts rm -r -f $node_dest_folder"
 
-echo "$ ssh $ssh_addr \"chmod 777 $dest_folder/broadcast.sh\""
-ssh $ssh_addr "chmod 777 $dest_folder/broadcast.sh"
+echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts mkdir $node_dest_folder\""
+ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts mkdir $node_dest_folder"
 
-echo "$ ssh $ssh_addr \"$dest_folder/broadcast.sh\""
-echo
-ssh $ssh_addr "$dest_folder/broadcast.sh"
+echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts cp -r $master_dest_folder/* $node_dest_folder\""
+ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts cp -r $master_dest_folder/* $node_dest_folder"
+
+echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts python -m venv $node_dest_folder/venv\""
+ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts python -m venv $node_dest_folder/venv"
+
+echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts $node_dest_folder/venv/bin/pip install -r $node_dest_folder/requirements.txt\""
+ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts $node_dest_folder/venv/bin/pip install -r $node_dest_folder/requirements.txt"
 
 # remove deployment folder
 echo
