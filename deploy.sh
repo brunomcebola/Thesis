@@ -1,7 +1,8 @@
 #!/bin/bash
 
-source="build"
-dest="~/Desktop/Argos"
+source_folder="build"
+dest_folder="/home/thales/Desktop/Argos"
+ssh_addr="thales@argos-master"
 
 blue='\033[1;34m'
 green='\033[1;32m'
@@ -12,23 +13,23 @@ echo
 echo -e "$blue"Creating build folder..."$reset"
 echo
 
-echo "$ rm -r -f $source"
-rm -r -f $source
+echo "$ rm -r -f $source_folder"
+rm -r -f $source_folder
 
-echo "$ mkdir $source"
-mkdir $source
+echo "$ mkdir $source_folder"
+mkdir $source_folder
 
-echo "$ GLOBIGNORE=$source"
-GLOBIGNORE=$source
+echo "$ GLOBIGNORE=$source_folder"
+GLOBIGNORE=$source_folder
 
-echo "$ cp -r * $source"
-cp -r * $source
+echo "$ cp -r * $source_folder"
+cp -r * $source_folder
 
 echo "$ unset GLOBIGNORE"
 unset GLOBIGNORE
 
-echo "$ cd $source"
-cd $source
+echo "$ cd $source_folder"
+cd $source_folder
 
 # remove unnecessary files and folders
 echo
@@ -80,34 +81,34 @@ echo
 echo -e "$blue"Deploying to host..."$reset"
 echo
 
-echo "$ ssh thales@argos-master \"rm -r -f $dest\""
-ssh thales@argos-master "rm -r -f $dest"
+echo "$ ssh $ssh_addr \"rm -r -f $dest_folder\""
+ssh $ssh_addr "rm -r -f $dest_folder"
 
-echo "$ ssh thales@argos-master \"mkdir $dest\""
-ssh thales@argos-master "mkdir $dest"
+echo "$ ssh $ssh_addr \"mkdir $dest_folder\""
+ssh $ssh_addr "mkdir $dest_folder"
 
-echo "$ scp -T -r ./$source/* thales@argos-master:$dest"
-scp -T -r ./$source/* "thales@argos-master:$dest"
+echo "$ scp -T -r ./$source_folder/* $ssh_addr:$dest_folder"
+scp -T -r ./$source_folder/* "$ssh_addr:$dest_folder"
 
 echo
 echo -e "$blue"Broadcasting to nodes..."$reset"
 echo
 
-echo "$ ssh thales@argos-master \"chmod 777 $dest/broadcast.sh\""
-ssh thales@argos-master "chmod 777 $dest/broadcast.sh"
+echo "$ ssh $ssh_addr \"chmod 777 $dest_folder/broadcast.sh\""
+ssh $ssh_addr "chmod 777 $dest_folder/broadcast.sh"
 
-echo "$ ssh thales@argos-master \"$dest/broadcast.sh\""
-ssh thales@argos-master "$dest/broadcast.sh"
-
+echo "$ ssh $ssh_addr \"$dest_folder/broadcast.sh\""
+echo
+ssh $ssh_addr "$dest_folder/broadcast.sh"
 
 # remove deployment folder
 echo
 echo -e "$blue"Removing build folder..."$reset"
 echo
 
-echo "$ rm -r -f $source"
-rm -r -f $source
+echo "$ rm -r -f $source_folder"
+rm -r -f $source_folder
 
 echo
-echo -e "$green"Deployment finished successfully!"$reset"
+echo -e "$blue"Deployment finished!"$reset"
 echo
