@@ -270,9 +270,6 @@ class RealSenseCamera:
                 self.__device = device
                 break
 
-        # force camera reset
-        self.__device.hardware_reset()
-
         # check if stream configurations are valid and applies them if so
         self.__apply_stream_configs()
 

@@ -421,6 +421,9 @@ class Acquire(utils.Mode):
     __root_idle: threading.Event
     __acquire_threads_idle: threading.Event
     __storage_thread_idle: threading.Event
+    __root_idling: bool
+    __acquire_threads_idling: bool
+    __storage_thread_idling: bool
     __nb_restart_attempts: int
 
     __capture_error: bool
@@ -475,10 +478,15 @@ class Acquire(utils.Mode):
         self.__root_idle = threading.Event()
         self.__acquire_threads_idle = threading.Event()
         self.__storage_thread_idle = threading.Event()
+
         self.__nb_restart_attempts = 0
 
         self.__root_idle.set()
         self.__storage_thread_idle.set()
+
+        self.__root_idling = False
+        self.__acquire_threads_idling = False
+        self.__storage_thread_idling = False
 
         # error flags
 
@@ -596,10 +604,18 @@ class Acquire(utils.Mode):
                     self.__storage_thread_idle.clear()
                     self.__root_idle.clear()
 
+                    self.__root_idling = True
+                    self.__storage_thread_idling = True
+                    self.__acquire_threads_idling = True
+
                     self.__acquire_threads_idle.wait(idle_time)
 
                     self.__root_idle.set()
                     self.__storage_thread_idle.set()
+
+                    self.__root_idling = False
+                    self.__storage_thread_idling = False
+                    self.__acquire_threads_idling = False
 
                     logger.info("Woke up!")
 
@@ -720,6 +736,7 @@ class Acquire(utils.Mode):
 
                     self.__stop_acquiring = True
                     self.__storage_thread_idle.clear()
+                    self.__storage_thread_idling = True
 
                     self.__capture_error = False
                     self.__nb_restart_attempts += 1
@@ -758,6 +775,7 @@ class Acquire(utils.Mode):
                     }
                     self.__stop_acquiring = False
                     self.__storage_thread_idle.set()
+                    self.__storage_thread_idling = False
 
                     for camera in self.__args.cameras:
                         thread = threading.Thread(target=self.__acquisition_target, args=(camera,))
@@ -774,20 +792,23 @@ class Acquire(utils.Mode):
 
         self.__terminate = True
 
-        try:
-            self.__root_idle.set()
-        except Exception:
-            pass
+        if self.__root_idling:
+            try:
+                self.__root_idle.set()
+            except Exception:
+                pass
 
-        try:
-            self.__storage_thread_idle.set()
-        except Exception:
-            pass
+        if self.__storage_thread_idling:
+            try:
+                self.__storage_thread_idle.set()
+            except Exception:
+                pass
 
-        try:
-            self.__acquire_threads_idle.set()
-        except Exception:
-            pass
+        if self.__acquire_threads_idling:
+            try:
+                self.__acquire_threads_idle.set()
+            except Exception:
+                pass
 
         logger.info("Stopping acquire mode...")
 

@@ -82,6 +82,15 @@ echo
 echo -e "$blue"Deploying to machines..."$reset"
 echo
 
+read -sp "Password: " password
+echo
+echo
+
+echo "$ ssh $ssh_addr \"/home/thales/.forward_ipv4.sh\""
+{
+ssh $ssh_addr "echo ${password} | /home/thales/.forward_ipv4.sh"
+} > /dev/null 2>/dev/null
+
 echo "$ ssh $ssh_addr \"rm -r -f $master_dest_folder\""
 ssh $ssh_addr "rm -r -f $master_dest_folder"
 
@@ -91,20 +100,20 @@ ssh $ssh_addr "mkdir $master_dest_folder"
 echo "$ scp -T -r ./$source_folder/* $ssh_addr:$master_dest_folder"
 scp -T -r ./$source_folder/* "$ssh_addr:$master_dest_folder"
 
-echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts rm -r -f $node_dest_folder\""
-ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts rm -r -f $node_dest_folder"
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts rm -r -f $node_dest_folder\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts rm -r -f $node_dest_folder"
 
-echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts mkdir $node_dest_folder\""
-ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts mkdir $node_dest_folder"
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts mkdir $node_dest_folder\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts mkdir $node_dest_folder"
 
-echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts cp -r $master_dest_folder/* $node_dest_folder\""
-ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts cp -r $master_dest_folder/* $node_dest_folder"
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts cp -r $master_dest_folder/* $node_dest_folder\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts cp -r $master_dest_folder/* $node_dest_folder"
 
-echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts python -m venv $node_dest_folder/venv\""
-ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts python -m venv $node_dest_folder/venv"
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts python -m venv $node_dest_folder/venv\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts python -m venv $node_dest_folder/venv"
 
-echo "$ ssh $ssh_addr \"parallel-ssh -i -h /home/thales/.rpi_pssh_hosts $node_dest_folder/venv/bin/pip install -r $node_dest_folder/requirements.txt\""
-ssh $ssh_addr "parallel-ssh -i -h /home/thales/.rpi_pssh_hosts $node_dest_folder/venv/bin/pip install -r $node_dest_folder/requirements.txt"
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts $node_dest_folder/venv/bin/pip install -r $node_dest_folder/requirements.txt\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts $node_dest_folder/venv/bin/pip install -r $node_dest_folder/requirements.txt"
 
 # remove deployment folder
 echo
@@ -115,5 +124,5 @@ echo "$ rm -r -f $source_folder"
 rm -r -f $source_folder
 
 echo
-echo -e "$blue"Deployment finished!"$reset"
+echo -e "$green"Deployment finished!"$reset"
 echo
