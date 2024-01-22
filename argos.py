@@ -34,11 +34,11 @@ if __name__ == "__main__":
                 else:
                     modes.acquire.Acquire.export_logs(parsed_args.export_path)
 
-            if parsed_args.sub_mode in ["yaml", "y"] or parsed_args.sub_mode in ["cmd", "c"]:
+            else:
                 args = None  # pylint: disable=invalid-name
 
                 if parsed_args.sub_mode in ["yaml", "y"]:
-                    args = utils.parse_acquire_yaml(parsed_args.file)
+                    args = modes.acquire.parse_acquire_yaml(parsed_args.file)
                 else:
                     args = parsed_args.__dict__
                     del args["mode"]

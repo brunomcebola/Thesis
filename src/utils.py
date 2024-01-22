@@ -16,19 +16,96 @@ from __future__ import annotations
 import os
 import logging
 
+from typing import Type
 from types import SimpleNamespace
 from abc import ABC, abstractmethod
-from jsonschema import validate
 from colorama import Fore, Style
 
-import yaml
-
 from . import intel
+
+
+class ModeNamespaceError(Exception):
+    """
+    Exception raised when errors related to the serial number occur.
+    """
+
 
 class ModeNamespace(SimpleNamespace):
     """
     Namespace for modes.
     """
+
+    def __init__(
+        self,
+        serial_numbers: list[str] | None = None,
+        stream_types: list[intel.StreamType] | None = None,
+        stream_configs: list[dict[intel.StreamType, intel.StreamConfig]] | None = None,
+        exception: Type[ModeNamespaceError] = ModeNamespaceError,
+    ) -> None:
+        # type definitions
+        self.cameras: list[intel.RealSenseCamera] = []
+
+        # serial_numbers validations
+        if serial_numbers is None:
+            print_warning("No camera specified. Using all connected cameras.")
+
+            serial_numbers = intel.RealSenseCamera.get_available_cameras_sn()
+
+            if len(serial_numbers) == 0:
+                raise intel.CameraUnavailableError("No available cameras.")
+
+        elif len(set(serial_numbers)) == len(serial_numbers):
+            serial_numbers = [str(serial_number).strip() for serial_number in serial_numbers]
+
+        else:
+            raise exception("Serial numbers.")
+
+        # stream_types validations
+        if stream_types is None:
+            print_warning("No stream type specified. Setting depth as stream type of all cameras.")
+
+            stream_types = [intel.StreamType.DEPTH] * len(serial_numbers)
+
+        elif len(stream_types) == 1:
+            print_warning("Using the specified stream type for all cameras.")
+
+            stream_types = stream_types * len(serial_numbers)
+
+        elif len(stream_types) == len(serial_numbers):
+            pass
+
+        else:
+            raise exception("Stream types.")
+
+        # stream configs validations
+        if stream_configs is None:
+            print_warning(
+                "No stream configs specified. Using default stream configs for each camera model."
+            )
+
+            stream_configs = [
+                intel.RealSenseCamera.get_default_config(
+                    intel.RealSenseCamera.get_camera_model(serial_number)
+                )
+                for serial_number in serial_numbers
+            ]
+
+        elif len(stream_configs) == 1:
+            print_warning("Using the specified stream config for all cameras.")
+
+            stream_configs = stream_configs * len(serial_numbers)
+
+        elif len(stream_configs) == len(serial_numbers):
+            pass
+
+        else:
+            raise exception("Stream configs.")
+
+        # create list of camera instances
+        self.cameras = [
+            intel.RealSenseCamera(sn, st, sc)
+            for sn, st, sc in zip(serial_numbers, stream_types, stream_configs)
+        ]
 
 
 class Mode(ABC):
@@ -65,170 +142,6 @@ class Logger(logging.Logger):
         file_handler.setFormatter(Logger.formatter)
 
         self.addHandler(file_handler)
-
-
-class YAMLError(Exception):
-    """
-    Raised when an invalid mode is specified.
-    """
-
-
-def parse_acquire_yaml(file: str) -> dict:
-    """
-    Parses a YAML file and returns its contents as a dictionary.
-
-    Args:
-    -----
-        - file: The path to the YAML file to be parsed.
-
-    Returns:
-    --------
-        The contents of the YAML file as a dictionary.
-    """
-
-    acquire_schema = {
-        "type": "object",
-        "properties": {
-            "output_folder": {"type": "string"},
-            "op_time": {
-                "type": "array",
-                "minItems": 2,
-                "maxItems": 2,
-                "uniqueItems": True,
-                "prefixItems": [
-                    {"type": "integer", "minimum": 0, "maximum": 23},
-                    {"type": "integer", "minimum": 1, "maximum": 24},
-                ],
-            },
-            "op_times": {
-                "type": "array",
-                "minItems": 7,
-                "maxItems": 7,
-                "items": {
-                    "type": "array",
-                    "minItems": 2,
-                    "maxItems": 2,
-                    "uniqueItems": True,
-                    "prefixItems": [
-                        {"type": "integer", "minimum": 0, "maximum": 23},
-                        {"type": "integer", "minimum": 1, "maximum": 24},
-                    ],
-                },
-            },
-            "camera": {"anyOf": [{"type": "string"}, {"type": "number", "minimum": 0}]},
-            "stream_type": {"enum": [type.name.lower() for type in intel.StreamType]},
-            "cameras": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "sn": {
-                            "anyOf": [
-                                {"type": "string"},
-                                {"type": "number", "minimum": 0},
-                            ]
-                        },
-                        "name": {"type": "string", "minLength": 1},
-                        "stream_type": {"enum": [type.name.lower() for type in intel.StreamType]},
-                        "stream_config": {
-                            "type": "object",
-                            "patternProperties": {
-                                f"^({'|'.join(list(filter(lambda v: '_n_' not in v, [type.name.lower() for type in intel.StreamType])))})$": {  # pylint: disable=line-too-long
-                                    "type": "object",
-                                    "properties": {
-                                        "width": {"type": "integer", "minimum": 0},
-                                        "height": {"type": "integer", "minimum": 0},
-                                        "format": {
-                                            "enum": [
-                                                format.name.lower() for format in intel.StreamFormat
-                                            ]
-                                        },
-                                        "fps": {"type": "number", "minimum": 0},
-                                    },
-                                    "required": ["width", "height", "format", "fps"],
-                                    "additionalProperties": False,
-                                },
-                            },
-                            "additionalProperties": False,
-                        },
-                    },
-                    "required": ["sn", "stream_type", "stream_config"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-        "required": ["output_folder"],
-        "allOf": [
-            {"not": {"required": ["op_time", "op_times"]}},
-            {"not": {"required": ["camera", "cameras"]}},
-            {"not": {"required": ["stream_type", "cameras"]}},
-        ],
-        "additionalProperties": False,
-    }
-
-    try:
-        with open(file, "r", encoding="utf-8") as f:
-            args = yaml.safe_load(f)
-
-            validate(args, acquire_schema)
-
-            acquire_args = {}
-
-            acquire_args["output_folder"] = args["output_folder"]
-
-            if "op_time" in args:
-                acquire_args["op_times"] = [args["op_time"]]
-            elif "op_times" in args:
-                acquire_args["op_times"] = args["op_times"]
-
-            if "cameras" in args:
-                acquire_args["serial_numbers"] = []
-                acquire_args["names"] = []
-                acquire_args["stream_types"] = []
-                acquire_args["stream_configs"] = []
-
-                for camera in args["cameras"]:
-                    acquire_args["serial_numbers"].append(str(camera["sn"]))
-
-                    acquire_args["names"].append(camera["name"] if "name" in camera else None)
-
-                    acquire_args["stream_types"].append(
-                        intel.StreamType[camera["stream_type"].upper()]
-                    )
-
-                    acquire_args["stream_configs"].append(
-                        {
-                            intel.StreamType[config.upper()]: intel.StreamConfig(
-                                intel.StreamFormat[
-                                    camera["stream_config"][config]["format"].upper()
-                                ],
-                                (
-                                    camera["stream_config"][config]["width"],
-                                    camera["stream_config"][config]["height"],
-                                ),
-                                camera["stream_config"][config]["fps"],
-                            )
-                            for config in camera["stream_config"]
-                        }
-                    )
-            else:
-                if "camera" in args:
-                    acquire_args["serial_numbers"] = [args["camera"]]
-
-                if "stream_type" in args:
-                    acquire_args["stream_types"] = [intel.StreamType[args["stream_type"].upper()]]
-
-            return acquire_args
-
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"Specified YAML file not found ({file}).") from e
-    except yaml.YAMLError as e:
-        if hasattr(e, "problem_mark"):
-            line = e.problem_mark.line + 1  # type: ignore
-            raise SyntaxError(f"Wrong syntax on line {line} of the YAML file.") from e
-        else:
-            raise RuntimeError("Unknown problem on the specified YAML file.") from e
 
 
 def print_info(message: str) -> None:
