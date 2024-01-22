@@ -441,11 +441,11 @@ class Acquire(utils.Mode):
 
         self.__args = args
 
-        self.__set_default_values(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
+        self.__set_default_values()
 
     # set default values
 
-    def __set_default_values(self, date: str) -> None:
+    def __set_default_values(self) -> None:
         """
         Sets the default values of the threads manager.
         """
@@ -454,7 +454,7 @@ class Acquire(utils.Mode):
 
         self.__cameras_storage = {
             camera.serial_number: os.path.abspath(
-                os.path.join(self.__args.output_folder, camera.serial_number, date)
+                os.path.join(self.__args.output_folder, camera.serial_number)
             )
             for camera in self.__args.cameras
         }
@@ -686,15 +686,15 @@ class Acquire(utils.Mode):
 
         logger = utils.Logger("Root", _LOG_FILE)
 
-        today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        logger.info("\nStarting acquire mode (%s).", today)
+        logger.info(
+            "Starting acquire mode (%s).", datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        )
 
         logger.info("Acquire mode started with following args:\n%s", self.__args)
 
         # perform reset of internal values
 
-        self.__set_default_values(today)
+        self.__set_default_values()
         logger.info("Performed reset of internal values.")
 
         # create storage folders
@@ -860,7 +860,7 @@ class Acquire(utils.Mode):
 
         utils.print_info(stats)
 
-        logger.info("Acquire mode terminated.")
+        logger.info("Acquire mode terminated.\n")
 
         utils.print_info("Acquire mode terminated!\n")
 
@@ -876,10 +876,10 @@ class Acquire(utils.Mode):
         session_logs = file.split("\n\n")
 
         for session_log in session_logs:
-            lines = re.split(r"\n(?=\d{4}-\d{2}-\d{2})", session_log)
+            if session_log == "":
+                continue
 
-            if lines[0] == "":
-                lines.pop(0)
+            lines = re.split(r"\n(?=\d{4}-\d{2}-\d{2})", session_log)
 
             utils.print_log(f"Session {lines[0].split('(')[1][:-2]}")
 
