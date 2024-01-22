@@ -66,7 +66,18 @@ if __name__ == "__main__":
 
         # realtime mode
         elif parsed_args.mode in ["realtime", "r"]:
-            utils.print_warning("This mode is not yet implemented!\n")
+            args = parsed_args.__dict__
+            del args["mode"]
+
+            try:
+                realtime_args = modes.realtime.RealtimeNamespace(**args)
+                print()
+                utils.print_info("Realtime mode settings:\n")
+                print(realtime_args)
+                print()
+            except Exception as e:
+                utils.print_error(str(e) + "\n")
+                exit(1)
 
         # train mode
         elif parsed_args.mode in ["train", "t"]:

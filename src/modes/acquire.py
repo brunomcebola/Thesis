@@ -1,18 +1,21 @@
 """
 This module holds the tools to acquire data from the realsense cameras.
 
+Methods:
+--------
+- parse_acquire_yaml(file: str) -> dict:
+    Parses a YAML file and returns its contents as a dictionary.
+
 Classes:
 --------
 - AcquireNamespace: Holds the arguments for the acquire mode.
+- Acquire: Holds the tools to acquire data from the realsense cameras.
 
 Exceptions:
 -----------
-- OutputFolderError: Exception raised when errors related to the out_folder occur.
-- OperationTimeError: Exception raised when errors related to the operation time occur.
-- SerialNumberError: Exception raised when errors related to the serial number occur.
-- NamesError: Exception raised when errors related to the names occur.
-- StreamTypeError: Exception raised when errors related to the stream type occur.
-- StreamConfigError: Exception raised when errors related to the stream config occur.
+- AcquireNamespaceError: Exception raised when errors related to the acquire namespace occur.
+- AcquireError: Exception raised when errors related to the acquire mode occur.
+
 """
 
 # pylint: disable=pointless-string-statement
@@ -227,8 +230,6 @@ def parse_acquire_yaml(file: str) -> dict:
 class AcquireNamespace(utils.ModeNamespace):
     """
     This class holds the arguments for the acquire mode.
-
-    It can be initialized with explicit arguments or with a dictionary.
 
     Attributes:
     -----------

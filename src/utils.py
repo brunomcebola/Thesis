@@ -32,7 +32,12 @@ class ModeNamespaceError(Exception):
 
 class ModeNamespace(SimpleNamespace):
     """
-    Namespace for modes.
+    This class is intended to be used as a namespace for the modes.
+
+    Attributes:
+    -----------
+        - cameras (list[intel.RealSenseCamera]):
+            The list with the cameras to be used.
     """
 
     def __init__(
@@ -42,6 +47,30 @@ class ModeNamespace(SimpleNamespace):
         stream_configs: list[dict[intel.StreamType, intel.StreamConfig]] | None = None,
         exception: Type[ModeNamespaceError] = ModeNamespaceError,
     ) -> None:
+        """
+        AcquireNamespace constructor.
+
+        Args:
+        -----
+            - serial_numbers: The serial numbers of the cameras to be used.
+                - If None then all connected cameras will be used.
+                - If list with n elements then the specified cameras will be used.
+            - names: The names of the cameras to be used.
+                - If None then the cameras' serial numbers will be used as names.
+                - If list with the same len as the serial_numbers list then the specified names
+                  will be used.
+            - stream_types: The stream types of the cameras to be used.
+                - If None then depth stream will be used for all cameras.
+                - If list with 1 element then the specified stream will be used for all cameras.
+                - If list with the same len as the serial_numbers list then the specified streams
+                  will be used.
+
+        Raises:
+        -------
+            - ModeNamespaceError: If any of the arguments is invalid.
+
+        """
+
         # type definitions
         self.cameras: list[intel.RealSenseCamera] = []
 
@@ -133,6 +162,7 @@ class ModeNamespace(SimpleNamespace):
         lines = "\t\t".join(lines)
 
         return (string[0] + "Cameras:" + lines).rstrip()
+
 
 class Mode(ABC):
     """
