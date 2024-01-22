@@ -17,15 +17,14 @@ Exceptions:
 
 
 from __future__ import annotations
-from enum import Enum
-from typing import NamedTuple
 
 import os
 
-import matplotlib.pyplot as plt
+from enum import Enum
+from typing import NamedTuple
 import numpy as np
-
 import pyrealsense2 as rs
+import matplotlib.pyplot as plt
 
 
 class StreamConfigError(Exception):
@@ -531,7 +530,7 @@ class RealSenseCamera:
         devices = context.query_devices()
 
         for device in devices:
-            cameras_sn.append(device.get_info(rs.camera_info.serial_number)) # type: ignore
+            cameras_sn.append(device.get_info(rs.camera_info.serial_number))  # type: ignore
 
         return cameras_sn
 
@@ -549,7 +548,7 @@ class RealSenseCamera:
         devices = context.query_devices()
 
         for device in devices:
-            if device.get_info(rs.camera_info.serial_number) == sn: # type: ignore
+            if device.get_info(rs.camera_info.serial_number) == sn:  # type: ignore
                 return True
 
         return False
@@ -569,7 +568,7 @@ class RealSenseCamera:
 
         for device in devices:
             if device.get_info(rs.camera_info.serial_number) == sn:  # type: ignore
-                return device.get_info(rs.camera_info.name).split(" ")[-1][:4] # type: ignore
+                return device.get_info(rs.camera_info.name).split(" ")[-1][:4]  # type: ignore
 
         return ""
 
@@ -655,7 +654,7 @@ class Frame:
             plt.show()
 
     @classmethod
-    def create_instances(cls, frame: rs.composite_frame, stream_type: StreamType) -> list["Frame"]: # type: ignore
+    def create_instances(cls, frame: rs.composite_frame, stream_type: StreamType) -> list["Frame"]:  # type: ignore
         """
         Return a list of Frame objects based on the stream type.
         """
@@ -679,7 +678,7 @@ class DepthFrame(Frame):
     Subclass of Frame to represent a depth frame captured by a camera.
     """
 
-    def __init__(self, frame: rs.composite_frame) -> None: # type: ignore
+    def __init__(self, frame: rs.composite_frame) -> None:  # type: ignore
         super().__init__(frame.get_depth_frame())
 
 
@@ -688,7 +687,7 @@ class ColorFrame(Frame):
     Subclass of Frame to represent a color frame captured by a camera.
     """
 
-    def __init__(self, frame: rs.composite_frame) -> None: # type: ignore
+    def __init__(self, frame: rs.composite_frame) -> None:  # type: ignore
         super().__init__(frame.get_color_frame())
 
 
@@ -697,5 +696,5 @@ class IRFrame(Frame):
     Subclass of Frame to represent an infrared frame captured by a camera.
     """
 
-    def __init__(self, frame: rs.composite_frame) -> None: # type: ignore
+    def __init__(self, frame: rs.composite_frame) -> None:  # type: ignore
         super().__init__(frame.get_infrared_frame())

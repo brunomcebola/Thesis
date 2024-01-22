@@ -5,15 +5,17 @@ It defines the available modes and their arguments, and parses the cmd line args
 Classes:
     - CmdParser: Object for parsing command line arguments into Python objects.
 """
+
 import argparse
 import sys
 
 from colorama import Style
-from helpers.utils import print_error
-from helpers.intel import StreamType
+
+from . import utils
+from . import intel
 
 
-class ArgParser:
+class Parser:
     """
     A class for parsing command line arguments into Python objects.
 
@@ -61,7 +63,7 @@ class ArgParser:
             return formatter.format_help()
 
         def error(self, message):
-            print_error(message)
+            utils.print_error(message)
             print()
 
             if not self._subparsers:
@@ -140,12 +142,12 @@ class ArgParser:
             """
             value = value.strip().upper()
 
-            if value in [type.name for type in StreamType]:
-                return StreamType[value]
-            elif value.isdigit() and int(value) in [type.value for type in StreamType]:
-                return StreamType(int(value))
+            if value in [type.name for type in intel.StreamType]:
+                return intel.StreamType[value]
+            elif value.isdigit() and int(value) in [type.value for type in intel.StreamType]:
+                return intel.StreamType(int(value))
             else:
-                options = ", ".join([f"'{type.name}' ({type.value})" for type in StreamType])
+                options = ", ".join([f"'{type.name}' ({type.value})" for type in intel.StreamType])
                 raise argparse.ArgumentTypeError(
                     f"invalid choice: '{value}' (choose from {options})"
                 )
@@ -213,7 +215,7 @@ class ArgParser:
             "-s",
             "--stream-type",
             nargs=1,
-            help=f"Specify the stream type to use ({', '.join([tp.name for tp in StreamType])}).",
+            help=f"Specify the stream type to use ({', '.join([tp.name for tp in intel.StreamType])}).",
             dest="stream_types",
             metavar="stream",
             type=_stream_type_type,
@@ -291,6 +293,26 @@ class ArgParser:
             dest="export_path",
         )
 
+    def _add_realtime_mode_subparser(self):
+        parser = self._subparsers.add_parser(
+            "realtime",
+            aliases="r",
+            description="Argos, Real-time Image Analysis for Fraud Detection",
+            help="Mode to stream the cameras in real-time.",
+            allow_abbrev=False,
+            formatter_class=self._HelpFormatterModes,
+            usage="argos.py realtime [-h | --help]",
+            add_help=False,
+        )
+
+        parser.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="Show this help message and exit.",
+        )
+
     # TODO
     def _add_train_mode_subparser(self):
         parser = self._subparsers.add_parser(
@@ -333,6 +355,7 @@ class ArgParser:
             help="Show this help message and exit.",
         )
 
+    # TODO
     def _add_calibrate_mode_subparser(self):
         parser = self._subparsers.add_parser(
             "calibrate",
@@ -356,6 +379,7 @@ class ArgParser:
     def _add_subparsers(self):
         self._add_calibrate_mode_subparser()
         self._add_acquire_mode_subparser()
+        self._add_realtime_mode_subparser()
         self._add_train_mode_subparser()
         self._add_online_mode_subparser()
 

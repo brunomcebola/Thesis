@@ -10,24 +10,29 @@ Usage:
     $ python argos.py [-h] {acquire,train,online,yaml} ...
 """
 
-import helpers.arg_parser as arg_parser
-import helpers.utils as utils
-import modes.acquire as acquire
+import src.parser as parser
+import src.utils as utils
+
+import src.modes as modes
 
 if __name__ == "__main__":
-    parser = arg_parser.ArgParser()
+    parser = parser.Parser()
     parsed_args = parser.get_args()
 
     print()
 
     try:
+        # calibration mode
+        if parsed_args.mode in ["calibrate", "cal"]:
+            pass
+
         # acquire mode
-        if parsed_args.mode in ["acquire", "a"]:
+        elif parsed_args.mode in ["acquire", "a"]:
             if parsed_args.sub_mode in ["log", "l"]:
                 if parsed_args.export_path is None:
-                    acquire.Acquire.print_logs()
+                    modes.acquire.Acquire.print_logs()
                 else:
-                    acquire.Acquire.export_logs(parsed_args.export_path)
+                    modes.acquire.Acquire.export_logs(parsed_args.export_path)
 
             if parsed_args.sub_mode in ["yaml", "y"] or parsed_args.sub_mode in ["cmd", "c"]:
                 args = None  # pylint: disable=invalid-name
@@ -40,7 +45,7 @@ if __name__ == "__main__":
                     del args["sub_mode"]
 
                 try:
-                    acquire_args = acquire.AcquireNamespace(**args)
+                    acquire_args = modes.acquire.AcquireNamespace(**args)
                     print()
                     utils.print_info("Aquire mode settings:\n")
                     print(acquire_args)
@@ -49,7 +54,7 @@ if __name__ == "__main__":
                     utils.print_error(str(e) + "\n")
                     exit(1)
 
-                acquire_handler = acquire.Acquire(acquire_args)
+                acquire_handler = modes.acquire.Acquire(acquire_args)
 
                 user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
                     "Do you wish to start the data acquisition?"
@@ -58,6 +63,11 @@ if __name__ == "__main__":
 
                 if user_prompt is True:
                     acquire_handler.run()
+
+        # realtime mode
+        elif parsed_args.mode in ["realtime", "r"]:
+            utils.print_warning("This mode is not yet implemented!\n")
+
         # train mode
         elif parsed_args.mode in ["train", "t"]:
             utils.print_warning("This mode is not yet implemented!\n")
@@ -66,9 +76,7 @@ if __name__ == "__main__":
         elif parsed_args.mode in ["online", "o"]:
             utils.print_warning("This mode is not yet implemented!\n")
 
-        # calibration mode
-        elif parsed_args.mode in ["calibrate", "cal"]:
-            pass
+
 
     except Exception as e:
         utils.print_error(str(e) + "\n")

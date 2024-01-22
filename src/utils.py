@@ -23,7 +23,7 @@ from colorama import Fore, Style
 
 import yaml
 
-import helpers.intel as intel
+from . import intel
 
 class ModeNamespace(SimpleNamespace):
     """

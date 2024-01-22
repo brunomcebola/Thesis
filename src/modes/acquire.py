@@ -24,8 +24,8 @@ import calendar
 import threading
 import datetime
 
-import helpers.intel as intel
-import helpers.utils as utils
+from .. import intel
+from .. import utils
 
 _LOG_FILE = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../logs/aquire.log")
 
@@ -670,7 +670,7 @@ class Acquire(utils.Mode):
                     for frame in frames:
                         frame.save_as_npy(
                             self.__cameras_storage[camera.serial_number],
-                            str(i) + "_" + str(timestamp).replace(".", "_"),
+                            str(timestamp).replace(".", "_") + "_" + str(i),
                         )
 
                     self.__stored_frames[camera.serial_number] += 1
