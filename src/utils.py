@@ -107,6 +107,32 @@ class ModeNamespace(SimpleNamespace):
             for sn, st, sc in zip(serial_numbers, stream_types, stream_configs)
         ]
 
+    def __str__(self) -> str:
+        string = ""
+
+        string += "\tCameras:"
+        for camera in self.cameras:
+            string += "\n"
+            string += f"\t\tName:{camera.name}\n"
+            string += f"\t\tSerial number:{camera.serial_number}\n"
+            string += f"\t\tStream type:{camera.stream_type}\n"
+            for key, value in camera.stream_configs.items():
+                string += f"\t\t{key.name.capitalize()} stream config:{str(value)}\n"
+
+        # align elements
+        string = string.split("Cameras:")
+        lines = string[1].split("\t\t")
+
+        max_title = max([len(line.split(":")[0]) for line in lines])
+
+        lines = [
+            f":  {' ' * (max_title - len(line.split(':')[0]))}".join(line.split(":"))
+            for line in lines
+        ]
+
+        lines = "\t\t".join(lines)
+
+        return (string[0] + "Cameras:" + lines).rstrip()
 
 class Mode(ABC):
     """

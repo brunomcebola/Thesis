@@ -349,29 +349,10 @@ class AcquireNamespace(utils.ModeNamespace):
 
         string += f"\tOutput folder: {self.output_folder}\n"
         string += f"\tOperation time: {[(list(calendar.day_abbr)[i], op[0], op[1]) for i, op in enumerate(self.op_times)]}\n"  # pylint: disable=line-too-long
-        string += "\tCameras:"
-        for camera in self.cameras:
-            string += "\n"
-            string += f"\t\tName:{camera.name}\n"
-            string += f"\t\tSerial number:{camera.serial_number}\n"
-            string += f"\t\tStream type:{camera.stream_type}\n"
-            for key, value in camera.stream_configs.items():
-                string += f"\t\t{key.name.capitalize()} stream config:{str(value)}\n"
 
-        # align elements
-        string = string.split(("Cameras:"))
-        lines = string[1].split("\t\t")
+        string += super().__str__()
 
-        max_title = max([len(line.split(":")[0]) for line in lines])
-
-        lines = [
-            f":  {' ' * (max_title - len(line.split(':')[0]))}".join(line.split(":"))
-            for line in lines
-        ]
-
-        lines = "\t\t".join(lines)
-
-        return (string[0] + "Cameras:" + lines).rstrip()
+        return string.rstrip()
 
 
 class Acquire(utils.Mode):
