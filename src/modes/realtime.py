@@ -56,3 +56,38 @@ class RealtimeNamespace(utils.ModeNamespace):
         - cameras (list[intel.RealSenseCamera]):
             The list with the cameras to be used.
     """
+
+
+class Realtime(utils.Mode):
+    """
+    This class holds the tools to stream data from the realsense cameras.
+
+    Methods:
+    --------
+        - run: Runs the realtime mode (in a blocking way).
+
+    """
+
+    # type hints
+
+    __args: RealtimeNamespace
+
+    def __init__(self, args: RealtimeNamespace) -> None:
+        """
+        Acquire constructor.
+
+        Args:
+        -----
+            - args: The arguments for the acquire mode (matching the constructor of
+                    AcquireNamespace).
+
+        """
+
+        self.__args = args
+
+    def run(self) -> None:
+        """
+        Runs the realtime mode (in a blocking way).
+        """
+
+        print(self.__args)

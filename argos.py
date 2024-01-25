@@ -22,12 +22,8 @@ if __name__ == "__main__":
     print()
 
     try:
-        # calibration mode
-        if parsed_args.mode in ["calibrate", "cal"]:
-            pass
-
         # acquire mode
-        elif parsed_args.mode in ["acquire", "a"]:
+        if parsed_args.mode in ["acquire", "a"]:
             if parsed_args.sub_mode in ["log", "l"]:
                 if parsed_args.export_path is None:
                     modes.acquire.Acquire.print_logs()
@@ -79,6 +75,20 @@ if __name__ == "__main__":
                 utils.print_error(str(e) + "\n")
                 exit(1)
 
+            realtime_handler = modes.realtime.Realtime(realtime_args)
+
+            user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
+                "Do you wish to start the data acquisition?"
+            )
+            print()
+
+            if user_prompt is True:
+                realtime_handler.run()
+
+        # calibration mode
+        elif parsed_args.mode in ["calibrate", "cal"]:
+            pass
+
         # train mode
         elif parsed_args.mode in ["train", "t"]:
             utils.print_warning("This mode is not yet implemented!\n")
@@ -86,8 +96,6 @@ if __name__ == "__main__":
         # online mode
         elif parsed_args.mode in ["online", "o"]:
             utils.print_warning("This mode is not yet implemented!\n")
-
-
 
     except Exception as e:
         utils.print_error(str(e) + "\n")
