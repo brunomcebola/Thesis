@@ -266,9 +266,9 @@ class StreamSignals(NamedTuple):
         - terminate: The signal to terminate the stream.
     """
 
-    sync: threading.Event = threading.Event()
     run: threading.Event = threading.Event()
     stop: threading.Event = threading.Event()
+    error: threading.Event = threading.Event()
 
 
 class RealSenseCamera:
@@ -278,19 +278,21 @@ class RealSenseCamera:
     Attributes:
     -----------
         - serial_number: The serial number of the camera.
-        - is_streaming: The status of the camera stream.
         - stream_configs: The configuration of the streams.
+        - is_streaming: The status of the camera stream.
+        - frames_streamed: The number of frames streamed.
+        - frames_queue: The queue of frames streamed.
+        - stream_signals: The signals used to control the stream.
+
 
     Instance Methods:
     --------
-        - change_stream_configs:
-            Changes the stream configurations.
-        - start:
+        - start_streaming:
             Starts the camera stream.
-        - stop:
+        - stop_streaming:
             Stops the camera stream.
         - capture:
-            Returns an object representing a frame from the camera.
+            Captures a frame from the camera.
 
     Class Methods:
     --------------
@@ -299,8 +301,6 @@ class RealSenseCamera:
             or an empty list if no cameras are available.
         - is_camera_available:
             Checks if camera is available.
-        - get_camera_model:
-            Returns the camera model.
 
     """
 
@@ -309,11 +309,16 @@ class RealSenseCamera:
 
     # Instance attributes
     _serial_number: str
-    _is_streaming: bool
     _stream_configs: list[StreamConfig]
 
     _pipeline: rs.pipeline  # type: ignore
     _config: rs.config  # type: ignore
+
+    _is_streaming: bool
+    _frames_queue: queue.Queue[list[Frame]]
+    _frames_streamed: int
+    _stream_signals: StreamSignals
+    _stream_thread: threading.Thread
 
     # Instance constructor and destructor
 
@@ -346,10 +351,15 @@ class RealSenseCamera:
         # Initializes attributes
         self._serial_number = serial_number
         self._stream_configs = stream_configs
-        self._is_streaming = False
+
         self._pipeline = rs.pipeline()  # type: ignore
         self._config = rs.config()  # type: ignore
         self._config.enable_device(self._serial_number)
+
+        self._is_streaming = False
+        self._frames_streamed = 0
+        self._frames_queue = queue.Queue()
+        self._stream_signals = StreamSignals()
 
         # applies stream configs explicitly
         self.__apply_stream_configs()
@@ -385,14 +395,6 @@ class RealSenseCamera:
         return self._serial_number
 
     @property
-    def is_streaming(self) -> bool:
-        """
-        Returns the status of the camera stream.
-        """
-
-        return self._is_streaming
-
-    @property
     def stream_configs(self) -> list[StreamConfig]:
         """
         Returns the configuration of the streams.
@@ -419,6 +421,38 @@ class RealSenseCamera:
             self._stream_configs = old_configs
             self.__apply_stream_configs()
             raise
+
+    @property
+    def is_streaming(self) -> bool:
+        """
+        Returns the status of the camera stream.
+        """
+
+        return self._is_streaming
+
+    @property
+    def frames_streamed(self) -> int:
+        """
+        Returns the number of frames streamed.
+        """
+
+        return self._frames_streamed
+
+    @property
+    def frames_queue(self) -> queue.Queue[list[Frame]]:
+        """
+        Returns the queue of frames.
+        """
+
+        return self._frames_queue
+
+    @property
+    def stream_signals(self) -> StreamSignals:
+        """
+        Returns the signals used to control the stream.
+        """
+
+        return self._stream_signals
 
     # Instance private methods
 
@@ -467,9 +501,94 @@ class RealSenseCamera:
         else:
             raise PipelineRunningError()
 
-    def start_streaming(self) -> None:
+    def __stream_thread_target(self) -> None:
         """
-        TODO: docstring
+        Target function of the acquisition threads.
+        """
+
+        nb_errors = 0
+        max_nb_errors = 5
+
+        while not self._stream_signals.stop.is_set():
+            # used to pause stream without killing thread
+            self.stream_signals.run.wait()
+
+            try:
+                frames = self._pipeline.wait_for_frames()
+
+                self._frames_queue.put(
+                    [
+                        Frame.from_intel_frame(frames, stream_config.type)
+                        for stream_config in self._stream_configs
+                    ]
+                )
+
+                self._frames_streamed += 1
+
+            except Exception:
+                nb_errors += 1
+
+                if nb_errors >= max_nb_errors:
+                    self._stream_signals.error.set()
+                    break
+
+        self._pipeline.stop()
+        self._is_streaming = False
+
+    # Instance public methods
+
+    def start_streaming(self, signals: StreamSignals | None = None) -> None:
+        """
+        Starts the camera stream.
+        """
+
+        if self.is_streaming:
+            raise PipelineRunningError()
+
+        self._is_streaming = True
+        self._frames_streamed = 0
+        self._frames_queue = queue.Queue()
+
+        if signals is None:
+            self._stream_signals = StreamSignals()
+
+            self._stream_signals.stop.clear()
+            self._stream_signals.error.clear()
+
+            self._stream_signals.run.set()
+
+        else:
+            self._stream_signals = signals
+
+        self._pipeline.start(self._config)
+
+        # allow for some auto exposure to happen
+        for _ in range(30):
+            self._pipeline.wait_for_frames()
+
+        self._stream_thread = threading.Thread(target=self.__stream_thread_target)
+
+    def stop_streaming(self) -> None:
+        """
+        Stops the camera stream.
+
+        Note:
+            If a signals class was passed to the start_streaming method,
+            all streams using that signals class will be stopped.
+        """
+
+        if self._is_streaming:
+            self._stream_signals.stop.set()
+
+            self._stream_thread.join()
+
+    def capture(self) -> list[Frame]:  # type: ignore
+        """
+        Captures a frame from the camera.
+
+        Returns:
+        --------
+            A list of the different frames captured from the camera in that instant.
         """
 
         if self.is_streaming:
@@ -478,123 +597,15 @@ class RealSenseCamera:
         self._is_streaming = True
         self._pipeline.start(self._config)
 
-        # allow for some auto exposure to happen
-        for _ in range(30):
-            self._pipeline.wait_for_frames()
-
-        # TODO: implement default signals
-
-        # TODO: send ready signal
-
-    def __stream_thread(
-        self,
-        frames_queue: queue.Queue[list[Frame]],
-        signals: StreamSignals,
-    ) -> None:
-        """
-        # TODO: docstring
-        """
-
-        signals.sync.wait()
-
-        try:
-            while not signals.stop.is_set():
-                # blocks until pause signal is cleared
-                signals.run.wait()
-
-                frames = self._pipeline.wait_for_frames()
-
-                self.__captured_frames[camera.serial_number] += 1
-
-                frames_queue.put( Frame.create_instances(frame, camera.stream_type),)
-
-                serial_number].append(
-                    (
-                        self.__captured_frames[camera.serial_number],
-
-                        frame.get_timestamp(),  # type: ignore
-                    )
-                )
-
-
-
-        #         instances_list: list[Frame] = []
-        # types_list = stream_type.value if isinstance(stream_type.value, list) else [stream_type]
-
-        # for t in types_list:
-        #     if t == StreamType.DEPTH:
-        #         instances_list.append(DepthFrame(frame))
-        #     elif t == StreamType.COLOR:
-        #         instances_list.append(ColorFrame(frame))
-        #     else:
-        #         instances_list.append(IRFrame(frame))
-
-        # return instances_list
-        except Exception:
-            self.__capture_error = True
-
-            logger.error("Error capturing frame.")
-
-        finally:
-            camera.stop()
-            logger.info("Camera stopped.")
-
-            logger.info("Stopped.")
-
-    # Instance public methods
-
-    # TODO: make this a stream with threads
-    def start(self) -> bool:
-        """
-        Starts the camera stream.
-
-        Returns:
-        --------
-            - True if the pipeline was not running and was started
-            - False if the pipelin was already running.
-        """
-
-        if self.is_streaming:
-            return False
-
-        self._pipeline.start(self._config)
-        self._is_streaming = True
-
-        return True
-
-    # TODO: perhaps remove this
-    def stop(self) -> bool:
-        """
-        Stops the camera stream.
-
-        Returns:
-        --------
-            - True if the pipeline was running and was stopped
-            - False if the pipeline was already stopped.
-        """
-
-        if not self.is_streaming:
-            return False
+        frames = self._pipeline.wait_for_frames()
 
         self._pipeline.stop()
         self._is_streaming = False
 
-        return True
-
-    # TODO: make this capture a frame and stop. Ensure no stream happening
-    def capture(self) -> rs.composite_frame:  # type: ignore
-        """
-        Returns an object representing a frame from the camera.
-
-        It blocks the execution until a frame is available, if the camera is running.
-
-        In order to access the frame data itself it is necessary to use a subclass of Frame.
-        """
-
-        if self.is_streaming:
-            return self._pipeline.wait_for_frames()
-        else:
-            return []
+        return [
+            Frame.from_intel_frame(frames, stream_config.type)
+            for stream_config in self._stream_configs
+        ]
 
     # Class public methods
 
@@ -633,72 +644,73 @@ class RealSenseCamera:
 
         return False
 
-    @classmethod
-    def get_camera_model(cls, sn: str) -> str:
+
+class Frame:
+    """
+    A class to represent a frame from the camera.
+    """
+
+    _data: np.ndarray
+    _timestamp: str
+    _frame_type: StreamType
+
+    # Instance constructor
+
+    def __init__(self, data: np.ndarray, timestamp: str, frame_type: StreamType) -> None:
         """
-        Returns the camera model.
+        Frame constructor.
 
         Args:
         -----
-            - sn: The serial number of the camera.
+            - data: The data of the frame.
+            - timestamp: The timestamp of the frame.
+        """
+        self._data = data
+        self._timestamp = timestamp
+        self._frame_type = frame_type
+
+    # Instance properties
+
+    @property
+    def data(self) -> np.ndarray:
+        """
+        Returns the data of the frame.
         """
 
-        context = rs.context()  # type: ignore
-        devices = context.query_devices()
+        return self._data
 
-        for device in devices:
-            if device.get_info(rs.camera_info.serial_number) == sn:  # type: ignore
-                return device.get_info(rs.camera_info.name).split(" ")[-1][:4]  # type: ignore
-
-        return ""
-
-
-# TODO: iprove this classes
-# TODO: add timestamp
-class _Frame(NamedTuple):
-    """
-    Abstract class to represent a frame captured by a camera.
-
-    Not to be instantiated directly.
-    """
-
-    data: np.ndarray
-
-    @classmethod
-    def from_file(cls, path: str):
-        #TODO: implement logic to check file existance
-        return cls(np.load(path))
-
-    @classmethod
-    def from_intel_frame(cls, intel_frame: rs.composite_frame): # type: ignore
-        return cls(np.array(intel_frame.get_data()))
-
-    def save_as_npy(self, folder: str, name: str) -> str:
+    @property
+    def timestamp(self) -> str:
         """
-        Saves the frame.
+        Returns the timestamp of the frame.
         """
 
-        if self.data is not None:
-            path = os.path.join(
-                folder, name + "_" + type(self).__name__.replace("Frame", "").lower() + ".npy"
-            )
+        return self._timestamp
 
-            np.save(path, self.data)
-
-            return path
-
-        else:
-            return ""
-
-    def load_from_npy(self, path: str) -> None:
+    @property
+    def frame_type(self) -> StreamType:
         """
-        Loads the frame.
+        Returns the type of the frame.
         """
 
-        try:
-            self.data = np.load(path)
-        except Exception:
-            pass
+        return self._frame_type
+
+    # Instance public methods
+
+    def save(self, folder: str) -> None:
+        """
+        Saves the frame in the specified folder with the timestamp and type as name.
+
+        Example: 1705944438145_0425_depth.npy
+        """
+
+        np.save(
+            os.path.join(
+                folder,
+                self._timestamp + "_" + self.frame_type.name.lower() + ".npy",
+            ),
+            self.data,
+        )
 
     def show(self) -> None:
         """
@@ -709,20 +721,44 @@ class _Frame(NamedTuple):
             plt.imshow(self.data)
             plt.show()
 
+    # Class public methods
 
-class DepthFrame(_Frame):
-    """
-    Subclass of Frame to represent a depth frame captured by a camera.
-    """
+    @classmethod
+    def from_intel_frame(
+        cls,
+        intel_frame: rs.composite_frame,  # type: ignore
+        frame_type: StreamType,
+    ) -> Frame:
+        """
+        Creates a frame from an intel frame.
+        """
+        get_frame_method = getattr(intel_frame, f"get_{frame_type.name.lower()}_frame", None)
 
-    def __init__(self, frame: rs.composite_frame) -> None:  # type: ignore
-        super().__init__(frame.get_depth_frame())
+        if get_frame_method is None:
+            raise ValueError("Invalid frame type.")
 
+        return cls(
+            np.array(get_frame_method.get_data()),
+            str(intel_frame.get_timestamp()).replace(".", "_"),
+            frame_type,
+        )
 
-class ColorFrame(_Frame):
-    """
-    Subclass of Frame to represent a color frame captured by a camera.
-    """
+    @classmethod
+    def from_file(
+        cls,
+        path: str,
+        frame_type: StreamType,
+    ) -> Frame:
+        """
+        Creates a frame from a file.
 
-    def __init__(self, frame: rs.composite_frame) -> None:  # type: ignore
-        super().__init__(frame.get_color_frame())
+        Note:
+            If an attempt is made to resave the frame, the result will be
+            a file named "_<type>.npy" as no timestamp is available.
+
+        Raises:
+        -------
+            - OSError: If the input file does not exist or cannot be read.
+        """
+
+        return Frame(np.load(path), "", frame_type)
