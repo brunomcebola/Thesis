@@ -189,7 +189,7 @@ class Parser:
             allow_abbrev=False,
             formatter_class=self._HelpFormatterModes,
             usage="argos.py acquire cmd (-o | --output) <path> [(-c | --camera) <sn>]\n"
-            + "                       [(-s | --stream-type) <stream>] [-h | --help]",
+            + "                       [-h | --help]",
             add_help=False,
         )
 
@@ -209,16 +209,6 @@ class Parser:
             metavar="sn",
             dest="serial_numbers",
             type=_non_empty_string_type,
-        )
-
-        cmd.add_argument(
-            "-s",
-            "--stream-type",
-            nargs=1,
-            help=f"Specify the stream type to use ({', '.join([tp.name for tp in intel.StreamType])}).",
-            dest="stream_types",
-            metavar="stream",
-            type=_stream_type_type,
         )
 
         cmd_required = cmd.add_argument_group("Required arguments")

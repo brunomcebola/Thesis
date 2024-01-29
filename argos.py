@@ -31,17 +31,17 @@ if __name__ == "__main__":
                     modes.acquire.Acquire.export_logs(parsed_args.export_path)
 
             else:
-                args = None  # pylint: disable=invalid-name
-
-                if parsed_args.sub_mode in ["yaml", "y"]:
-                    args = modes.acquire.parse_acquire_yaml(parsed_args.file)
-                else:
-                    args = parsed_args.__dict__
-                    del args["mode"]
-                    del args["sub_mode"]
-
                 try:
-                    acquire_args = modes.acquire.AcquireNamespace(**args)
+                    if parsed_args.sub_mode in ["yaml", "y"]:
+                        acquire_args = modes.acquire.AcquireNamespace.from_yaml(parsed_args.file)
+
+                    else:
+                        args = parsed_args.__dict__
+                        del args["mode"]
+                        del args["sub_mode"]
+                        acquire_args = modes.acquire.AcquireNamespace(**args)
+
+
                     print()
                     utils.print_info("Aquire mode settings:\n")
                     print(acquire_args)
@@ -62,11 +62,13 @@ if __name__ == "__main__":
 
         # realtime mode
         elif parsed_args.mode in ["realtime", "r"]:
-            args = parsed_args.__dict__
-            del args["mode"]
+
 
             try:
+                args = parsed_args.__dict__
+                del args["mode"]
                 realtime_args = modes.realtime.RealtimeNamespace(**args)
+                
                 print()
                 utils.print_info("Realtime mode settings:\n")
                 print(realtime_args)

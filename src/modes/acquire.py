@@ -211,7 +211,11 @@ class AcquireNamespace(utils.ModeNamespace):
         return string.rstrip()
 
     @classmethod
-    def get_specific_yaml_schema(cls) -> dict:
+    def from_yaml(cls, file: str) -> AcquireNamespace:
+        return cls.from_yaml(file)
+
+    @classmethod
+    def _get_specific_yaml_schema(cls) -> dict:
         return {
             "output_folder": {"type": "string"},
             "op_times": {

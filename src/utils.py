@@ -63,6 +63,11 @@ class ModeNamespace(SimpleNamespace, ABC):
     -----------
         - cameras (list[intel.RealSenseCamera]):
             The list with the cameras to be used.
+
+    Class methods:
+    --------------
+        - from_yaml(file: str):
+            Loads the namespace from a YAML file.
     """
 
     # type hints
@@ -163,7 +168,7 @@ class ModeNamespace(SimpleNamespace, ABC):
             with open(file, "r", encoding="utf-8") as f:
                 args = yaml.safe_load(f)
 
-                validate(args, cls.get_full_yaml_schema())
+                validate(args, cls._get_full_yaml_schema())
 
                 return cls(**args)
 
@@ -177,13 +182,13 @@ class ModeNamespace(SimpleNamespace, ABC):
                 raise RuntimeError("Unknown problem on the specified YAML file.") from e
 
     @classmethod
-    def get_full_yaml_schema(cls) -> dict:
+    def _get_full_yaml_schema(cls) -> dict:
         """
         Returns the schema of the mode.
         """
         schema = {
             "type": "object",
-            "properties": cls.get_specific_yaml_schema()
+            "properties": cls._get_specific_yaml_schema()
             | {
                 "cameras": {
                     "type": "array",
@@ -245,7 +250,7 @@ class ModeNamespace(SimpleNamespace, ABC):
 
     @classmethod
     @abstractmethod
-    def get_specific_yaml_schema(cls) -> dict:
+    def _get_specific_yaml_schema(cls) -> dict:
         """
         Returns the schema of the mode.
         """
