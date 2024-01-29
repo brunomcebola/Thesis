@@ -11,17 +11,31 @@ Functions:
 - get_user_confirmation(message) -> bool: Asks the user for confirmation.
 """
 
+# pylint: disable=pointless-string-statement
+
 from __future__ import annotations
 
 import os
 import logging
-
 from typing import Type
 from types import SimpleNamespace
 from abc import ABC, abstractmethod
+import yaml
 from colorama import Fore, Style
+from jsonschema import validate
 
 from . import intel
+
+
+# Exceptions
+"""
+███████╗██╗  ██╗ ██████╗███████╗██████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
+██╔════╝╚██╗██╔╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+█████╗   ╚███╔╝ ██║     █████╗  ██████╔╝   ██║   ██║██║   ██║██╔██╗ ██║███████╗
+██╔══╝   ██╔██╗ ██║     ██╔══╝  ██╔═══╝    ██║   ██║██║   ██║██║╚██╗██║╚════██║
+███████╗██╔╝ ██╗╚██████╗███████╗██║        ██║   ██║╚██████╔╝██║ ╚████║███████║
+╚══════╝╚═╝  ╚═╝ ╚═════╝╚══════╝╚═╝        ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+"""
 
 
 class ModeNamespaceError(Exception):
@@ -30,7 +44,18 @@ class ModeNamespaceError(Exception):
     """
 
 
-class ModeNamespace(SimpleNamespace):
+# Classes
+"""
+ ██████╗██╗      █████╗ ███████╗███████╗███████╗███████╗
+██╔════╝██║     ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝
+██║     ██║     ███████║███████╗███████╗█████╗  ███████╗
+██║     ██║     ██╔══██║╚════██║╚════██║██╔══╝  ╚════██║
+╚██████╗███████╗██║  ██║███████║███████║███████╗███████║
+ ╚═════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝
+"""
+
+
+class ModeNamespace(SimpleNamespace, ABC):
     """
     This class is intended to be used as a namespace for the modes.
 
@@ -40,11 +65,15 @@ class ModeNamespace(SimpleNamespace):
             The list with the cameras to be used.
     """
 
+    # type hints
+    cameras: list[intel.RealSenseCamera]
+
+    # Instance constructor
+
     def __init__(
         self,
-        serial_numbers: list[str] | None = None,
-        stream_types: list[intel.StreamType] | None = None,
-        stream_configs: list[dict[intel.StreamType, intel.StreamConfig]] | None = None,
+        serial_numbers: list[str],
+        stream_configs: list[list[intel.StreamConfig]],
         exception: Type[ModeNamespaceError] = ModeNamespaceError,
     ) -> None:
         """
@@ -53,88 +82,45 @@ class ModeNamespace(SimpleNamespace):
         Args:
         -----
             - serial_numbers: The serial numbers of the cameras to be used.
-                - If None then all connected cameras will be used.
-                - If list with n elements then the specified cameras will be used.
-            - names: The names of the cameras to be used.
-                - If None then the cameras' serial numbers will be used as names.
-                - If list with the same len as the serial_numbers list then the specified names
-                  will be used.
-            - stream_types: The stream types of the cameras to be used.
-                - If None then depth stream will be used for all cameras.
-                - If list with 1 element then the specified stream will be used for all cameras.
-                - If list with the same len as the serial_numbers list then the specified streams
-                  will be used.
+            - stream_configs: The stream configs of the cameras to be used.
+            - exception: The exception class to be raised if any of the arguments is invalid.
+
+            Note: The number of stream configs must match the number of cameras.
 
         Raises:
         -------
-            - ModeNamespaceError: If any of the arguments is invalid.
+            - Type[ModeNamespaceError]: If any of the arguments is invalid.
 
         """
 
-        # type definitions
-        self.cameras: list[intel.RealSenseCamera] = []
-
         # serial_numbers validations
-        if serial_numbers is None:
-            print_warning("No camera specified. Using all connected cameras.")
+        if len(serial_numbers) == 0:
+            raise exception("At least one serial number must be specified.")
 
-            serial_numbers = intel.RealSenseCamera.get_available_cameras_sn()
-
-            if len(serial_numbers) == 0:
-                raise intel.CameraUnavailableError("No available cameras.")
-
-        elif len(set(serial_numbers)) == len(serial_numbers):
-            serial_numbers = [str(serial_number).strip() for serial_number in serial_numbers]
-
-        else:
-            raise exception("Serial numbers.")
-
-        # stream_types validations
-        if stream_types is None:
-            print_warning("No stream type specified. Setting depth as stream type of all cameras.")
-
-            stream_types = [intel.StreamType.DEPTH] * len(serial_numbers)
-
-        elif len(stream_types) == 1:
-            print_warning("Using the specified stream type for all cameras.")
-
-            stream_types = stream_types * len(serial_numbers)
-
-        elif len(stream_types) == len(serial_numbers):
-            pass
-
-        else:
-            raise exception("Stream types.")
+        if len(set(serial_numbers)) != len(serial_numbers):
+            raise exception("There are repeated serial numbers.")
 
         # stream configs validations
-        if stream_configs is None:
-            print_warning(
-                "No stream configs specified. Using default stream configs for each camera model."
-            )
+        if len(stream_configs) != len(serial_numbers):
+            raise exception("The number of stream configs must match the number of cameras.")
 
-            stream_configs = [
-                intel.RealSenseCamera.get_default_config(
-                    intel.RealSenseCamera.get_camera_model(serial_number)
+        for camera_stream_configs in stream_configs:
+            if len(camera_stream_configs) == 0:
+                raise exception("At least one stream config must be specified for each camera.")
+
+            if len(camera_stream_configs) != len(
+                set(
+                    camera_stream_config.type.name for camera_stream_config in camera_stream_configs
                 )
-                for serial_number in serial_numbers
-            ]
-
-        elif len(stream_configs) == 1:
-            print_warning("Using the specified stream config for all cameras.")
-
-            stream_configs = stream_configs * len(serial_numbers)
-
-        elif len(stream_configs) == len(serial_numbers):
-            pass
-
-        else:
-            raise exception("Stream configs.")
+            ):
+                raise exception("There are repeated stream configs for the same camera.")
 
         # create list of camera instances
         self.cameras = [
-            intel.RealSenseCamera(sn, st, sc)
-            for sn, st, sc in zip(serial_numbers, stream_types, stream_configs)
+            intel.RealSenseCamera(sn.strip(), sc) for sn, sc in zip(serial_numbers, stream_configs)
         ]
+
+    # Instance special methods
 
     def __str__(self) -> str:
         string = ""
@@ -142,11 +128,10 @@ class ModeNamespace(SimpleNamespace):
         string += "\tCameras:"
         for camera in self.cameras:
             string += "\n"
-            string += f"\t\tName:{camera.name}\n"
             string += f"\t\tSerial number:{camera.serial_number}\n"
-            string += f"\t\tStream type:{camera.stream_type}\n"
-            for key, value in camera.stream_configs.items():
-                string += f"\t\t{key.name.capitalize()} stream config:{str(value)}\n"
+            string += "\t\tStream configs:\n"
+            for stream_config in camera.stream_configs:
+                string += f"\t\t\t{stream_config}\n"
 
         # align elements
         string = string.split("Cameras:")
@@ -162,6 +147,108 @@ class ModeNamespace(SimpleNamespace):
         lines = "\t\t".join(lines)
 
         return (string[0] + "Cameras:" + lines).rstrip()
+
+    # Class methods
+
+    @classmethod
+    def from_yaml(cls, file: str) -> ModeNamespace:
+        """
+        Loads the mode from a YAML file.
+
+        Args:
+        -----
+            - file: The YAML file to be loaded.
+        """
+        try:
+            with open(file, "r", encoding="utf-8") as f:
+                args = yaml.safe_load(f)
+
+                validate(args, cls.get_full_yaml_schema())
+
+                return cls(**args)
+
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Specified YAML file not found ({file}).") from e
+        except yaml.YAMLError as e:
+            if hasattr(e, "problem_mark"):
+                line = e.problem_mark.line + 1  # type: ignore
+                raise SyntaxError(f"Wrong syntax on line {line} of the YAML file.") from e
+            else:
+                raise RuntimeError("Unknown problem on the specified YAML file.") from e
+
+    @classmethod
+    def get_full_yaml_schema(cls) -> dict:
+        """
+        Returns the schema of the mode.
+        """
+        schema = {
+            "type": "object",
+            "properties": cls.get_specific_yaml_schema()
+            | {
+                "cameras": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "serial_number": {
+                                "anyOf": [
+                                    {"type": "string"},
+                                    {"type": "number", "minimum": 0},
+                                ]
+                            },
+                            "stream_configs": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "enum": [
+                                                s_type.name.lower() for s_type in intel.StreamType
+                                            ]
+                                        },
+                                        "format": {
+                                            "enum": [
+                                                s_format.name.lower()
+                                                for s_format in intel.StreamFormat
+                                            ]
+                                        },
+                                        "resolution": {
+                                            "enum": [
+                                                s_resolution.name.lower()
+                                                for s_resolution in intel.StreamResolution
+                                            ]
+                                        },
+                                        "fps": {
+                                            "enum": [
+                                                s_fps.name.lower() for s_fps in intel.StreamFPS
+                                            ]
+                                        },
+                                    },
+                                    "required": ["type", "format", "resolution", "fps"],
+                                    "additionalProperties": False,
+                                },
+                            },
+                        },
+                        "required": ["serial_number", "stream_config"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            "additionalProperties": False,
+        }
+
+        schema["required"] = list(schema["properties"].keys())
+
+        return schema
+
+    @classmethod
+    @abstractmethod
+    def get_specific_yaml_schema(cls) -> dict:
+        """
+        Returns the schema of the mode.
+        """
 
 
 class Mode(ABC):
@@ -198,6 +285,17 @@ class Logger(logging.Logger):
         file_handler.setFormatter(Logger.formatter)
 
         self.addHandler(file_handler)
+
+
+# Methods
+"""
+███╗   ███╗███████╗████████╗██╗  ██╗ ██████╗ ██████╗ ███████╗
+████╗ ████║██╔════╝╚══██╔══╝██║  ██║██╔═══██╗██╔══██╗██╔════╝
+██╔████╔██║█████╗     ██║   ███████║██║   ██║██║  ██║███████╗
+██║╚██╔╝██║██╔══╝     ██║   ██╔══██║██║   ██║██║  ██║╚════██║
+██║ ╚═╝ ██║███████╗   ██║   ██║  ██║╚██████╔╝██████╔╝███████║
+╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝
+"""
 
 
 def print_info(message: str) -> None:

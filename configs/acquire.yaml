@@ -1,9 +1,4 @@
 output_folder: ./data/
-
-######################
-
-# op_time: [21, 19]
-
 ######
 
 # op_times:
@@ -13,38 +8,25 @@ output_folder: ./data/
 #   - [0, 6]
 #   - [0, 6]
 #   - [0, 6]
-# - [0, 6]
-
-######################
-
-# camera: 135522077203
-
-# stream_type: depth_n_color
+#   - [0, 6]
 
 ######
 
 # cameras:
-#   - sn: 135522077203
-#     name: Left camera
-#     stream_type: depth
-#     stream_config:
-#       depth:
-#         width: 640
-#         height: 480
-#         fps: 30
-#         format: z16
-#       color:
-#         width: 640
-#         height: 480
-#         fps: 30
-#         format: rgb8
-#   - sn: 135522071130
-#     name: Right camera
-#     stream_type: depth
-#     stream_config:
-#       depth:
-#         width: 640
-#         height: 480
-#         fps: 30
-#         format: z16
+#   - serial_number: 135522077203
+#     stream_configs:
+#         - type: depth
+#           format: z16
+#           resolution: x640_y480
+#           fps: fps_30
+#         - type: color
+#           format: rgb8
+#           resolution: x640_y480
+#           fps: fps_30
+#   - serial_number: 135522071130
+#     stream_configs:
+#         - type: depth
+#           format: z16
+#           resolution: x640_y480
+#           fps: fps_30
 

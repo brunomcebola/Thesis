@@ -212,7 +212,7 @@ class StreamResolution(Enum):
         return self.name
 
 
-class StreamFrameRate(Enum):
+class StreamFPS(Enum):
     """
     An enumeration of the different frame rates of the camera stream.
 
@@ -241,18 +241,21 @@ class StreamConfig(NamedTuple):
 
     Attributes:
     -----------
+        - type: The type of the camera stream.
         - format: The format of the camera stream.
-        - resolution: The resolution of the camera stream (width x height)
-        - fps: The frames per second of the camera stream.
+        - resolution: The resolution of the camera stream.
+        - fps: The speed of the camera stream.
     """
 
     type: StreamType
     format: StreamFormat
     resolution: StreamResolution
-    fps: StreamFrameRate
+    fps: StreamFPS
 
     def __str__(self) -> str:
-        return f"format={self.format}, resolution={self.resolution}, fps={self.fps}"
+        return (
+            f"type={self.type} , format={self.format}, resolution={self.resolution}, fps={self.fps}"
+        )
 
 
 class StreamSignals(NamedTuple):
@@ -296,7 +299,7 @@ class RealSenseCamera:
 
     Class Methods:
     --------------
-        - get_available_cameras_sn:
+        - get_available_cameras_serial_numbers:
             Returns a list with the serial numbers of the available cameras
             or an empty list if no cameras are available.
         - is_camera_available:
@@ -510,7 +513,6 @@ class RealSenseCamera:
         max_nb_errors = 5
 
         while not self._stream_signals.stop.is_set():
-            # used to pause stream without killing thread
             self.stream_signals.run.wait()
 
             try:
@@ -524,6 +526,8 @@ class RealSenseCamera:
                 )
 
                 self._frames_streamed += 1
+
+                nb_errors = 0
 
             except Exception:
                 nb_errors += 1
@@ -568,6 +572,8 @@ class RealSenseCamera:
 
         self._stream_thread = threading.Thread(target=self.__stream_thread_target)
 
+        self._stream_thread.start()
+
     def stop_streaming(self) -> None:
         """
         Stops the camera stream.
@@ -610,7 +616,7 @@ class RealSenseCamera:
     # Class public methods
 
     @classmethod
-    def get_available_cameras_sn(cls) -> list[str]:
+    def get_available_cameras_serial_numbers(cls) -> list[str]:
         """
         Returns a list with the serial numbers of the available cameras
         or an empty list if no cameras are available.
