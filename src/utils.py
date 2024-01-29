@@ -272,7 +272,7 @@ class Logger(logging.Logger):
     Logger class.
     """
 
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     level = logging.INFO
 
     def __init__(self, name: str, file: str) -> None:

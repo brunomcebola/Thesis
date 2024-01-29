@@ -257,6 +257,10 @@ class Acquire(utils.Mode):
     _stream_signals: intel.StreamSignals
     _op_time_signal: threading.Event
 
+    # logger
+
+    _logger: utils.Logger
+
     def __init__(self, args: AcquireNamespace) -> None:
         """
         Acquire constructor.
@@ -269,6 +273,8 @@ class Acquire(utils.Mode):
         """
 
         self._args = args
+
+        self._logger = utils.Logger("", _LOG_FILE)
 
         self._set_default_values()
 
@@ -335,8 +341,11 @@ class Acquire(utils.Mode):
         frames_queue = camera.frames_queue
         folder = self._storage_folders[serial_number]
 
+        self._stream_signals.run.wait()
+
         while not self._stream_signals.stop.is_set():
-            self._stream_signals.run.wait()
+            if frames_queue.empty():
+                self._stream_signals.run.wait()
 
             try:
                 frames = frames_queue.get(timeout=5)
@@ -399,23 +408,25 @@ class Acquire(utils.Mode):
             start = get_start_hour(datetime.now())
             finish = get_finish_hour(datetime.now())
 
+            # idle stream until next op_time
             if not start <= now < finish:
                 idle_time = (start - now).total_seconds()
 
+                self._logger.info("Pausing stream for %s seconds.", str(idle_time / 60))
+
+                self._stream_signals.run.clear()
+
+                self._op_time_signal.wait(idle_time)
+
+                self._stream_signals.run.set()
+
+                self._logger.info("Restarting stream.")
+
+            # idle op time check until end of current op time
             else:
                 idle_time = (finish - now).total_seconds()
 
-            # TODO: this must be logged
-            # logger.info("Idling for %s seconds.", datetime.timedelta(seconds=idle_time))
-
-            self._stream_signals.run.clear()
-
-            self._op_time_signal.wait(idle_time)
-
-            self._stream_signals.run.set()
-
-            # TODO: this must be logged
-            # logger.info("Woke up!")
+                self._op_time_signal.wait(idle_time)
 
     # main function of the class
 
@@ -424,23 +435,23 @@ class Acquire(utils.Mode):
         Runs the acquire mode (in a blocking way).
         """
 
-        logger = utils.Logger("Root", _LOG_FILE)
-
-        logger.info(
-            "New acquisition session (%s) with:\n%s",
+        self._logger.info(
+            "New acquisition session (%s) started with:\n%s",
             datetime.now().strftime("%Y%m%d_%H%M%S"),
             self._args,
         )
 
+        utils.print_info("New acquisition session started!\n")
+
         # perform reset of internal values
 
         self._set_default_values()
-        logger.info("Performed reset of internal values.")
+        self._logger.info("Performed reset of internal values.")
 
         # create storage folders
 
         path = self._create_storage_folders()
-        logger.info("Defined storage folders:\n%s", path)
+        self._logger.info("Defined storage folders:\n%s", path)
 
         # Launch all threads
 
@@ -465,12 +476,12 @@ class Acquire(utils.Mode):
 
             utils.print_error("Error in one of the camera streams.")
 
-            logger.error("Error in one of the camera streams.")
+            self._logger.error("Error in one of the camera streams.")
 
         except KeyboardInterrupt:
             utils.print_info("\rCtrl + C pressed\n")
 
-            logger.info("Ctrl + C pressed.")
+            self._logger.info("Ctrl + C pressed.")
 
         self._stream_signals.stop.set()
         self._stream_signals.run.set()
@@ -484,13 +495,13 @@ class Acquire(utils.Mode):
         stats = "Acquire statistics:\n\n"
 
         for camera in self._args.cameras:
-            logger.info(
+            self._logger.info(
                 "%s captured %d frames.",
                 camera.serial_number,
                 camera.frames_streamed,
             )
 
-            logger.info(
+            self._logger.info(
                 "%s stored %d frames.",
                 camera.serial_number,
                 self._stored_frames[camera.serial_number],
@@ -498,7 +509,7 @@ class Acquire(utils.Mode):
 
             dropped = camera.frames_streamed - self._stored_frames[camera.serial_number]
 
-            logger.info(
+            self._logger.info(
                 "%s dropped %d frames.",
                 camera.serial_number,
                 dropped,
@@ -511,7 +522,7 @@ class Acquire(utils.Mode):
 
         utils.print_info(stats)
 
-        logger.info("Acquire mode terminated.\n")
+        self._logger.info("Acquisition session finished.\n")
 
         utils.print_info("Acquire mode terminated!\n")
 
