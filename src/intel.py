@@ -527,7 +527,8 @@ class RealSenseCamera:
 
                 nb_errors = 0
 
-            except Exception:
+            except Exception as e:
+                print(e)
                 nb_errors += 1
 
                 if nb_errors >= max_nb_errors:
@@ -742,7 +743,7 @@ class Frame:
             raise ValueError("Invalid frame type.")
 
         return cls(
-            np.array(get_frame_method.get_data()),
+            np.array(get_frame_method().get_data()),
             str(intel_frame.get_timestamp()).replace(".", "_"),
             frame_type,
         )
