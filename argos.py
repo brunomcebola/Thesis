@@ -41,7 +41,6 @@ if __name__ == "__main__":
                         del args["sub_mode"]
                         acquire_args = modes.acquire.AcquireNamespace(**args)
 
-
                     print()
                     utils.print_info("Aquire mode settings:\n")
                     print(acquire_args)
@@ -62,13 +61,11 @@ if __name__ == "__main__":
 
         # realtime mode
         elif parsed_args.mode in ["realtime", "r"]:
-
-
             try:
                 args = parsed_args.__dict__
                 del args["mode"]
                 realtime_args = modes.realtime.RealtimeNamespace(**args)
-                
+
                 print()
                 utils.print_info("Realtime mode settings:\n")
                 print(realtime_args)

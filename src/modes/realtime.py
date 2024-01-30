@@ -57,6 +57,14 @@ class RealtimeNamespace(utils.ModeNamespace):
             The list with the cameras to be used.
     """
 
+    @classmethod
+    def from_yaml(cls, file: str) -> RealtimeNamespace:
+        return cls.from_yaml(file)
+
+    @classmethod
+    def _get_specific_yaml_schema(cls) -> dict:
+        return {}
+
 
 class Realtime(utils.Mode):
     """
