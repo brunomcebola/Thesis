@@ -133,25 +133,12 @@ class ModeNamespace(SimpleNamespace, ABC):
         string += "\tCameras:"
         for camera in self.cameras:
             string += "\n"
-            string += f"\t\tSerial number:{camera.serial_number}\n"
+            string += f"\t\tSerial number: {camera.serial_number}\n"
             string += "\t\tStream configs:\n"
             for stream_config in camera.stream_configs:
                 string += f"\t\t\t{stream_config}\n"
 
-        # align elements
-        string = string.split("Cameras:")
-        lines = string[1].split("\t\t")
-
-        max_title = max([len(line.split(":")[0]) for line in lines])
-
-        lines = [
-            f":  {' ' * (max_title - len(line.split(':')[0]))}".join(line.split(":"))
-            for line in lines
-        ]
-
-        lines = "\t\t".join(lines)
-
-        return (string[0] + "Cameras:" + lines).rstrip()
+        return (string).rstrip()
 
     # Class methods
 

@@ -253,9 +253,7 @@ class StreamConfig(NamedTuple):
     fps: StreamFPS
 
     def __str__(self) -> str:
-        return (
-            f"type={self.type} , format={self.format}, resolution={self.resolution}, fps={self.fps}"
-        )
+        return f"type = {self.type}, format = {self.format}, resolution = {self.resolution}, fps = {self.fps}"
 
 
 class StreamSignals(NamedTuple):
