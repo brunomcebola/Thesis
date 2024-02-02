@@ -1,32 +1,26 @@
 output_folder: ./data/
 ######
 
-# op_times:
-#   - [0, 6]
-#   - [0, 6]
-#   - [0, 6]
-#   - [0, 6]
-#   - [0, 6]
-#   - [0, 6]
-#   - [0, 6]
+op_times:
+  - [0, 6]
+  - [0, 6]
+  - [0, 6]
+  - [0, 6]
+  - [0, 6]
+  - [0, 6]
+  - [0, 6]
 
 ######
 
-# cameras:
-#   - serial_number: 135522077203
-#     stream_configs:
-#         - type: depth
-#           format: z16
-#           resolution: x640_y480
-#           fps: fps_30
-#         - type: color
-#           format: rgb8
-#           resolution: x640_y480
-#           fps: fps_30
-#   - serial_number: 135522071130
-#     stream_configs:
-#         - type: depth
-#           format: z16
-#           resolution: x640_y480
-#           fps: fps_30
+cameras:
+  - serial_number: 135522077052
+    stream_configs:
+      - type: depth
+        format: z16
+        resolution: x640_y480
+        fps: fps_6
+      - type: color
+        format: rgb8
+        resolution: x640_y480
+        fps: fps_6
 

@@ -147,9 +147,6 @@ class AcquireNamespace(utils.ModeNamespace):
         if output_folder == "":
             raise AcquireNamespaceError("The output folder cannot be a empty string.")
 
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
-
         self.output_folder = os.path.abspath(output_folder)
 
         # op_times validations
@@ -212,7 +209,10 @@ class AcquireNamespace(utils.ModeNamespace):
 
     @classmethod
     def from_yaml(cls, file: str) -> AcquireNamespace:
-        return cls.from_yaml(file)
+        try:
+            return cls(**cls._get_yaml_args(file))
+        except Exception as e:
+            raise AcquireNamespaceError(str(e).split("\n", maxsplit=1)[0]) from e
 
     @classmethod
     def _get_specific_yaml_schema(cls) -> dict:

@@ -143,7 +143,7 @@ class ModeNamespace(SimpleNamespace, ABC):
     # Class methods
 
     @classmethod
-    def from_yaml(cls, file: str) -> ModeNamespace:
+    def _get_yaml_args(cls, file: str) -> dict:
         """
         Loads the mode from a YAML file.
 
@@ -157,7 +157,26 @@ class ModeNamespace(SimpleNamespace, ABC):
 
                 validate(args, cls._get_full_yaml_schema())
 
-                return cls(**args)
+                args["serial_numbers"] = [
+                    str(camera["serial_number"]) for camera in args["cameras"]
+                ]
+
+                args["stream_configs"] = [
+                    [
+                        intel.StreamConfig(
+                            intel.StreamType[stream_config["type"].upper()],
+                            intel.StreamFormat[stream_config["format"].upper()],
+                            intel.StreamResolution[stream_config["resolution"].upper()],
+                            intel.StreamFPS[stream_config["fps"].upper()],
+                        )
+                        for stream_config in camera["stream_configs"]
+                    ]
+                    for camera in args["cameras"]
+                ]
+
+                del args["cameras"]
+                
+                return args
 
         except FileNotFoundError as e:
             raise FileNotFoundError(f"Specified YAML file not found ({file}).") from e
@@ -223,7 +242,7 @@ class ModeNamespace(SimpleNamespace, ABC):
                                 },
                             },
                         },
-                        "required": ["serial_number", "stream_config"],
+                        "required": ["serial_number", "stream_configs"],
                         "additionalProperties": False,
                     },
                 },
@@ -240,6 +259,17 @@ class ModeNamespace(SimpleNamespace, ABC):
     def _get_specific_yaml_schema(cls) -> dict:
         """
         Returns the schema of the mode.
+        """
+
+    @classmethod
+    @abstractmethod
+    def from_yaml(cls, file: str) -> ModeNamespace:
+        """
+        Loads the mode from a YAML file.
+
+        Args:
+        -----
+            - file: The YAML file to be loaded.
         """
 
 
