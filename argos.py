@@ -16,12 +16,12 @@ import src.utils as utils
 import src.modes as modes
 
 if __name__ == "__main__":
-    parser = parser.Parser()
-    parsed_args = parser.get_args()
-
-    print()
-
     try:
+        parser = parser.Parser()
+        parsed_args = parser.get_args()
+
+        print()
+
         # acquire mode
         if parsed_args.mode in ["acquire", "a"]:
             if parsed_args.sub_mode in ["log", "l"]:
@@ -31,23 +31,19 @@ if __name__ == "__main__":
                     modes.acquire.Acquire.export_logs(parsed_args.export_path)
 
             else:
-                try:
-                    if parsed_args.sub_mode in ["yaml", "y"]:
-                        acquire_args = modes.acquire.AcquireNamespace.from_yaml(parsed_args.file)
+                if parsed_args.sub_mode in ["yaml", "y"]:
+                    acquire_args = modes.acquire.AcquireNamespace.from_yaml(parsed_args.file)
 
-                    else:
-                        args = parsed_args.__dict__
-                        del args["mode"]
-                        del args["sub_mode"]
-                        acquire_args = modes.acquire.AcquireNamespace(**args)
+                else:
+                    args = parsed_args.__dict__
+                    del args["mode"]
+                    del args["sub_mode"]
+                    acquire_args = modes.acquire.AcquireNamespace(**args)
 
-                    print()
-                    utils.print_info("Aquire mode settings:\n")
-                    print(acquire_args)
-                    print()
-                except Exception as e:
-                    utils.print_error(str(e) + "\n")
-                    exit(1)
+                print()
+                utils.print_info("Aquire mode settings:\n")
+                print(acquire_args)
+                print()
 
                 acquire_handler = modes.acquire.Acquire(acquire_args)
 
@@ -61,18 +57,14 @@ if __name__ == "__main__":
 
         # realtime mode
         elif parsed_args.mode in ["realtime", "r"]:
-            try:
-                args = parsed_args.__dict__
-                del args["mode"]
-                realtime_args = modes.realtime.RealtimeNamespace(**args)
+            args = parsed_args.__dict__
+            del args["mode"]
+            realtime_args = modes.realtime.RealtimeNamespace(**args)
 
-                print()
-                utils.print_info("Realtime mode settings:\n")
-                print(realtime_args)
-                print()
-            except Exception as e:
-                utils.print_error(str(e) + "\n")
-                exit(1)
+            print()
+            utils.print_info("Realtime mode settings:\n")
+            print(realtime_args)
+            print()
 
             realtime_handler = modes.realtime.Realtime(realtime_args)
 
@@ -98,6 +90,14 @@ if __name__ == "__main__":
 
     except Exception as e:
         utils.print_error(str(e) + "\n")
+
+        utils.print_warning("Terminating program!\n")
+
+        exit(1)
+
+    except KeyboardInterrupt as e:
+        print()
+        print()
 
         utils.print_warning("Terminating program!\n")
 

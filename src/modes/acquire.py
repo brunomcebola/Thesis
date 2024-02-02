@@ -341,18 +341,18 @@ class Acquire(utils.Mode):
         Target function of the storage handler thread.
         """
 
+        self._stream_signals.run.wait()
+
         serial_number = camera.serial_number
         frames_queue = camera.frames_queue
         folder = self._storage_folders[serial_number]
 
-        self._stream_signals.run.wait()
-
         while not self._stream_signals.stop.is_set():
-            if frames_queue.empty():
+            if frames_queue.empty():  # type: ignore
                 self._stream_signals.run.wait()
 
             try:
-                frames = frames_queue.get(timeout=5)
+                frames = frames_queue.get(timeout=5)  # type: ignore
 
                 for frame in frames:
                     threading.Thread(target=self._storage_target, args=(frame, folder)).start()
@@ -361,9 +361,9 @@ class Acquire(utils.Mode):
             except Exception:
                 continue
 
-        while not frames_queue.empty():
+        while not frames_queue.empty():  # type: ignore
             try:
-                frames = frames_queue.get(timeout=5)
+                frames = frames_queue.get(timeout=5)  # type: ignore
 
                 for frame in frames:
                     threading.Thread(target=self._storage_target, args=(frame, folder)).start()
@@ -438,44 +438,43 @@ class Acquire(utils.Mode):
         """
         Runs the acquire mode (in a blocking way).
         """
-
-        self._logger.info(
-            "New acquisition session (%s) started with:\n%s",
-            datetime.now().strftime("%Y%m%d_%H%M%S"),
-            self._args,
-        )
-
-        utils.print_info("New acquisition session started!\n")
-
-        # perform reset of internal values
-
-        self._set_default_values()
-        self._logger.info("Performed reset of internal values.")
-
-        # create storage folders
-
-        path = self._create_storage_folders()
-        self._logger.info("Defined storage folders:\n%s", path)
-
-        # Launch all threads
-
-        for camera in self._args.cameras:
-            # start camera stream
-            camera.start_streaming(self._stream_signals)
-
-            # start storage handler thread for the camera
-            self._storage_handler_threads[camera.serial_number] = threading.Thread(
-                target=self._storage_handler_target, args=(camera,)
-            )
-            self._storage_handler_threads[camera.serial_number].start()  # type: ignore
-
-        self._stream_signals.run.set()
-
-        # main loop
-
-        utils.print_info("To stop data acquisition press Ctrl + C!\n")
-
         try:
+            self._logger.info(
+                "New acquisition session (%s) started with:\n%s",
+                datetime.now().strftime("%Y%m%d_%H%M%S"),
+                self._args,
+            )
+
+            utils.print_info("New acquisition session started!\n")
+
+            # perform reset of internal values
+
+            self._set_default_values()
+            self._logger.info("Performed reset of internal values.")
+
+            # create storage folders
+
+            path = self._create_storage_folders()
+            self._logger.info("Defined storage folders:\n%s", path)
+
+            # Launch all threads
+
+            for camera in self._args.cameras:
+                # start camera stream
+                camera.start_streaming(self._stream_signals)
+
+                # start storage handler thread for the camera
+                self._storage_handler_threads[camera.serial_number] = threading.Thread(
+                    target=self._storage_handler_target, args=(camera,)
+                )
+                self._storage_handler_threads[camera.serial_number].start()  # type: ignore
+
+            self._stream_signals.run.set()
+
+            # main loop
+
+            utils.print_info("To stop data acquisition press Ctrl + C!\n")
+
             self._stream_signals.error.wait()
 
             utils.print_error("Error in one of the camera streams.")
@@ -493,8 +492,10 @@ class Acquire(utils.Mode):
 
         for camera in self._args.cameras:
             camera.stop_streaming()
-            self._storage_handler_threads[camera.serial_number].join()  # type: ignore
-            self._storage_handler_threads[camera.serial_number] = None
+
+            if self._storage_handler_threads[camera.serial_number] is not None:
+                self._storage_handler_threads[camera.serial_number].join()  # type: ignore
+                self._storage_handler_threads[camera.serial_number] = None
 
         stats = "Acquire statistics:\n\n"
 

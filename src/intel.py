@@ -316,10 +316,10 @@ class RealSenseCamera:
     _config: rs.config  # type: ignore
 
     _is_streaming: bool
-    _frames_queue: queue.Queue[list[Frame]]
     _frames_streamed: int
-    _stream_signals: StreamSignals
-    _stream_thread: threading.Thread
+    _frames_queue: queue.Queue[list[Frame]] | None
+    _stream_signals: StreamSignals | None
+    _stream_thread: threading.Thread | None
 
     # Instance constructor and destructor
 
@@ -359,8 +359,9 @@ class RealSenseCamera:
 
         self._is_streaming = False
         self._frames_streamed = 0
-        self._frames_queue = queue.Queue()
-        self._stream_signals = StreamSignals()
+        self._frames_queue = None
+        self._stream_signals = None
+        self._stream_thread = None
 
         # applies stream configs explicitly
         self.__apply_stream_configs()
@@ -440,7 +441,7 @@ class RealSenseCamera:
         return self._frames_streamed
 
     @property
-    def frames_queue(self) -> queue.Queue[list[Frame]]:
+    def frames_queue(self) -> queue.Queue[list[Frame]] | None:
         """
         Returns the queue of frames.
         """
@@ -448,7 +449,7 @@ class RealSenseCamera:
         return self._frames_queue
 
     @property
-    def stream_signals(self) -> StreamSignals:
+    def stream_signals(self) -> StreamSignals | None:
         """
         Returns the signals used to control the stream.
         """
@@ -510,13 +511,13 @@ class RealSenseCamera:
         nb_errors = 0
         max_nb_errors = 5
 
-        while not self._stream_signals.stop.is_set():
-            self.stream_signals.run.wait()
+        while not self._stream_signals.stop.is_set():  # type: ignore
+            self._stream_signals.run.wait()  # type: ignore
 
             try:
                 frames = self._pipeline.wait_for_frames()
 
-                self._frames_queue.put(
+                self._frames_queue.put(  # type: ignore
                     [
                         Frame.from_intel_frame(frames, stream_config.type)
                         for stream_config in self._stream_configs
@@ -532,7 +533,7 @@ class RealSenseCamera:
                 nb_errors += 1
 
                 if nb_errors >= max_nb_errors:
-                    self._stream_signals.error.set()
+                    self._stream_signals.error.set()  # type: ignore
                     break
 
         self._pipeline.stop()
@@ -582,8 +583,8 @@ class RealSenseCamera:
             all streams using that signals class will be stopped.
         """
 
-        if self._is_streaming:
-            self._stream_signals.stop.set()
+        if self._is_streaming and self._stream_thread:
+            self._stream_signals.stop.set()  # type: ignore
 
             self._stream_thread.join()
 
