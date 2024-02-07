@@ -37,8 +37,8 @@ echo
 echo -e "$blue"Removing unnecessary files and folders..."$reset"
 echo
 
-echo "$ GLOBIGNORE=argos.py:helpers:modes:configs:realsense_so:requirements.txt"
-GLOBIGNORE=argos.py:helpers:modes:configs:realsense_so:requirements.txt
+echo "$ GLOBIGNORE=argos.py:src:configs:realsense_so:requirements.txt"
+GLOBIGNORE=argos.py:src:configs:realsense_so:requirements.txt
 
 echo "$ rm -r -f *"
 rm -r -f *
@@ -62,22 +62,13 @@ echo
 echo -e "$blue"Removing pycache..."$reset"
 echo
 
-echo "$ cd helpers"
-cd helpers
-
 echo "$ rm -r -f __pycache__"
-rm -r -f __pycache__
+rm -r -f */__pycache__
 
-echo "$ cd ../modes"
-cd ../modes
+echo "$ cd .."
+cd ..
 
-echo "$ rm -r -f __pycache__"
-rm -r -f __pycache__
-
-echo "$ cd ../.."
-cd ../..
-
-# deploy to host
+deploy to host
 echo
 echo -e "$blue"Deploying to machines..."$reset"
 echo

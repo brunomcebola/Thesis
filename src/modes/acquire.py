@@ -75,21 +75,20 @@ class AcquireNamespace(utils.ModeNamespace):
     -----------
         - output_folder (str):
             The path to the output folder.
-        - op_times (list[tuple[int, int]]):
-            The time interval in which the cameras will be capturing data
-            for each day of the week (Monday to Sunday).
+        - op_times (list[tuple[int, int]] | None):
+            The time intervals in which the cameras will be capturing data.
         - cameras (list[intel.RealSenseCamera]):
             The list with the cameras to be used.
     """
 
     # type hints
     output_folder: str
-    op_times: list[tuple[int, int]]
+    op_times: list[tuple[int, int]] | None
 
     def __init__(
         self,
         output_folder: str,
-        op_times: list[tuple[int, int]] | None = None,
+        op_times: list[dict[str, str]] | None = None,
         serial_numbers: list[str] | None = None,
         stream_configs: list[list[intel.StreamConfig]] | None = None,
     ):
@@ -99,10 +98,9 @@ class AcquireNamespace(utils.ModeNamespace):
         Args:
         -----
             - output_folder: The path to the output folder.
-            - op_times: The time interval in which the cameras will be capturing data
-              for each day of the week (Monday to Sunday).
+            - op_times: The time intervals in which the cameras will be capturing data.
                 - It can be None, in which case the cameras will be capturing data all the time.
-                - Or it can be a list with 7 elements, one for each day of the week.
+                - Or it can be a list of dicts specifying time frames.
             - serial_numbers: The serial numbers of the cameras to be used.
                 - It can be None, in which case all the connected cameras will be used.
                 - Or it can be a list with the serial numbers of the cameras to be used.
@@ -155,49 +153,110 @@ class AcquireNamespace(utils.ModeNamespace):
                 "No operation time specified. Cameras will be capturing data all the time."
             )
 
-            op_times = [(int(0), int(24))] * 7
+            op_times = None
 
-        elif len(op_times) == 1:
-            utils.print_warning(
-                f"Using ({op_times[0][0]}h - {op_times[0][1]}h) as operation time for all days."
-            )
+        else:
 
-            op_times = op_times * 7
+            def convert_op_time_to_seconds(weekday: str, time: str) -> int:
+                day = [
+                    index
+                    for index in range(len(list(calendar.day_abbr)))
+                    if list(calendar.day_abbr)[index] == weekday.capitalize()
+                ][0]
+                hour = int(time.split(":")[0])
+                minute = int(time.split(":")[1])
 
-        elif len(op_times) != 7:
-            raise AcquireNamespaceError(
-                "The specified operation time must be a list with 1 or 7 elements.",
-            )
+                return (3600 * (24 * day + hour)) + (minute * 60)
 
-        for i, op_time in enumerate(op_times):
-            if len(op_time) != 2:
+            if len(op_times) == 0:
                 raise AcquireNamespaceError(
-                    "The operation time must be expressed in the format "
-                    + "(int, int). Ex: (8, 12) => 8:00 - 12:00.",
-                    i,
+                    "At least one operation time must be specified.",
                 )
 
-            if op_time[0] not in range(24):
-                raise AcquireNamespaceError(
-                    "The start hour must be a value between 0 and 23.",
-                    i,
+            if (
+                len(op_times) == 1
+                and op_times[0]["start_day"] == op_times[0]["stop_day"]
+                and op_times[0]["start_time"] == op_times[0]["stop_time"]
+            ):
+                self.op_times = None
+
+            else:
+                for op_time in op_times:
+                    if op_time["start_day"].capitalize() not in list(calendar.day_abbr):
+                        raise AcquireNamespaceError(
+                            "The start day must be one of the following: mon, tue, wed, thu, fri, sat, sun."  # pylint: disable=line-too-long
+                        )
+
+                    if op_time["stop_day"].lower().capitalize() not in list(calendar.day_abbr):
+                        raise AcquireNamespaceError(
+                            "The stop day must be one of the following: mon, tue, wed, thu, fri, sat, sun."  # pylint: disable=line-too-long
+                        )
+
+                    if op_time["start_time"].split(":")[0] not in range(24):
+                        raise AcquireNamespaceError(
+                            "The start hour must be a value between 0 and 23.",
+                        )
+
+                    if op_time["stop_time"].split(":")[0] not in range(24):
+                        raise AcquireNamespaceError(
+                            "The stop hour must be a value between 0 and 23.",
+                        )
+
+                    if op_time["start_time"].split(":")[1] not in range(60):
+                        raise AcquireNamespaceError(
+                            "The start minute must be a value between 0 and 59.",
+                        )
+
+                    if op_time["stop_time"].split(":")[1] not in range(60):
+                        raise AcquireNamespaceError(
+                            "The stop minute must be a value between 0 and 59.",
+                        )
+
+                converted_op_times = sorted(
+                    [
+                        (
+                            convert_op_time_to_seconds(op_time["start_day"], op_time["start_time"]),
+                            convert_op_time_to_seconds(op_time["stop_day"], op_time["stop_time"]),
+                        )
+                        for op_time in op_times
+                    ],
+                    key=lambda x: (x[0], x[1]),
                 )
 
-            if op_time[1] not in range(1, 25):
-                raise AcquireNamespaceError(
-                    "The stop hour must be a value between 1 and 24.",
-                    i,
-                )
+                for i in range(len(converted_op_times) - 1):
+                    current_start_time = converted_op_times[i][0]
+                    current_stop_time = converted_op_times[i][1]
+                    next_start_time = converted_op_times[i + 1][0]
 
-            if op_time[0] >= op_time[1]:
-                raise AcquireNamespaceError(
-                    "The start hour must be smaller than the stop hour.",
-                    i,
-                )
+                    if current_start_time >= current_stop_time:
+                        raise AcquireNamespaceError(
+                            "The start time must be before the stop time.",
+                        )
 
-        self.op_times = op_times
+                    # Check if current end time is after next start time
+                    if current_stop_time > next_start_time:
+                        raise AcquireNamespaceError(
+                            "The operation times must not overlap.",
+                        )
+
+                joint_op_times = [converted_op_times[0]]
+
+                for i in range(1, len(converted_op_times)):
+                    if joint_op_times[-1][1] == converted_op_times[i][0]:
+                        joint_op_times[-1] = (joint_op_times[-1][0], converted_op_times[i][1])
+                    else:
+                        joint_op_times.append(converted_op_times[i])
+
+                self.op_times = joint_op_times
+
+        # self.op_times = op_times
 
     def __str__(self) -> str:
+        def convert_op_time_to_str():
+            "Convert (0, 3600) to the format (Mon, 00h00 - 01h00)"
+
+            
+
         string = ""
 
         string += f"\tOutput folder: {self.output_folder}\n"
