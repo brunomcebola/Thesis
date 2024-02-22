@@ -2,14 +2,10 @@ output_folder: ./data/
 ######
 
 op_times:
-  - start_day: "Mon"
-    start_time: "12:00"
+  - start_day: "Tue"
+    start_time: "17:35"
     stop_day: "Mon"
-    stop_time: "14:00"
-  - start_day: "Mon"
-    start_time: "13:00"
-    stop_day: "Tue"
-    stop_time: "14:00"
+    stop_time: "17:36"
 
 ######
 

@@ -26,7 +26,7 @@ import os
 import re
 import calendar
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from .. import intel
 from .. import utils
@@ -71,17 +71,24 @@ def convert_weekday_time_to_seconds(weekday: str, time: str) -> int:
     """
     Convert a weekday and a time to seconds.
 
-    Ex: (Mon, 00:00) -> 0
+    It is mandatory to pass a the hours and minutes in the time. The seconds are optional.
+
+    Ex: (Mon, 00:00:00) -> 0
     """
+
     day = [
         index
         for index in range(len(list(calendar.day_abbr)))
         if list(calendar.day_abbr)[index] == weekday.capitalize()
     ][0]
-    hour = int(time.split(":")[0])
-    minute = int(time.split(":")[1])
 
-    return (3600 * (24 * day + hour)) + (minute * 60)
+    split_time = time.split(":")
+
+    hour = int(split_time[0])
+    minute = int(split_time[1])
+    second = int(split_time[2]) if len(split_time) == 3 else 0
+
+    return (3600 * (24 * day + hour)) + (minute * 60) + second
 
 
 def convert_seconds_interval_to_string(interval: tuple[int, int]):
@@ -250,21 +257,23 @@ class AcquireNamespace(utils.ModeNamespace):
                     key=lambda x: (x[0], x[1]),
                 )
 
-                for i in range(len(converted_op_times) - 1):
-                    current_start_time = converted_op_times[i][0]
-                    current_stop_time = converted_op_times[i][1]
-                    next_start_time = converted_op_times[i + 1][0]
+                for idx, op_tinterval in enumerate(converted_op_times):
+                    current_start_time = op_tinterval[0]
+                    current_stop_time = op_tinterval[1]
 
                     if current_start_time >= current_stop_time:
                         raise AcquireNamespaceError(
                             "The start time must be before the stop time.",
                         )
 
-                    # Check if current end time is after next start time
-                    if current_stop_time > next_start_time:
-                        raise AcquireNamespaceError(
-                            "The operation times must not overlap.",
-                        )
+                    if idx % len(converted_op_times):
+                        next_start_time = converted_op_times[idx + 1][0]
+
+                        # Check if current end time is after next start time
+                        if current_stop_time > next_start_time:
+                            raise AcquireNamespaceError(
+                                "The operation times must not overlap.",
+                            )
 
                 joint_op_times = [converted_op_times[0]]
 
@@ -302,31 +311,36 @@ class AcquireNamespace(utils.ModeNamespace):
         return {
             "output_folder": {"type": "string"},
             "op_times": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "start_day": {
-                            "enum": [day.lower() for day in list(calendar.day_abbr)]
-                            + [day.capitalize() for day in list(calendar.day_abbr)]
-                        },
-                        "start_time": {
-                            "type": "string",
-                            "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
-                        },
-                        "stop_day": {
-                            "enum": [day.lower() for day in list(calendar.day_abbr)]
-                            + [day.capitalize() for day in list(calendar.day_abbr)]
-                        },
-                        "stop_time": {
-                            "type": "string",
-                            "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+                "anyOf": [
+                    {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "start_day": {
+                                    "enum": [day.lower() for day in list(calendar.day_abbr)]
+                                    + [day.capitalize() for day in list(calendar.day_abbr)]
+                                },
+                                "start_time": {
+                                    "type": "string",
+                                    "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+                                },
+                                "stop_day": {
+                                    "enum": [day.lower() for day in list(calendar.day_abbr)]
+                                    + [day.capitalize() for day in list(calendar.day_abbr)]
+                                },
+                                "stop_time": {
+                                    "type": "string",
+                                    "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+                                },
+                            },
+                            "required": ["start_day", "start_time", "stop_day", "stop_time"],
+                            "additionalProperties": False,
                         },
                     },
-                    "required": ["start_day", "start_time", "stop_day", "stop_time"],
-                    "additionalProperties": False,
-                },
+                    {"type": "null"},
+                ],
             },
         }
 
@@ -489,44 +503,37 @@ class Acquire(utils.Mode):
 
         now = datetime.now()
 
-        now = convert_weekday_time_to_seconds(now.strftime("%a"), now.strftime("%H:%M"))
+        now = convert_weekday_time_to_seconds(now.strftime("%a"), now.strftime("%H:%M:%S"))
 
         interval = 0
+
+        in_interval = False
 
         for idx, op_time in enumerate(self._args.op_times):
             if now < op_time[1]:
                 interval = idx
+
+                if now > op_time[0]:
+                    in_interval = True
+
                 break
 
-        # wait until current op time finishes if in the middle of it
-
-        if self._args.op_times[interval][0] <= now < self._args.op_times[interval][1]:
-            now = datetime.now()
-
-            now = convert_weekday_time_to_seconds(now.strftime("%a"), now.strftime("%H:%M"))
-
-            idle_time = self._args.op_times[interval][1] - now
-
-            self._stream_signals.run.set()
-
-            self._op_time_signal.wait(idle_time)
-
-            interval = (interval + 1) % len(self._args.op_times)
-
         # main looop
-
-        in_interval = False
 
         while not self._stream_signals.stop.is_set():
 
             now = datetime.now()
 
-            now = convert_weekday_time_to_seconds(now.strftime("%a"), now.strftime("%H:%M"))
+            now = convert_weekday_time_to_seconds(now.strftime("%a"), now.strftime("%H:%M:%S"))
 
             idle_time = self._args.op_times[interval][in_interval] - now
 
+            # if the idle time is negative, it means that the next interval is in the next week
+            if idle_time < 0:
+                idle_time += 604800
+
             if in_interval:
-                self._logger.info("Resuming stream.")
+                self._logger.info("Starting stream.")
 
                 self._stream_signals.run.set()
 
