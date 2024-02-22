@@ -67,6 +67,41 @@ class AcquireError(Exception):
 """
 
 
+def convert_weekday_time_to_seconds(weekday: str, time: str) -> int:
+    """
+    Convert a weekday and a time to seconds.
+
+    Ex: (Mon, 00:00) -> 0
+    """
+    day = [
+        index
+        for index in range(len(list(calendar.day_abbr)))
+        if list(calendar.day_abbr)[index] == weekday.capitalize()
+    ][0]
+    hour = int(time.split(":")[0])
+    minute = int(time.split(":")[1])
+
+    return (3600 * (24 * day + hour)) + (minute * 60)
+
+
+def convert_seconds_interval_to_string(interval: tuple[int, int]):
+    """
+    Convert a time interval in seconds to a string.
+
+    Ex: [0, 3600] -> Mon, 00h00 - Mon, 01h00
+    """
+
+    start_day = list(calendar.day_abbr)[interval[0] // 86400]
+    start_hour = interval[0] // 3600 % 24
+    start_minute = interval[0] // 60 % 60
+
+    stop_day = list(calendar.day_abbr)[interval[1] // 86400]
+    stop_hour = interval[1] // 3600 % 24
+    stop_minute = interval[1] // 60 % 60
+
+    return f"({start_day}, {start_hour:02d}h{start_minute:02d} - {stop_day}, {stop_hour:02d}h{stop_minute:02d})"  # pylint: disable=line-too-long
+
+
 class AcquireNamespace(utils.ModeNamespace):
     """
     This class holds the arguments for the acquire mode.
@@ -153,21 +188,9 @@ class AcquireNamespace(utils.ModeNamespace):
                 "No operation time specified. Cameras will be capturing data all the time."
             )
 
-            op_times = None
+            self.op_times = None
 
         else:
-
-            def convert_op_time_to_seconds(weekday: str, time: str) -> int:
-                day = [
-                    index
-                    for index in range(len(list(calendar.day_abbr)))
-                    if list(calendar.day_abbr)[index] == weekday.capitalize()
-                ][0]
-                hour = int(time.split(":")[0])
-                minute = int(time.split(":")[1])
-
-                return (3600 * (24 * day + hour)) + (minute * 60)
-
             if len(op_times) == 0:
                 raise AcquireNamespaceError(
                     "At least one operation time must be specified.",
@@ -192,22 +215,22 @@ class AcquireNamespace(utils.ModeNamespace):
                             "The stop day must be one of the following: mon, tue, wed, thu, fri, sat, sun."  # pylint: disable=line-too-long
                         )
 
-                    if op_time["start_time"].split(":")[0] not in range(24):
+                    if int(op_time["start_time"].split(":")[0]) not in range(24):
                         raise AcquireNamespaceError(
                             "The start hour must be a value between 0 and 23.",
                         )
 
-                    if op_time["stop_time"].split(":")[0] not in range(24):
+                    if int(op_time["stop_time"].split(":")[0]) not in range(24):
                         raise AcquireNamespaceError(
                             "The stop hour must be a value between 0 and 23.",
                         )
 
-                    if op_time["start_time"].split(":")[1] not in range(60):
+                    if int(op_time["start_time"].split(":")[1]) not in range(60):
                         raise AcquireNamespaceError(
                             "The start minute must be a value between 0 and 59.",
                         )
 
-                    if op_time["stop_time"].split(":")[1] not in range(60):
+                    if int(op_time["stop_time"].split(":")[1]) not in range(60):
                         raise AcquireNamespaceError(
                             "The stop minute must be a value between 0 and 59.",
                         )
@@ -215,8 +238,12 @@ class AcquireNamespace(utils.ModeNamespace):
                 converted_op_times = sorted(
                     [
                         (
-                            convert_op_time_to_seconds(op_time["start_day"], op_time["start_time"]),
-                            convert_op_time_to_seconds(op_time["stop_day"], op_time["stop_time"]),
+                            convert_weekday_time_to_seconds(
+                                op_time["start_day"], op_time["start_time"]
+                            ),
+                            convert_weekday_time_to_seconds(
+                                op_time["stop_day"], op_time["stop_time"]
+                            ),
                         )
                         for op_time in op_times
                     ],
@@ -249,18 +276,15 @@ class AcquireNamespace(utils.ModeNamespace):
 
                 self.op_times = joint_op_times
 
-        # self.op_times = op_times
-
     def __str__(self) -> str:
-        def convert_op_time_to_str():
-            "Convert (0, 3600) to the format (Mon, 00h00 - 01h00)"
-
-            
-
         string = ""
 
         string += f"\tOutput folder: {self.output_folder}\n"
-        string += f"\tOperation time: {[(list(calendar.day_abbr)[i], op[0], op[1]) for i, op in enumerate(self.op_times)]}\n"  # pylint: disable=line-too-long
+
+        if self.op_times is not None:
+            string += f"\tOperation time: {', '.join([convert_seconds_interval_to_string(op_time) for op_time in self.op_times])}\n"  # pylint: disable=line-too-long
+        else:
+            string += "\tOperation time: Allways\n"
 
         string += super().__str__()
 
@@ -279,17 +303,29 @@ class AcquireNamespace(utils.ModeNamespace):
             "output_folder": {"type": "string"},
             "op_times": {
                 "type": "array",
-                "minItems": 7,
-                "maxItems": 7,
+                "minItems": 1,
                 "items": {
-                    "type": "array",
-                    "minItems": 2,
-                    "maxItems": 2,
-                    "uniqueItems": True,
-                    "prefixItems": [
-                        {"type": "integer", "minimum": 0, "maximum": 23},
-                        {"type": "integer", "minimum": 1, "maximum": 24},
-                    ],
+                    "type": "object",
+                    "properties": {
+                        "start_day": {
+                            "enum": [day.lower() for day in list(calendar.day_abbr)]
+                            + [day.capitalize() for day in list(calendar.day_abbr)]
+                        },
+                        "start_time": {
+                            "type": "string",
+                            "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+                        },
+                        "stop_day": {
+                            "enum": [day.lower() for day in list(calendar.day_abbr)]
+                            + [day.capitalize() for day in list(calendar.day_abbr)]
+                        },
+                        "stop_time": {
+                            "type": "string",
+                            "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+                        },
+                    },
+                    "required": ["start_day", "start_time", "stop_day", "stop_time"],
+                    "additionalProperties": False,
                 },
             },
         }
@@ -308,6 +344,10 @@ class Acquire(utils.Mode):
     # type hints
 
     _args: AcquireNamespace
+
+    # operation time
+
+    _op_time_handler_thread: threading.Thread | None
 
     # storage
 
@@ -347,6 +387,10 @@ class Acquire(utils.Mode):
         """
         Sets the default values of the threads manager.
         """
+
+        # operation time
+
+        self._op_time_handler_thread = None
 
         # storage
 
@@ -436,60 +480,69 @@ class Acquire(utils.Mode):
         Target function of the operation time handler thread.
         """
 
-        def get_start_hour(now: datetime) -> datetime:
-            # current operation time
-            if now.hour < self._args.op_times[now.weekday()][1]:
-                ref_weekday = now.weekday()
-            # next operation time
-            else:
-                ref_weekday = now.weekday() + 1 if now.weekday() < 6 else 0
-                now += timedelta(days=1)
+        if self._args.op_times is None:
+            return
 
-            return now.replace(
-                hour=self._args.op_times[ref_weekday][0],
-                minute=0,
-                second=0,
-            )
+        self._stream_signals.run.wait()
 
-        def get_finish_hour(now: datetime) -> datetime:
-            # current operation time
-            if now.hour < self._args.op_times[now.weekday()][1]:
-                ref_weekday = now.weekday()
-            # next operation time
-            else:
-                ref_weekday = now.weekday() + 1 if now.weekday() < 6 else 0
-                now += timedelta(days=1)
+        # determine the current interval
 
-            return now.replace(
-                hour=self._args.op_times[ref_weekday][1] - 1,
-                minute=59,
-                second=59,
-            )
+        now = datetime.now()
+
+        now = convert_weekday_time_to_seconds(now.strftime("%a"), now.strftime("%H:%M"))
+
+        interval = 0
+
+        for idx, op_time in enumerate(self._args.op_times):
+            if now < op_time[1]:
+                interval = idx
+                break
+
+        # wait until current op time finishes if in the middle of it
+
+        if self._args.op_times[interval][0] <= now < self._args.op_times[interval][1]:
+            now = datetime.now()
+
+            now = convert_weekday_time_to_seconds(now.strftime("%a"), now.strftime("%H:%M"))
+
+            idle_time = self._args.op_times[interval][1] - now
+
+            self._stream_signals.run.set()
+
+            self._op_time_signal.wait(idle_time)
+
+            interval = (interval + 1) % len(self._args.op_times)
+
+        # main looop
+
+        in_interval = False
 
         while not self._stream_signals.stop.is_set():
+
             now = datetime.now()
-            start = get_start_hour(datetime.now())
-            finish = get_finish_hour(datetime.now())
 
-            # idle stream until next op_time
-            if not start <= now < finish:
-                idle_time = (start - now).total_seconds()
+            now = convert_weekday_time_to_seconds(now.strftime("%a"), now.strftime("%H:%M"))
 
-                self._logger.info("Pausing stream for %s seconds.", str(idle_time / 60))
+            idle_time = self._args.op_times[interval][in_interval] - now
 
-                self._stream_signals.run.clear()
-
-                self._op_time_signal.wait(idle_time)
+            if in_interval:
+                self._logger.info("Resuming stream.")
 
                 self._stream_signals.run.set()
 
-                self._logger.info("Restarting stream.")
+                interval = (interval + 1) % len(self._args.op_times)
 
-            # idle op time check until end of current op time
             else:
-                idle_time = (finish - now).total_seconds()
+                self._logger.info("Pausing stream for %d seconds.", idle_time)
 
-                self._op_time_signal.wait(idle_time)
+                self._stream_signals.run.clear()
+
+            self._op_time_signal.wait(idle_time)
+
+            if self._stream_signals.stop.is_set():
+                break
+
+            in_interval = not in_interval
 
     # main function of the class
 
@@ -517,6 +570,12 @@ class Acquire(utils.Mode):
             self._logger.info("Defined storage folders:\n%s", path)
 
             # Launch all threads
+
+            if self._args.op_times is not None:
+                self._op_time_handler_thread = threading.Thread(
+                    target=self._op_time_handler_target,
+                )
+                self._op_time_handler_thread.start()
 
             for camera in self._args.cameras:
                 # start camera stream

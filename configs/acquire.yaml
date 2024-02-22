@@ -6,27 +6,15 @@ op_times:
     start_time: "12:00"
     stop_day: "Mon"
     stop_time: "14:00"
-  - start_day: "Tue"
-    start_time: "12:00"
+  - start_day: "Mon"
+    start_time: "13:00"
     stop_day: "Tue"
-    stop_time: "14:00"
-  - start_day: "Wed"
-    start_time: "12:00"
-    stop_day: "Wed"
-    stop_time: "14:00"
-  - start_day: "Thu"
-    start_time: "12:00"
-    stop_day: "Thu"
-    stop_time: "14:00"
-  - start_day: "Fri"
-    start_time: "12:00"
-    stop_day: "Fri"
     stop_time: "14:00"
 
 ######
 
 cameras:
-  - serial_number: 135522077052
+  - serial_number: 939622075103
     stream_configs:
       - type: depth
         format: z16
