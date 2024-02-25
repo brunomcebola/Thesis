@@ -18,75 +18,49 @@ import src.modes as modes
 if __name__ == "__main__":
     try:
         parser = parser.Parser()
-        parsed_args = parser.get_args()
+        cmd_line_args = parser.get_args()
 
         print()
 
-        # acquire mode
-        if parsed_args.mode in ["acquire", "a"]:
-            if parsed_args.sub_mode in ["log", "l"]:
-                if parsed_args.export_path is None:
-                    modes.acquire.Acquire.print_logs()
-                else:
-                    modes.acquire.Acquire.export_logs(parsed_args.export_path)
+        # Set up the mode
+
+        if cmd_line_args.mode in ["acquire", "a"]:
+            if cmd_line_args.sub_mode in ["log", "l"]:
+                modes.acquire.Acquire.logs(cmd_line_args.export_path)
+
+                exit(0)
 
             else:
-                if parsed_args.sub_mode in ["yaml", "y"]:
-                    acquire_args = modes.acquire.AcquireNamespace.from_yaml(parsed_args.file)
+                if cmd_line_args.sub_mode in ["yaml", "y"]:
+                    args = modes.acquire.AcquireNamespace.from_yaml(cmd_line_args.file)
 
                 else:
-                    args = parsed_args.__dict__
+                    args = cmd_line_args.__dict__
                     del args["mode"]
                     del args["sub_mode"]
-                    acquire_args = modes.acquire.AcquireNamespace(**args)
+                    args = modes.acquire.AcquireNamespace(**args)
 
-                print()
-                utils.print_info("Aquire mode settings:\n")
-                print(acquire_args)
-                print()
+            mode = modes.acquire.Acquire(args)
 
-                acquire_handler = modes.acquire.Acquire(acquire_args)
-
-                user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
-                    "Do you wish to start the data acquisition?"
-                )
-                print()
-
-                if user_prompt is True:
-                    acquire_handler.run()
-
-        # realtime mode
-        elif parsed_args.mode in ["realtime", "r"]:
-            args = parsed_args.__dict__
+        elif cmd_line_args.mode in ["realtime", "r"]:
+            args = cmd_line_args.__dict__
             del args["mode"]
-            realtime_args = modes.realtime.RealtimeNamespace(**args)
+            args = modes.realtime.RealtimeNamespace(**args)
 
-            print()
-            utils.print_info("Realtime mode settings:\n")
-            print(realtime_args)
-            print()
+            mode = modes.realtime.Realtime(args)
 
-            realtime_handler = modes.realtime.Realtime(realtime_args)
+        # Run the mode
 
-            user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
-                "Do you wish to start the data acquisition?"
-            )
-            print()
+        print()
+        utils.print_info("Mode settings:\n")
+        print(args)
+        print()
 
-            if user_prompt is True:
-                realtime_handler.run()
+        user_confirm = utils.get_user_confirmation("Do you wish to start the data acquisition?")
+        print()
 
-        # calibration mode
-        elif parsed_args.mode in ["calibrate", "cal"]:
-            pass
-
-        # train mode
-        elif parsed_args.mode in ["train", "t"]:
-            utils.print_warning("This mode is not yet implemented!\n")
-
-        # online mode
-        elif parsed_args.mode in ["online", "o"]:
-            utils.print_warning("This mode is not yet implemented!\n")
+        if user_confirm:
+            mode.run()
 
     except Exception as e:
         utils.print_error(str(e) + "\n")

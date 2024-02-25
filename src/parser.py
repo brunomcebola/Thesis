@@ -12,7 +12,6 @@ import sys
 from colorama import Style
 
 from . import utils
-from . import intel
 
 
 class Parser:
@@ -49,7 +48,11 @@ class Parser:
 
             # positionals, optionals and user-defined groups
             for action_group in self._action_groups[::-1]:
-                formatter.start_section(action_group.title)
+                formatter.start_section(
+                    Style.BRIGHT + action_group.title + Style.RESET_ALL
+                    if action_group.title is not None
+                    else None
+                )
                 formatter.add_text(action_group.description)
                 formatter.add_arguments(
                     action_group._group_actions  # pylint: disable=protected-access
@@ -82,7 +85,7 @@ class Parser:
     class _HelpFormatter(argparse.HelpFormatter):
         def add_usage(self, usage, actions, groups, prefix=None):
             if prefix is None:
-                prefix = Style.BRIGHT + "Usage\n  " + Style.RESET_ALL
+                prefix = Style.BRIGHT + "Usage:\n  " + Style.RESET_ALL
                 return super().add_usage(usage, actions, groups, prefix)
 
         def _format_action(self, action):
@@ -106,7 +109,7 @@ class Parser:
         self._parser = self._ArgumentParser(
             description="Argos, Real-time Image Analysis for Fraud Detection",
             formatter_class=self._HelpFormatter,
-            usage="argos.py <mode> [<args>] [-h | --help]",
+            usage="1. argos.py <mode> [<args>]\n" + "  2. argos.py [-h | --help]",
             add_help=False,
         )
 
@@ -126,34 +129,15 @@ class Parser:
 
         self._add_subparsers()
 
+    def _add_subparsers(self):
+        self._add_acquire_mode_subparser()
+        self._add_realtime_mode_subparser()
+        self._add_train_mode_subparser()
+        self._add_online_mode_subparser()
+
+    # subparsers
+
     def _add_acquire_mode_subparser(self):
-        def _non_empty_string_type(value: str):
-            """
-            Checks if value is not an empty string.
-            """
-            value = value.strip()
-            if len(value) == 0:
-                raise argparse.ArgumentTypeError("Empty string")
-            return value
-
-        def _stream_type_type(value: str):
-            """
-            Checks if the stream type is either a key or a value of the StreamType enum.
-            """
-            value = value.strip().upper()
-
-            if value in [type.name for type in intel.StreamType]:
-                return intel.StreamType[value]
-            elif value.isdigit() and int(value) in [type.value for type in intel.StreamType]:
-                return intel.StreamType(int(value))
-            else:
-                options = ", ".join([f"'{type.name}' ({type.value})" for type in intel.StreamType])
-                raise argparse.ArgumentTypeError(
-                    f"invalid choice: '{value}' (choose from {options})"
-                )
-
-        # create acquire parser
-
         parser = self._subparsers.add_parser(
             "acquire",
             aliases="a",
@@ -161,7 +145,9 @@ class Parser:
             help="Mode to capture and store video.",
             allow_abbrev=False,
             formatter_class=self._HelpFormatterModes,
-            usage="argos.py acquire <source> [<args>] [-h | --help]",
+            usage="1. argos.py acquire \n"
+            + "  2. argos.py acquire [(-l | --logs) [<dest>]] \n"
+            + "  3. argos.py acquire [-h | --help]",
             add_help=False,
         )
 
@@ -171,6 +157,16 @@ class Parser:
             action="help",
             default=argparse.SUPPRESS,
             help="Show this help message and exit.",
+        )
+
+        parser.add_argument(
+            "-l",
+            "--logs",
+            nargs="?",
+            const="",
+            help="Access the logs of the acquire mode.",
+            metavar="dest",
+            dest="logs_dest",
         )
 
         subparsers = parser.add_subparsers(
@@ -254,35 +250,6 @@ class Parser:
             type=_non_empty_string_type,
         )
 
-        # create log parser
-
-        log = subparsers.add_parser(
-            "log",
-            aliases="l",
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            help="Access the logs of the acquire mode.",
-            allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
-            usage="argos.py acquire log [(-e | --export) <file>] [-h | --help]",
-            add_help=False,
-        )
-
-        log.add_argument(
-            "-h",
-            "--help",
-            action="help",
-            default=argparse.SUPPRESS,
-            help="Show this help message and exit.",
-        )
-
-        log.add_argument(
-            "-e",
-            "--export",
-            help="Export the logs to a file.",
-            metavar="file",
-            dest="export_path",
-        )
-
     def _add_realtime_mode_subparser(self):
         parser = self._subparsers.add_parser(
             "realtime",
@@ -345,33 +312,7 @@ class Parser:
             help="Show this help message and exit.",
         )
 
-    # TODO
-    def _add_calibrate_mode_subparser(self):
-        parser = self._subparsers.add_parser(
-            "calibrate",
-            aliases="c",
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            help="Mode to calibrate the cameras.",
-            allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
-            usage="argos.py calibrate [-h | --help]",
-            add_help=False,
-        )
-
-        parser.add_argument(
-            "-h",
-            "--help",
-            action="help",
-            default=argparse.SUPPRESS,
-            help="Show this help message and exit.",
-        )
-
-    def _add_subparsers(self):
-        self._add_calibrate_mode_subparser()
-        self._add_acquire_mode_subparser()
-        self._add_realtime_mode_subparser()
-        self._add_train_mode_subparser()
-        self._add_online_mode_subparser()
+    # methods
 
     def get_args(self):
         """
@@ -381,3 +322,14 @@ class Parser:
             dict: The command line arguments as a dictionary.
         """
         return self._parser.parse_args()
+
+
+# type checkers
+def _non_empty_string_type(value: str):
+    """
+    Checks if value is not an empty string.
+    """
+    value = value.strip()
+    if len(value) == 0:
+        raise argparse.ArgumentTypeError("Empty string")
+    return value

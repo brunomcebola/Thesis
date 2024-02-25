@@ -656,48 +656,6 @@ class Acquire(utils.Mode):
 
         utils.print_info("Acquire mode terminated!\n")
 
-    @classmethod
-    def print_logs(cls) -> None:
-        """
-        Prints the acquire mode logs.
-        """
-
-        with open(_LOG_FILE, encoding="utf-8") as f:
-            file = f.read()
-
-        session_logs = file.split("\n\n")
-
-        for session_log in session_logs:
-            if session_log == "":
-                continue
-
-            lines = re.split(r"\n(?=\d{4}-\d{2}-\d{2})", session_log)
-
-            utils.print_log(f"Session {lines[0].split('(')[1][:-2]}")
-
-            for line in lines:
-                date, level, source, message = line.split(" - ", 3)
-                utils.print_log(message, date, source, level)
-
-            print()
-
-    @classmethod
-    def export_logs(cls, file: str) -> None:
-        """
-        Exports the acquire mode logs to a file.
-        """
-
-        with open(
-            _LOG_FILE,
-            "r",
-            encoding="utf-8",
-        ) as origin, open(
-            file,
-            "w",
-            encoding="utf-8",
-        ) as destination:
-            destination.write("".join(origin.readlines()[1:]))
-
 
 # pylint: disable=invalid-name
 if __name__ == "__main__":
