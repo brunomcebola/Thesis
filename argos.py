@@ -10,46 +10,42 @@ Usage:
     $ python argos.py [-h] {acquire,train,online,yaml} ...
 """
 
-import helpers.arg_parser as arg_parser
-import helpers.utils as utils
-import modes.acquire as acquire
+import src.parser as parser
+import src.utils as utils
+
+import src.modes as modes
 
 if __name__ == "__main__":
-    parser = arg_parser.ArgParser()
-    parsed_args = parser.get_args()
-
-    print()
-
     try:
+        parser = parser.Parser()
+        parsed_args = parser.get_args()
+
+        print()
+
         # acquire mode
         if parsed_args.mode in ["acquire", "a"]:
             if parsed_args.sub_mode in ["log", "l"]:
                 if parsed_args.export_path is None:
-                    acquire.Acquire.print_logs()
+                    modes.acquire.Acquire.print_logs()
                 else:
-                    acquire.Acquire.export_logs(parsed_args.export_path)
+                    modes.acquire.Acquire.export_logs(parsed_args.export_path)
 
-            if parsed_args.sub_mode in ["yaml", "y"] or parsed_args.sub_mode in ["cmd", "c"]:
-                args = None  # pylint: disable=invalid-name
-
+            else:
                 if parsed_args.sub_mode in ["yaml", "y"]:
-                    args = utils.parse_acquire_yaml(parsed_args.file)
+                    acquire_args = modes.acquire.AcquireNamespace.from_yaml(parsed_args.file)
+
                 else:
                     args = parsed_args.__dict__
                     del args["mode"]
                     del args["sub_mode"]
+                    acquire_args = modes.acquire.AcquireNamespace(**args)
 
-                try:
-                    acquire_args = acquire.AcquireNamespace(**args)
-                    print()
-                    utils.print_info("Aquire mode settings:\n")
-                    print(acquire_args)
-                    print()
-                except Exception as e:
-                    utils.print_error(str(e) + "\n")
-                    exit(1)
+                print()
+                utils.print_info("Aquire mode settings:\n")
+                print(acquire_args)
+                print()
 
-                acquire_handler = acquire.Acquire(acquire_args)
+                acquire_handler = modes.acquire.Acquire(acquire_args)
 
                 user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
                     "Do you wish to start the data acquisition?"
@@ -58,6 +54,32 @@ if __name__ == "__main__":
 
                 if user_prompt is True:
                     acquire_handler.run()
+
+        # realtime mode
+        elif parsed_args.mode in ["realtime", "r"]:
+            args = parsed_args.__dict__
+            del args["mode"]
+            realtime_args = modes.realtime.RealtimeNamespace(**args)
+
+            print()
+            utils.print_info("Realtime mode settings:\n")
+            print(realtime_args)
+            print()
+
+            realtime_handler = modes.realtime.Realtime(realtime_args)
+
+            user_prompt = utils.get_user_confirmation(  # pylint: disable=invalid-name
+                "Do you wish to start the data acquisition?"
+            )
+            print()
+
+            if user_prompt is True:
+                realtime_handler.run()
+
+        # calibration mode
+        elif parsed_args.mode in ["calibrate", "cal"]:
+            pass
+
         # train mode
         elif parsed_args.mode in ["train", "t"]:
             utils.print_warning("This mode is not yet implemented!\n")
@@ -66,12 +88,16 @@ if __name__ == "__main__":
         elif parsed_args.mode in ["online", "o"]:
             utils.print_warning("This mode is not yet implemented!\n")
 
-        # calibration mode
-        elif parsed_args.mode in ["calibrate", "cal"]:
-            pass
-
     except Exception as e:
         utils.print_error(str(e) + "\n")
+
+        utils.print_warning("Terminating program!\n")
+
+        exit(1)
+
+    except KeyboardInterrupt as e:
+        print()
+        print()
 
         utils.print_warning("Terminating program!\n")
 
