@@ -253,7 +253,7 @@ class StreamConfig(NamedTuple):
     fps: StreamFPS
 
     def __str__(self) -> str:
-        return f"type = {self.type}, format = {self.format}, resolution = {self.resolution}, fps = {self.fps}"
+        return f"type = {self.type}, format = {self.format}, resolution = {self.resolution}, fps = {self.fps}"  # pylint: disable=line-too-long
 
 
 class StreamSignals(NamedTuple):
@@ -441,10 +441,13 @@ class RealSenseCamera:
         return self._frames_streamed
 
     @property
-    def frames_queue(self) -> queue.Queue[list[Frame]] | None:
+    def frames_queue(self) -> queue.Queue[list[Frame]]:
         """
         Returns the queue of frames.
         """
+
+        if self._frames_queue is None:
+            self._frames_queue = queue.Queue()
 
         return self._frames_queue
 

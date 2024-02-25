@@ -11,10 +11,9 @@ import pyrealsense2 as rs
 import numpy as np
 # Import OpenCV for easy image rendering
 import cv2
-# Import YOLO for object detection
+
 from ultralytics import YOLO
 
-# Load model
 model = YOLO("yolov8n.pt")
 
 # Create a pipeline
@@ -63,12 +62,22 @@ try:
         depth_image = np.asanyarray(depth_frame.get_data())
         color_image = np.asanyarray(color_frame.get_data())
 
-        model(color_image)
+        results = model.predict(source=color_image, classes=[0])
 
         # Render images:
         #   depth align to color on left
         #   depth on right
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+
+        for box in results[0].boxes:
+            depth_colormap = cv2.rectangle(
+                depth_colormap,
+                (int(box.xyxy[0][0]), int(box.xyxy[0][1])),
+                (int(box.xyxy[0][2]), int(box.xyxy[0][3])),
+                (0, 0, 255),
+                2,
+            )
+
         images = np.hstack((color_image, depth_colormap))
 
         cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)

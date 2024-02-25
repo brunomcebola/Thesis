@@ -167,3 +167,5 @@ data/
 
 .direnv/
 .envrc
+runs/
+yolo*
