@@ -175,7 +175,7 @@ class ModeNamespace(SimpleNamespace, ABC):
                 ]
 
                 del args["cameras"]
-                
+
                 return args
 
         except FileNotFoundError as e:
@@ -282,11 +282,65 @@ class Mode(ABC):
         - stop(): Stops the mode.
     """
 
+    _LOG_FILE: str | None = None
+
     @abstractmethod
     def run(self) -> None:
         """
         Runs the mode.
         """
+
+    @classmethod
+    def logs(cls, file: str) -> None:
+        """
+        Prints or exports the logs of the mode.
+
+        Args:
+        -----
+            - file: The file to print the logs to. If None, the logs are printed to the console.
+        """
+
+        if cls._LOG_FILE is None:
+            raise ValueError("The mode has no logs to print.")
+
+        # print to console
+        if file == "":
+            with open(
+                cls._LOG_FILE,
+                "r",
+                encoding="utf-8",
+            ) as f:
+                file_lines = f.readlines()
+
+                for line in file_lines[1:]:
+                    print(line, end="")
+
+                # session_logs = file.split("\n\n")
+
+                # for session_log in session_logs:
+                #     if session_log == "":
+                #         continue
+
+                #     lines = re.split(r"\n(?=\d{4}-\d{2}-\d{2})", session_log)
+
+                #     utils.print_log(f"Session {lines[0].split('(')[1][:-2]}")
+
+                #     for line in lines:
+                #         date, level, source, message = line.split(" - ", 3)
+                #         utils.print_log(message, date, source, level)
+
+        # export to file
+        else:
+            with open(
+                cls._LOG_FILE,
+                "r",
+                encoding="utf-8",
+            ) as origin, open(
+                file,
+                "w",
+                encoding="utf-8",
+            ) as destination:
+                destination.write("".join(origin.readlines()[1:]))
 
 
 class Logger(logging.Logger):
