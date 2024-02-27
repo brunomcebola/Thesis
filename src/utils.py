@@ -77,8 +77,8 @@ class ModeNamespace(SimpleNamespace, ABC):
 
     def __init__(
         self,
-        serial_numbers: list[str],
-        stream_configs: list[list[intel.StreamConfig]],
+        serial_numbers: list[str] | None = None,
+        stream_configs: list[list[intel.StreamConfig]] | None = None,
         exception: Type[ModeNamespaceError] = ModeNamespaceError,
     ) -> None:
         """
@@ -99,14 +99,37 @@ class ModeNamespace(SimpleNamespace, ABC):
         """
 
         # serial_numbers validations
-        if len(serial_numbers) == 0:
+        if serial_numbers is None:
+            print_warning("No cameras specified. Using all available cameras.")
+
+            serial_numbers = intel.RealSenseCamera.get_available_cameras_serial_numbers()
+
+            if len(serial_numbers) == 0:
+                raise exception("No cameras available.")
+
+        elif len(serial_numbers) == 0:
             raise exception("At least one serial number must be specified.")
 
-        if len(set(serial_numbers)) != len(serial_numbers):
+        elif len(set(serial_numbers)) != len(serial_numbers):
             raise exception("There are repeated serial numbers.")
 
         # stream configs validations
-        if len(stream_configs) != len(serial_numbers):
+        if stream_configs is None:
+            print_warning("No stream configurations specified. Using default configurations.")
+
+            stream_configs = [
+                [
+                    intel.StreamConfig(
+                        intel.StreamType.DEPTH,
+                        intel.StreamFormat.Z16,
+                        intel.StreamResolution.X640_Y480,
+                        intel.StreamFPS.FPS_30,
+                    )
+                ]
+                for _ in range(len(serial_numbers))
+            ]
+
+        elif len(stream_configs) != len(serial_numbers):
             raise exception("The number of stream configs must match the number of cameras.")
 
         for camera_stream_configs in stream_configs:
@@ -161,18 +184,28 @@ class ModeNamespace(SimpleNamespace, ABC):
                     str(camera["serial_number"]) for camera in args["cameras"]
                 ]
 
+                if "None" in args["serial_numbers"]:
+                    args["serial_numbers"] = None
+
                 args["stream_configs"] = [
-                    [
-                        intel.StreamConfig(
-                            intel.StreamType[stream_config["type"].upper()],
-                            intel.StreamFormat[stream_config["format"].upper()],
-                            intel.StreamResolution[stream_config["resolution"].upper()],
-                            intel.StreamFPS[stream_config["fps"].upper()],
-                        )
-                        for stream_config in camera["stream_configs"]
-                    ]
+                    (
+                        [
+                            intel.StreamConfig(
+                                intel.StreamType[stream_config["type"].upper()],
+                                intel.StreamFormat[stream_config["format"].upper()],
+                                intel.StreamResolution[stream_config["resolution"].upper()],
+                                intel.StreamFPS[stream_config["fps"].upper()],
+                            )
+                            for stream_config in camera["stream_configs"]
+                        ]
+                        if camera["stream_configs"] is not None
+                        else None
+                    )
                     for camera in args["cameras"]
                 ]
+
+                if None in args["stream_configs"]:
+                    args["stream_configs"] = None
 
                 del args["cameras"]
 
@@ -206,40 +239,48 @@ class ModeNamespace(SimpleNamespace, ABC):
                                 "anyOf": [
                                     {"type": "string"},
                                     {"type": "number", "minimum": 0},
+                                    {"type": "null"},
                                 ]
                             },
                             "stream_configs": {
-                                "type": "array",
-                                "minItems": 1,
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "type": {
-                                            "enum": [
-                                                s_type.name.lower() for s_type in intel.StreamType
-                                            ]
-                                        },
-                                        "format": {
-                                            "enum": [
-                                                s_format.name.lower()
-                                                for s_format in intel.StreamFormat
-                                            ]
-                                        },
-                                        "resolution": {
-                                            "enum": [
-                                                s_resolution.name.lower()
-                                                for s_resolution in intel.StreamResolution
-                                            ]
-                                        },
-                                        "fps": {
-                                            "enum": [
-                                                s_fps.name.lower() for s_fps in intel.StreamFPS
-                                            ]
+                                "anyOf": [
+                                    {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "type": {
+                                                    "enum": [
+                                                        s_type.name.lower()
+                                                        for s_type in intel.StreamType
+                                                    ]
+                                                },
+                                                "format": {
+                                                    "enum": [
+                                                        s_format.name.lower()
+                                                        for s_format in intel.StreamFormat
+                                                    ]
+                                                },
+                                                "resolution": {
+                                                    "enum": [
+                                                        s_resolution.name.lower()
+                                                        for s_resolution in intel.StreamResolution
+                                                    ]
+                                                },
+                                                "fps": {
+                                                    "enum": [
+                                                        s_fps.name.lower()
+                                                        for s_fps in intel.StreamFPS
+                                                    ]
+                                                },
+                                            },
+                                            "required": ["type", "format", "resolution", "fps"],
+                                            "additionalProperties": False,
                                         },
                                     },
-                                    "required": ["type", "format", "resolution", "fps"],
-                                    "additionalProperties": False,
-                                },
+                                    {"type": "null"},
+                                ],
                             },
                         },
                         "required": ["serial_number", "stream_configs"],

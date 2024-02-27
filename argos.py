@@ -10,59 +10,79 @@ Usage:
     $ python argos.py [-h] {acquire,train,online,yaml} ...
 """
 
+import colorama
+
 import src.parser as parser
 import src.utils as utils
 
 import src.modes as modes
 
+MAP_TO_MODE_CLASS = {
+    "acquire": modes.acquire.Acquire,
+    "a": modes.acquire.Acquire,
+}
+
+MAP_TO_MODE_NAMESPACE_CLASS = {
+    "acquire": modes.acquire.AcquireNamespace,
+    "a": modes.acquire.AcquireNamespace,
+}
+
 if __name__ == "__main__":
     try:
+        print()
+        print(
+            colorama.Style.BRIGHT
+            + colorama.Fore.CYAN
+            + "Welcome to Argos, Real-time Image Analysis for Fraud Detection!"
+            + colorama.Style.RESET_ALL
+        )
+        print()
+
         parser = parser.Parser()
+
         cmd_line_args = parser.get_args()
 
-        print()
+        mode = cmd_line_args.mode
 
-        # Set up the mode
+        if cmd_line_args.run and cmd_line_args.logs:
+            raise ValueError("Cannot run and log at the same time.")
 
-        if cmd_line_args.mode in ["acquire", "a"]:
-            if cmd_line_args.sub_mode in ["log", "l"]:
-                modes.acquire.Acquire.logs(cmd_line_args.export_path)
-
-                exit(0)
-
+        elif cmd_line_args.run:
+            if cmd_line_args.yaml:
+                args = MAP_TO_MODE_NAMESPACE_CLASS[mode].from_yaml(cmd_line_args.yaml)
             else:
-                if cmd_line_args.sub_mode in ["yaml", "y"]:
-                    args = modes.acquire.AcquireNamespace.from_yaml(cmd_line_args.file)
+                cmd_line_args = cmd_line_args.__dict__
 
-                else:
-                    args = cmd_line_args.__dict__
-                    del args["mode"]
-                    del args["sub_mode"]
-                    args = modes.acquire.AcquireNamespace(**args)
+                del cmd_line_args["mode"]
+                del cmd_line_args["run"]
+                del cmd_line_args["logs"]
+                del cmd_line_args["logs_dest"]
+                args = MAP_TO_MODE_NAMESPACE_CLASS[mode](**cmd_line_args)
 
-            mode = modes.acquire.Acquire(args)
+            # Run the mode
 
-        elif cmd_line_args.mode in ["realtime", "r"]:
-            args = cmd_line_args.__dict__
-            del args["mode"]
-            args = modes.realtime.RealtimeNamespace(**args)
+            print()
+            utils.print_info(
+                colorama.Style.BRIGHT
+                + f"{MAP_TO_MODE_CLASS[mode].__name__} settings"
+                + colorama.Style.RESET_ALL
+            )
+            print(args)
+            print()
 
-            mode = modes.realtime.Realtime(args)
+            USER_CONFIRM = utils.get_user_confirmation("Do you wish to start the data acquisition?")
+            print()
 
-        # Run the mode
+            if USER_CONFIRM:
+                MAP_TO_MODE_CLASS[mode](args).run()
 
-        print()
-        utils.print_info("Mode settings:\n")
-        print(args)
-        print()
+        elif cmd_line_args.logs:
+            MAP_TO_MODE_CLASS[mode].logs(cmd_line_args.logs_dest)
 
-        user_confirm = utils.get_user_confirmation("Do you wish to start the data acquisition?")
-        print()
+        else:
+            raise ValueError("No mode selected.")
 
-        if user_confirm:
-            mode.run()
-
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         utils.print_error(str(e) + "\n")
 
         utils.print_warning("Terminating program!\n")

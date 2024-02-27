@@ -36,7 +36,7 @@ class Parser:
                     Style.BRIGHT
                     + self.description
                     + (
-                        (" - " + self.usage.split(" ")[1].strip().capitalize() + " mode")  # type: ignore # pylint: disable=line-too-long
+                        (" - " + self.prog.split(" ")[1].strip().capitalize() + " mode")  # type: ignore # pylint: disable=line-too-long
                         if self.prog != "argos.py"
                         else ""
                     )
@@ -54,9 +54,11 @@ class Parser:
                     else None
                 )
                 formatter.add_text(action_group.description)
+
                 formatter.add_arguments(
                     action_group._group_actions  # pylint: disable=protected-access
                 )
+
                 formatter.end_section()
 
             # epilog
@@ -109,7 +111,7 @@ class Parser:
         self._parser = self._ArgumentParser(
             description="Argos, Real-time Image Analysis for Fraud Detection",
             formatter_class=self._HelpFormatter,
-            usage="1. argos.py <mode> [<args>]\n" + "  2. argos.py [-h | --help]",
+            usage="1. argos.py <mode> [<args>]\n" + "  2. argos.py (-h | --help)",
             add_help=False,
         )
 
@@ -130,28 +132,118 @@ class Parser:
         self._add_subparsers()
 
     def _add_subparsers(self):
-        self._add_acquire_mode_subparser()
-        self._add_realtime_mode_subparser()
-        self._add_train_mode_subparser()
-        self._add_online_mode_subparser()
+
+        # acquire mode
+        self._add_subparser(
+            {"name": "acquire", "aliases": "a", "help": "Mode to capture and store video."},
+            [
+                (
+                    ["-c", "--camera"],
+                    {
+                        "nargs": 1,
+                        "help": "Specify the camera to be used by serial number.",
+                        "metavar": "sn",
+                        "dest": "serial_numbers",
+                        "type": _non_empty_string_type,
+                    },
+                ),
+                (
+                    ["-o", "--output-folder"],
+                    {
+                        "help": "Folder where the acquired images will be stored.",
+                        "metavar": "path",
+                        "type": _non_empty_string_type,
+                    },
+                ),
+                (
+                    ["-y", "--yaml"],
+                    {
+                        "help": "Path to the yaml configuration file.",
+                        "metavar": "path",
+                        "type": _non_empty_string_type,
+                    },
+                ),
+            ],
+        )
+
+        # self._add_subparser(
+        #     {
+        #         "name": "preprocess",
+        #         "aliases": "p",
+        #         "help": "Mode to preprocess the acquired data.",
+        #     },
+        #     [],
+        # )
+
+        # self._add_subparser(
+        #     {
+        #         "name": "train",
+        #         "aliases": "t",
+        #         "help": "Mode to train a model.",
+        #     },
+        #     [],
+        # )
+
+        self._add_subparser(
+            {
+                "name": "online",
+                "aliases": "o",
+                "help": "Mode to run the model in real-time.",
+            },
+            [],
+        )
 
     # subparsers
 
-    def _add_acquire_mode_subparser(self):
-        parser = self._subparsers.add_parser(
-            "acquire",
-            aliases="a",
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            help="Mode to capture and store video.",
-            allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
-            usage="1. argos.py acquire \n"
-            + "  2. argos.py acquire [(-l | --logs) [<dest>]] \n"
-            + "  3. argos.py acquire [-h | --help]",
-            add_help=False,
+    def _add_subparser(self, subparser_configs: dict, subparser_args: list[tuple[list, dict]]):
+        usage = []
+
+        run_args = []
+        for args in subparser_args:
+            required = "required" in args[1].keys() and args[1]["required"]
+            run_args.append(
+                (
+                    (
+                        ("[" if not required else "")
+                        + ("(" if not required and len(args[0]) > 1 else "")
+                        + " | ".join(args[0])
+                        + (")" if not required and len(args[0]) > 1 else "")
+                        + " <"
+                        + args[1]["metavar"]
+                        + ">"
+                        + ("]" if not required else "")
+                    ),
+                    args[1]["required"] if "required" in args[1].keys() else False,
+                )
+            )  # pylint: disable=line-too-long
+        # sort run_args so that the required arguments are shown first
+        run_args.sort(key=lambda x: x[1], reverse=True)
+        run_args = " ".join([arg[0] for arg in run_args])
+
+        usage.append(
+            f"{str(len(usage) + 1)}. argos.py {subparser_configs['name']} (-r | --run) {run_args}"
         )
 
-        parser.add_argument(
+        usage.append(
+            f"{str(len(usage) + 1)}. argos.py {subparser_configs['name']} (-l | --logs) [(-d | --dest) <path>]"  # pylint: disable=line-too-long
+        )
+
+        usage.append(f"{str(len(usage) + 1)}. argos.py {subparser_configs['name']} (-h | --help)")
+
+        usage = "\n  ".join(usage)
+
+        parser = self._subparsers.add_parser(
+            description="Argos, Real-time Image Analysis for Fraud Detection",
+            allow_abbrev=False,
+            formatter_class=self._HelpFormatterModes,
+            add_help=False,
+            **subparser_configs,
+            usage=usage,
+        )
+
+        help_cmd = parser.add_argument_group("Help mode arguments")
+
+        help_cmd.add_argument(
             "-h",
             "--help",
             action="help",
@@ -159,158 +251,34 @@ class Parser:
             help="Show this help message and exit.",
         )
 
-        parser.add_argument(
+        logs_cmd = parser.add_argument_group("Logs mode arguments")
+
+        logs_cmd.add_argument(
             "-l",
             "--logs",
-            nargs="?",
-            const="",
-            help="Access the logs of the acquire mode.",
-            metavar="dest",
+            action="store_true",
+            help=f"Access the logs of the {subparser_configs['name'] if 'name' in subparser_configs.keys() else ''} mode.",  # pylint: disable=line-too-long
+        )
+
+        logs_cmd.add_argument(
+            "-d",
+            "--dest",
+            help="Specify where to exports the logs to. If not specified the logs will be printed to the console.",  # pylint: disable=line-too-long
+            metavar="path",
             dest="logs_dest",
         )
 
-        subparsers = parser.add_subparsers(
-            title="Mode",
-            dest="sub_mode",
-            required=True,
+        run_cmd = parser.add_argument_group("Run mode arguments")
+
+        run_cmd.add_argument(
+            "-r",
+            "--run",
+            action="store_true",
+            help=f"Run the {subparser_configs['name'] if 'name' in subparser_configs.keys() else ''} mode.",  # pylint: disable=line-too-long
         )
 
-        # create cmd subparser
-
-        cmd = subparsers.add_parser(
-            "cmd",
-            aliases="c",
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            help="Define the arguments in the command line.",
-            allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
-            usage="argos.py acquire cmd (-o | --output) <path> [(-c | --camera) <sn>]\n"
-            + "                       [-h | --help]",
-            add_help=False,
-        )
-
-        cmd.add_argument(
-            "-h",
-            "--help",
-            action="help",
-            default=argparse.SUPPRESS,
-            help="Show this help message and exit.",
-        )
-
-        cmd.add_argument(
-            "-c",
-            "--camera",
-            nargs=1,
-            help="Specify the camera to use by passing its serial number.",
-            metavar="sn",
-            dest="serial_numbers",
-            type=_non_empty_string_type,
-        )
-
-        cmd_required = cmd.add_argument_group("Required arguments")
-
-        cmd_required.add_argument(
-            "-o",
-            "--output-folder",
-            required=True,
-            help="Folder where sub folders for each camera will be created to store the images.",
-            metavar="path",
-            type=_non_empty_string_type,
-        )
-
-        # create yaml subparser
-
-        yaml = subparsers.add_parser(
-            "yaml",
-            aliases="y",
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            help="Define the arguments in a yaml file.",
-            allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
-            usage="argos.py acquire yaml (-f | --file) <path> [-h | --help]",
-            add_help=False,
-        )
-
-        yaml.add_argument(
-            "-h",
-            "--help",
-            action="help",
-            default=argparse.SUPPRESS,
-            help="Show this help message and exit.",
-        )
-
-        yaml_required = yaml.add_argument_group("Required arguments")
-
-        yaml_required.add_argument(
-            "-f",
-            "--file",
-            required=True,
-            help="Path to the yaml file containing the configuration.",
-            metavar="path",
-            type=_non_empty_string_type,
-        )
-
-    def _add_realtime_mode_subparser(self):
-        parser = self._subparsers.add_parser(
-            "realtime",
-            aliases="r",
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            help="Mode to stream the cameras in real-time.",
-            allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
-            usage="argos.py realtime [-h | --help]",
-            add_help=False,
-        )
-
-        parser.add_argument(
-            "-h",
-            "--help",
-            action="help",
-            default=argparse.SUPPRESS,
-            help="Show this help message and exit.",
-        )
-
-    # TODO
-    def _add_train_mode_subparser(self):
-        parser = self._subparsers.add_parser(
-            "train",
-            aliases="t",
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            help="Mode to train a model.",
-            allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
-            usage="argos.py train [-h | --help]",
-            add_help=False,
-        )
-
-        parser.add_argument(
-            "-h",
-            "--help",
-            action="help",
-            default=argparse.SUPPRESS,
-            help="Show this help message and exit.",
-        )
-
-    # TODO
-    def _add_online_mode_subparser(self):
-        parser = self._subparsers.add_parser(
-            "online",
-            aliases="o",
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            help="Mode to run the model online.",
-            allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
-            usage="argos.py online [-h | --help]",
-            add_help=False,
-        )
-
-        parser.add_argument(
-            "-h",
-            "--help",
-            action="help",
-            default=argparse.SUPPRESS,
-            help="Show this help message and exit.",
-        )
+        for args in subparser_args:
+            run_cmd.add_argument(*args[0], **args[1])
 
     # methods
 
