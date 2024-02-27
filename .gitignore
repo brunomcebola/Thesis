@@ -164,8 +164,8 @@ data/
 *.pkl
 *.bag
 *test*
-
 .direnv/
 .envrc
 runs/
 yolo*
+realsense_so/

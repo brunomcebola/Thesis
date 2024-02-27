@@ -1,50 +1,44 @@
 #!/bin/bash
 
-source_folder="build"
-master_dest_folder="/prog/Argos"
-node_dest_folder="~/Argos"
-ssh_addr="thales@argos-master"
+build_folder="build"
+ssh_addr="argos-master"
+dest_folder="/rpi/shared/Argos"
 
 blue='\033[1;34m'
 green='\033[1;32m'
 reset='\033[0m'
 
-# creating build folder
 echo
+echo -e "$green"Deployment started!"$reset"
+echo
+
+# creating build folder
 echo -e "$blue"Creating build folder..."$reset"
 echo
 
-echo "$ rm -r -f $source_folder"
-rm -r -f $source_folder
+echo "$ rm -rf $build_folder"
+rm -rf $build_folder
 
-echo "$ mkdir $source_folder"
-mkdir $source_folder
+echo "$ mkdir $build_folder"
+mkdir $build_folder
 
-echo "$ GLOBIGNORE=$source_folder"
-GLOBIGNORE=$source_folder
-
-echo "$ cp -r * $source_folder"
-cp -r * $source_folder
-
-echo "$ unset GLOBIGNORE"
-unset GLOBIGNORE
-
-echo "$ cd $source_folder"
-cd $source_folder
-
-# remove unnecessary files and folders
+# copy files and dirs into build folder
 echo
-echo -e "$blue"Removing unnecessary files and folders..."$reset"
+echo -e "$blue"Copying files and dirs into build folder..."$reset"
 echo
 
-echo "$ GLOBIGNORE=argos.py:src:configs:realsense_so:requirements.txt"
-GLOBIGNORE=argos.py:src:configs:realsense_so:requirements.txt
+echo "$ cat deploy.txt | xargs -I % cp -r % $build_folder"
+cat deploy.txt | xargs -I % cp -r % $build_folder
 
-echo "$ rm -r -f *"
-rm -r -f *
 
-echo "$ unset GLOBIGNORE"
-unset GLOBIGNORE
+# enter build folder
+
+echo
+echo -e "$blue"Entering build folder..."$reset"
+echo
+
+echo "$ cd $build_folder"
+cd $build_folder
 
 # extracting .so files
 echo
@@ -62,57 +56,41 @@ echo
 echo -e "$blue"Removing pycache..."$reset"
 echo
 
-echo "$ rm -r -f __pycache__"
-rm -r -f */__pycache__
+echo "$ find . -name __pycache__ -exec rm -rf {} \;"
+find . -name __pycache__ -exec rm -rf {} \;
+
+# exit build folder
+echo
+echo -e "$blue"Exiting build folder..."$reset"
+echo
 
 echo "$ cd .."
 cd ..
 
-deploy to host
+# deploy to cluster
 echo
-echo -e "$blue"Deploying to machines..."$reset"
-echo
-
-read -sp "Password: " password
-echo
+echo -e "$blue"Deploying to the cluster..."$reset"
 echo
 
-echo "$ ssh $ssh_addr \"/home/thales/.forward_ipv4.sh\""
-{
-ssh $ssh_addr "echo ${password} | /home/thales/.forward_ipv4.sh"
-} > /dev/null 2>/dev/null
+echo "$ ssh $ssh_addr \"rm -r -f $dest_folder\""
+ssh $ssh_addr "rm -r -f $dest_folder"
 
-echo "$ ssh $ssh_addr \"rm -r -f $master_dest_folder\""
-ssh $ssh_addr "rm -r -f $master_dest_folder"
+echo "$ ssh $ssh_addr \"mkdir $dest_folder\""
+ssh $ssh_addr "mkdir $dest_folder"
 
-echo "$ ssh $ssh_addr \"mkdir $master_dest_folder\""
-ssh $ssh_addr "mkdir $master_dest_folder"
+echo "$ scp -T -r ./$build_folder/* $ssh_addr:$dest_folder/"
+scp -T -r ./$build_folder/* $ssh_addr:$dest_folder/
 
-echo "$ scp -T -r ./$source_folder/* $ssh_addr:$master_dest_folder"
-scp -T -r ./$source_folder/* "$ssh_addr:$master_dest_folder"
-
-echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts rm -r -f $node_dest_folder\""
-ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts rm -r -f $node_dest_folder"
-
-echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts mkdir $node_dest_folder\""
-ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts mkdir $node_dest_folder"
-
-echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts cp -r $master_dest_folder/* $node_dest_folder\""
-ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts cp -r $master_dest_folder/* $node_dest_folder"
-
-echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts python -m venv $node_dest_folder/venv\""
-ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts python -m venv $node_dest_folder/venv"
-
-echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts $node_dest_folder/venv/bin/pip install -r $node_dest_folder/requirements.txt\""
-ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_pssh_hosts $node_dest_folder/venv/bin/pip install -r $node_dest_folder/requirements.txt"
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts /home/thales/Argos/Argos_venv/bin/pip install -q -r /home/thales/Argos/Argos_code/requirements.txt\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts /home/thales/Argos/Argos_venv/bin/pip install -q -r /home/thales/Argos/Argos_code/requirements.txt"
 
 # remove deployment folder
 echo
 echo -e "$blue"Removing build folder..."$reset"
 echo
 
-echo "$ rm -r -f $source_folder"
-rm -r -f $source_folder
+echo "$ rm -r -f $build_folder"
+rm -r -f $build_folder
 
 echo
 echo -e "$green"Deployment finished!"$reset"
