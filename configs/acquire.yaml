@@ -3,14 +3,30 @@ output_folder: ./data/
 
 op_times:
   - start_day: "Mon"
-    start_time: "17:35"
+    start_time: "12:00"
+    stop_day: "Mon"
+    stop_time: "14:00"
+  - start_day: "Tue"
+    start_time: "12:00"
     stop_day: "Tue"
-    stop_time: "17:36"
+    stop_time: "14:00"
+  - start_day: "Wed"
+    start_time: "12:00"
+    stop_day: "Wed"
+    stop_time: "14:00"
+  - start_day: "Thu"
+    start_time: "12:00"
+    stop_day: "Thu"
+    stop_time: "14:00"
+  - start_day: "Fri"
+    start_time: "12:00"
+    stop_day: "Fri"
+    stop_time: "14:00"
 
 ######
 
 cameras:
-  - serial_number: 5646858
+  - serial_number:
     stream_configs:
       - type: depth
         format: z16

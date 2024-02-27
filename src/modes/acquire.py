@@ -248,7 +248,7 @@ class AcquireNamespace(utils.ModeNamespace):
                             "The start time must be before the stop time.",
                         )
 
-                    if idx % len(converted_op_times):
+                    if idx < len(converted_op_times) - 1:
                         next_start_time = converted_op_times[idx + 1][0]
 
                         # Check if current end time is after next start time
