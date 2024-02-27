@@ -2,15 +2,15 @@ output_folder: ./data/
 ######
 
 op_times:
-  - start_day: "Tue"
+  - start_day: "Mon"
     start_time: "17:35"
-    stop_day: "Mon"
+    stop_day: "Tue"
     stop_time: "17:36"
 
 ######
 
 cameras:
-  - serial_number: 939622075103
+  - serial_number: 5646858
     stream_configs:
       - type: depth
         format: z16

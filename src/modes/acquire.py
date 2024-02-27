@@ -23,7 +23,6 @@ Exceptions:
 from __future__ import annotations
 
 import os
-import re
 import calendar
 import threading
 from datetime import datetime
@@ -133,6 +132,7 @@ class AcquireNamespace(utils.ModeNamespace):
         op_times: list[dict[str, str]] | None = None,
         serial_numbers: list[str] | None = None,
         stream_configs: list[list[intel.StreamConfig]] | None = None,
+        **kwargs,
     ):
         """
         AcquireNamespace constructor.
@@ -156,32 +156,14 @@ class AcquireNamespace(utils.ModeNamespace):
 
         """
 
-        if serial_numbers is None:
-            utils.print_warning("No cameras specified. Using all available cameras.")
-
-            serial_numbers = intel.RealSenseCamera.get_available_cameras_serial_numbers()
-
-            if len(serial_numbers) == 0:
-                raise AcquireNamespaceError("No cameras available.")
-
-        if stream_configs is None:
-            utils.print_warning("No stream configurations specified. Using default configurations.")
-
-            stream_configs = [
-                [
-                    intel.StreamConfig(
-                        intel.StreamType.DEPTH,
-                        intel.StreamFormat.Z16,
-                        intel.StreamResolution.X640_Y480,
-                        intel.StreamFPS.FPS_30,
-                    )
-                ]
-                for _ in range(len(serial_numbers))
-            ]
+        del kwargs
 
         super().__init__(serial_numbers, stream_configs, AcquireNamespaceError)
 
         # output_folder validations
+        if output_folder is None:
+            raise AcquireNamespaceError("The output folder must be specified.")
+
         output_folder = output_folder.strip()
 
         if output_folder == "":
@@ -475,7 +457,7 @@ class Acquire(utils.Mode):
                     threading.Thread(target=self._storage_target, args=(frame, folder)).start()
 
                 self._stored_frames[serial_number] += 1
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 continue
 
         while not frames_queue.empty():  # type: ignore
@@ -486,7 +468,7 @@ class Acquire(utils.Mode):
                     threading.Thread(target=self._storage_target, args=(frame, folder)).start()
 
                 self._stored_frames[serial_number] += 1
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 continue
 
     def _op_time_handler_target(self) -> None:
