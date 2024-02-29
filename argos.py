@@ -14,17 +14,20 @@ import colorama
 
 import src.parser as parser
 import src.utils as utils
-
 import src.modes as modes
 
 MAP_TO_MODE_CLASS = {
     "acquire": modes.acquire.Acquire,
     "a": modes.acquire.Acquire,
+    "preprocess": modes.preprocess.Preprocess,
+    "p": modes.preprocess.Preprocess,
 }
 
 MAP_TO_MODE_NAMESPACE_CLASS = {
     "acquire": modes.acquire.AcquireNamespace,
     "a": modes.acquire.AcquireNamespace,
+    "preprocess": modes.preprocess.PreprocessNamespace,
+    "p": modes.preprocess.PreprocessNamespace,
 }
 
 if __name__ == "__main__":
