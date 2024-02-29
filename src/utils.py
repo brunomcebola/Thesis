@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import os
 import logging
-from typing import Type
+from typing import Type, TypeVar
 from types import SimpleNamespace
 from abc import ABC, abstractmethod
 import yaml
@@ -54,6 +54,8 @@ class ModeNamespaceError(Exception):
  ╚═════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝
 """
 
+MN = TypeVar("MN", bound="ModeNamespace")
+
 
 class ModeNamespace(SimpleNamespace, ABC):
     """
@@ -70,6 +72,8 @@ class ModeNamespace(SimpleNamespace, ABC):
             Loads the namespace from a YAML file.
     """
 
+    _EXCEPTION_CLS: Type[ModeNamespaceError] = ModeNamespaceError
+
     # type hints
     cameras: list[intel.RealSenseCamera]
 
@@ -79,7 +83,6 @@ class ModeNamespace(SimpleNamespace, ABC):
         self,
         serial_numbers: list[str] | None = None,
         stream_configs: list[list[intel.StreamConfig]] | None = None,
-        exception: Type[ModeNamespaceError] = ModeNamespaceError,
     ) -> None:
         """
         AcquireNamespace constructor.
@@ -105,13 +108,13 @@ class ModeNamespace(SimpleNamespace, ABC):
             serial_numbers = intel.RealSenseCamera.get_available_cameras_serial_numbers()
 
             if len(serial_numbers) == 0:
-                raise exception("No cameras available.")
+                raise self.__class__._EXCEPTION_CLS("No cameras available.")
 
         elif len(serial_numbers) == 0:
-            raise exception("At least one serial number must be specified.")
+            raise self.__class__._EXCEPTION_CLS("At least one serial number must be specified.")
 
         elif len(set(serial_numbers)) != len(serial_numbers):
-            raise exception("There are repeated serial numbers.")
+            raise self.__class__._EXCEPTION_CLS("There are repeated serial numbers.")
 
         # stream configs validations
         if stream_configs is None:
@@ -130,18 +133,24 @@ class ModeNamespace(SimpleNamespace, ABC):
             ]
 
         elif len(stream_configs) != len(serial_numbers):
-            raise exception("The number of stream configs must match the number of cameras.")
+            raise self.__class__._EXCEPTION_CLS(
+                "The number of stream configs must match the number of cameras."
+            )
 
         for camera_stream_configs in stream_configs:
             if len(camera_stream_configs) == 0:
-                raise exception("At least one stream config must be specified for each camera.")
+                raise self.__class__._EXCEPTION_CLS(
+                    "At least one stream config must be specified for each camera."
+                )
 
             if len(camera_stream_configs) != len(
                 set(
                     camera_stream_config.type.name for camera_stream_config in camera_stream_configs
                 )
             ):
-                raise exception("There are repeated stream configs for the same camera.")
+                raise self.__class__._EXCEPTION_CLS(
+                    "There are repeated stream configs for the same camera."
+                )
 
         # create list of camera instances
         self.cameras = [
@@ -221,90 +230,73 @@ class ModeNamespace(SimpleNamespace, ABC):
                 raise RuntimeError("Unknown problem on the specified YAML file.") from e
 
     @classmethod
-    def _get_full_yaml_schema(cls) -> dict:
+    def _get_cameras_yaml_schema(cls) -> dict:
         """
-        Returns the schema of the mode.
+        Return the schema of the cameras attribute.
         """
-        schema = {
-            "type": "object",
-            "properties": cls._get_specific_yaml_schema()
-            | {
-                "cameras": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "serial_number": {
-                                "anyOf": [
-                                    {"type": "string"},
-                                    {"type": "number", "minimum": 0},
-                                    {"type": "null"},
-                                ]
-                            },
-                            "stream_configs": {
-                                "anyOf": [
-                                    {
-                                        "type": "array",
-                                        "minItems": 1,
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "type": {
-                                                    "enum": [
-                                                        s_type.name.lower()
-                                                        for s_type in intel.StreamType
-                                                    ]
-                                                },
-                                                "format": {
-                                                    "enum": [
-                                                        s_format.name.lower()
-                                                        for s_format in intel.StreamFormat
-                                                    ]
-                                                },
-                                                "resolution": {
-                                                    "enum": [
-                                                        s_resolution.name.lower()
-                                                        for s_resolution in intel.StreamResolution
-                                                    ]
-                                                },
-                                                "fps": {
-                                                    "enum": [
-                                                        s_fps.name.lower()
-                                                        for s_fps in intel.StreamFPS
-                                                    ]
-                                                },
-                                            },
-                                            "required": ["type", "format", "resolution", "fps"],
-                                            "additionalProperties": False,
-                                        },
-                                    },
-                                    {"type": "null"},
-                                ],
-                            },
+
+        return {
+            "cameras": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "serial_number": {
+                            "anyOf": [
+                                {"type": "string"},
+                                {"type": "number", "minimum": 0},
+                                {"type": "null"},
+                            ]
                         },
-                        "required": ["serial_number", "stream_configs"],
-                        "additionalProperties": False,
+                        "stream_configs": {
+                            "anyOf": [
+                                {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "type": {
+                                                "enum": [
+                                                    s_type.name.lower()
+                                                    for s_type in intel.StreamType
+                                                ]
+                                            },
+                                            "format": {
+                                                "enum": [
+                                                    s_format.name.lower()
+                                                    for s_format in intel.StreamFormat
+                                                ]
+                                            },
+                                            "resolution": {
+                                                "enum": [
+                                                    s_resolution.name.lower()
+                                                    for s_resolution in intel.StreamResolution
+                                                ]
+                                            },
+                                            "fps": {
+                                                "enum": [
+                                                    s_fps.name.lower() for s_fps in intel.StreamFPS
+                                                ]
+                                            },
+                                        },
+                                        "required": ["type", "format", "resolution", "fps"],
+                                        "additionalProperties": False,
+                                    },
+                                },
+                                {"type": "null"},
+                            ],
+                        },
                     },
+                    "required": ["serial_number", "stream_configs"],
+                    "additionalProperties": False,
                 },
             },
-            "additionalProperties": False,
         }
 
-        schema["required"] = list(schema["properties"].keys())
-
-        return schema
-
     @classmethod
-    @abstractmethod
-    def _get_specific_yaml_schema(cls) -> dict:
-        """
-        Returns the schema of the mode.
-        """
-
-    @classmethod
-    @abstractmethod
-    def from_yaml(cls, file: str) -> ModeNamespace:
+    def from_yaml(cls: Type[MN], file: str) -> MN:
         """
         Loads the mode from a YAML file.
 
@@ -312,6 +304,11 @@ class ModeNamespace(SimpleNamespace, ABC):
         -----
             - file: The YAML file to be loaded.
         """
+
+        try:
+            return cls(**cls._get_yaml_args(file))
+        except Exception as e:
+            raise cls._EXCEPTION_CLS(str(e).split("\n", maxsplit=1)[0]) from e
 
 
 class Mode(ABC):
@@ -323,7 +320,7 @@ class Mode(ABC):
         - stop(): Stops the mode.
     """
 
-    _LOG_FILE: str | None = None
+    _LOG_FILE: str
 
     @abstractmethod
     def run(self) -> None:
@@ -340,9 +337,6 @@ class Mode(ABC):
         -----
             - file: The file to print the logs to. If None, the logs are printed to the console.
         """
-
-        if cls._LOG_FILE is None:
-            raise ValueError("The mode has no logs to print.")
 
         # print to console
         if file == "":

@@ -1,20 +1,28 @@
 """
-This module holds the tools to stream in realtime from the cameras.
+This module holds the tools to preprocess the data acquired from the realsense cameras.
+
+Methods:
+--------
+- TODO
 
 Classes:
 --------
-- AcquireNamespace: Holds the arguments for the acquire mode.
-- Acquire: Holds the tools to acquire data from the realsense cameras.
+- TODO
 
 Exceptions:
 -----------
-- AcquireNamespaceError: Exception raised when errors related to the acquire namespace occur.
-- AcquireError: Exception raised when errors related to the acquire mode occur.
+- TODO
 
 """
 
 # pylint: disable=pointless-string-statement
+
 from __future__ import annotations
+
+import os
+import calendar
+import threading
+from datetime import datetime
 
 from .. import intel
 from .. import utils
@@ -30,9 +38,15 @@ from .. import utils
 """
 
 
-class RealtimeNamespaceError(utils.ModeNamespaceError):
+class PreprocessNamespaceError(utils.ModeNamespaceError):
     """
     Exception raised when errors related to the acquire namespace occur.
+    """
+
+
+class PreprocessError(Exception):
+    """
+    Exception raised when errors related to the acquire mode occur.
     """
 
 
@@ -46,56 +60,17 @@ class RealtimeNamespaceError(utils.ModeNamespaceError):
 ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝   ╚═╝
 """
 
-
-class RealtimeNamespace(utils.ModeNamespace):
+class PreprocessNamespace(utils.ModeNamespace):
     """
-    This class holds the arguments for the realtime mode.
+    This class holds the arguments for the acquire mode.
 
     Attributes:
     -----------
+        - output_folder (str):
+            The path to the output folder.
+        - op_times (list[tuple[int, int]] | None):
+            The time intervals in which the cameras will be capturing data.
         - cameras (list[intel.RealSenseCamera]):
             The list with the cameras to be used.
     """
 
-    @classmethod
-    def from_yaml(cls, file: str) -> RealtimeNamespace:
-        return cls.from_yaml(file)
-
-    @classmethod
-    def _get_specific_yaml_schema(cls) -> dict:
-        return {}
-
-
-class Realtime(utils.Mode):
-    """
-    This class holds the tools to stream data from the realsense cameras.
-
-    Methods:
-    --------
-        - run: Runs the realtime mode (in a blocking way).
-
-    """
-
-    # type hints
-
-    __args: RealtimeNamespace
-
-    def __init__(self, args: RealtimeNamespace) -> None:
-        """
-        Acquire constructor.
-
-        Args:
-        -----
-            - args: The arguments for the acquire mode (matching the constructor of
-                    AcquireNamespace).
-
-        """
-
-        self.__args = args
-
-    def run(self) -> None:
-        """
-        Runs the realtime mode (in a blocking way).
-        """
-
-        print(self.__args)

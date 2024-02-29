@@ -30,8 +30,6 @@ from datetime import datetime
 from .. import intel
 from .. import utils
 
-_LOG_FILE = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../../logs/aquire.log")
-
 # Exceptions
 """
 ███████╗██╗  ██╗ ██████╗███████╗██████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
@@ -122,6 +120,8 @@ class AcquireNamespace(utils.ModeNamespace):
             The list with the cameras to be used.
     """
 
+    _EXCEPTION_CLS = AcquireNamespaceError
+
     # type hints
     output_folder: str
     op_times: list[tuple[int, int]] | None
@@ -158,7 +158,7 @@ class AcquireNamespace(utils.ModeNamespace):
 
         del kwargs
 
-        super().__init__(serial_numbers, stream_configs, AcquireNamespaceError)
+        super().__init__(serial_numbers, stream_configs)
 
         # output_folder validations
         if output_folder is None:
@@ -282,11 +282,19 @@ class AcquireNamespace(utils.ModeNamespace):
         return string.rstrip()
 
     @classmethod
-    def from_yaml(cls, file: str) -> AcquireNamespace:
-        try:
-            return cls(**cls._get_yaml_args(file))
-        except Exception as e:
-            raise AcquireNamespaceError(str(e).split("\n", maxsplit=1)[0]) from e
+    def _get_yaml_schema(cls) -> dict:
+        """
+        Returns the schema of the mode.
+        """
+        schema = {
+            "type": "object",
+            "properties": cls._get_specific_yaml_schema() | cls._get_cameras_yaml_schema(),
+            "additionalProperties": False,
+        }
+
+        schema["required"] = list(schema["properties"].keys())
+
+        return schema
 
     @classmethod
     def _get_specific_yaml_schema(cls) -> dict:
@@ -337,6 +345,10 @@ class Acquire(utils.Mode):
 
     """
 
+    _LOG_FILE = os.path.abspath(
+        os.path.dirname(os.path.abspath(__file__)) + "/../../logs/aquire.log"
+    )
+
     # type hints
 
     _args: AcquireNamespace
@@ -373,7 +385,7 @@ class Acquire(utils.Mode):
 
         self._args = args
 
-        self._logger = utils.Logger("", _LOG_FILE)
+        self._logger = utils.Logger("", Acquire._LOG_FILE)
 
         self._set_default_values()
 

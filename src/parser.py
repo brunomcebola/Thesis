@@ -166,14 +166,31 @@ class Parser:
             ],
         )
 
-        # self._add_subparser(
-        #     {
-        #         "name": "preprocess",
-        #         "aliases": "p",
-        #         "help": "Mode to preprocess the acquired data.",
-        #     },
-        #     [],
-        # )
+        self._add_subparser(
+            {
+                "name": "preprocess",
+                "aliases": "p",
+                "help": "Mode to preprocess the acquired data.",
+            },
+            [
+                (
+                    ["-o", "--origin-folder"],
+                    {
+                        "help": "Folder where the images to be preprocessed are stored.",
+                        "metavar": "path",
+                        "type": _non_empty_string_type,
+                    },
+                ),
+                (
+                    ["-d", "--dest-folder"],
+                    {
+                        "help": "Folder where the generated datasets will be stored.",
+                        "metavar": "path",
+                        "type": _non_empty_string_type,
+                    },
+                ),
+            ],
+        )
 
         # self._add_subparser(
         #     {
@@ -184,14 +201,14 @@ class Parser:
         #     [],
         # )
 
-        self._add_subparser(
-            {
-                "name": "online",
-                "aliases": "o",
-                "help": "Mode to run the model in real-time.",
-            },
-            [],
-        )
+        # self._add_subparser(
+        #     {
+        #         "name": "online",
+        #         "aliases": "o",
+        #         "help": "Mode to run the model in real-time.",
+        #     },
+        #     [],
+        # )
 
     # subparsers
 
