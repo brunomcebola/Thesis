@@ -158,7 +158,7 @@ class AcquireNamespace(utils.ModeNamespace):
 
         del kwargs
 
-        super().__init__(serial_numbers, stream_configs)
+        super()._init_cameras(serial_numbers, stream_configs)
 
         # output_folder validations
         if output_folder is None:
@@ -288,7 +288,42 @@ class AcquireNamespace(utils.ModeNamespace):
         """
         schema = {
             "type": "object",
-            "properties": cls._get_specific_yaml_schema() | cls._get_cameras_yaml_schema(),
+            "properties": {
+                "output_folder": {"type": "string"},
+                "op_times": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "start_day": {
+                                        "enum": [day.lower() for day in list(calendar.day_abbr)]
+                                        + [day.capitalize() for day in list(calendar.day_abbr)]
+                                    },
+                                    "start_time": {
+                                        "type": "string",
+                                        "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+                                    },
+                                    "stop_day": {
+                                        "enum": [day.lower() for day in list(calendar.day_abbr)]
+                                        + [day.capitalize() for day in list(calendar.day_abbr)]
+                                    },
+                                    "stop_time": {
+                                        "type": "string",
+                                        "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+                                    },
+                                },
+                                "required": ["start_day", "start_time", "stop_day", "stop_time"],
+                                "additionalProperties": False,
+                            },
+                        },
+                        {"type": "null"},
+                    ],
+                },
+            }
+            | cls._get_cameras_yaml_schema(),
             "additionalProperties": False,
         }
 
@@ -297,42 +332,8 @@ class AcquireNamespace(utils.ModeNamespace):
         return schema
 
     @classmethod
-    def _get_specific_yaml_schema(cls) -> dict:
-        return {
-            "output_folder": {"type": "string"},
-            "op_times": {
-                "anyOf": [
-                    {
-                        "type": "array",
-                        "minItems": 1,
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "start_day": {
-                                    "enum": [day.lower() for day in list(calendar.day_abbr)]
-                                    + [day.capitalize() for day in list(calendar.day_abbr)]
-                                },
-                                "start_time": {
-                                    "type": "string",
-                                    "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
-                                },
-                                "stop_day": {
-                                    "enum": [day.lower() for day in list(calendar.day_abbr)]
-                                    + [day.capitalize() for day in list(calendar.day_abbr)]
-                                },
-                                "stop_time": {
-                                    "type": "string",
-                                    "pattern": r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
-                                },
-                            },
-                            "required": ["start_day", "start_time", "stop_day", "stop_time"],
-                            "additionalProperties": False,
-                        },
-                    },
-                    {"type": "null"},
-                ],
-            },
-        }
+    def _format_yaml_args(cls, args: dict) -> dict:
+        return cls._format_cameras_yaml_args(args)
 
 
 class Acquire(utils.Mode):

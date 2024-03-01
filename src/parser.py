@@ -32,16 +32,7 @@ class Parser:
             formatter = self._get_formatter()
 
             if self.description:
-                formatter.add_text(
-                    Style.BRIGHT
-                    + self.description
-                    + (
-                        (" - " + self.prog.split(" ")[1].strip().capitalize() + " mode")  # type: ignore # pylint: disable=line-too-long
-                        if self.prog != "argos.py"
-                        else ""
-                    )
-                    + Style.RESET_ALL
-                )
+                formatter.add_text(Style.BRIGHT + self.description + Style.RESET_ALL)
 
             # usage
             formatter.add_usage(self.usage, self._actions, self._mutually_exclusive_groups)
@@ -179,6 +170,7 @@ class Parser:
                         "help": "Folder where the images to be preprocessed are stored.",
                         "metavar": "path",
                         "type": _non_empty_string_type,
+                        "required": True,
                     },
                 ),
                 (
@@ -187,32 +179,44 @@ class Parser:
                         "help": "Folder where the generated datasets will be stored.",
                         "metavar": "path",
                         "type": _non_empty_string_type,
+                        "required": True,
                     },
                 ),
             ],
         )
 
-        # self._add_subparser(
-        #     {
-        #         "name": "train",
-        #         "aliases": "t",
-        #         "help": "Mode to train a model.",
-        #     },
-        #     [],
-        # )
-
-        # self._add_subparser(
-        #     {
-        #         "name": "online",
-        #         "aliases": "o",
-        #         "help": "Mode to run the model in real-time.",
-        #     },
-        #     [],
-        # )
-
     # subparsers
 
     def _add_subparser(self, subparser_configs: dict, subparser_args: list[tuple[list, dict]]):
+        description = f"Argos, Real-time Image Analysis for Fraud Detection - {subparser_configs['name'].capitalize()} mode"  # pylint: disable=line-too-long
+
+        usage = f"1. argos.py {subparser_configs['name']} <command> [<args>]"
+        usage += f"\n  2. argos.py {subparser_configs['name']} (-h | --help)"
+
+        parser = self._subparsers.add_parser(
+            description=description,
+            allow_abbrev=False,
+            formatter_class=self._HelpFormatterModes,
+            add_help=False,
+            **subparser_configs,
+            usage=usage,
+        )
+
+        parser.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="Show this help message and exit.",
+        )
+
+        subparsers = parser.add_subparsers(
+            title="Commands",
+            dest="command",
+        )
+
+        # run command
+
         usage = []
 
         run_args = []
@@ -222,9 +226,9 @@ class Parser:
                 (
                     (
                         ("[" if not required else "")
-                        + ("(" if not required and len(args[0]) > 1 else "")
+                        + ("(" if len(args[0]) > 1 else "")
                         + " | ".join(args[0])
-                        + (")" if not required and len(args[0]) > 1 else "")
+                        + (")" if len(args[0]) > 1 else "")
                         + " <"
                         + args[1]["metavar"]
                         + ">"
@@ -237,30 +241,23 @@ class Parser:
         run_args.sort(key=lambda x: x[1], reverse=True)
         run_args = " ".join([arg[0] for arg in run_args])
 
-        usage.append(
-            f"{str(len(usage) + 1)}. argos.py {subparser_configs['name']} (-r | --run) {run_args}"
-        )
+        usage = f"1. argos.py {subparser_configs['name']} run {run_args}"
+        usage += f"\n  2. argos.py {subparser_configs['name']} run (-h | --help)"
 
-        usage.append(
-            f"{str(len(usage) + 1)}. argos.py {subparser_configs['name']} (-l | --logs) [(-d | --dest) <path>]"  # pylint: disable=line-too-long
-        )
-
-        usage.append(f"{str(len(usage) + 1)}. argos.py {subparser_configs['name']} (-h | --help)")
-
-        usage = "\n  ".join(usage)
-
-        parser = self._subparsers.add_parser(
-            description="Argos, Real-time Image Analysis for Fraud Detection",
-            allow_abbrev=False,
+        run_cmd = subparsers.add_parser(
+            name="run",
+            aliases="r",
+            description=description + " (run)",
             formatter_class=self._HelpFormatterModes,
             add_help=False,
-            **subparser_configs,
             usage=usage,
+            help=f"Run the {subparser_configs['name'] if 'name' in subparser_configs.keys() else ''} mode.",  # pylint: disable=line-too-long
         )
 
-        help_cmd = parser.add_argument_group("Help mode arguments")
+        for args in subparser_args:
+            run_cmd.add_argument(*args[0], **args[1])
 
-        help_cmd.add_argument(
+        run_cmd.add_argument(
             "-h",
             "--help",
             action="help",
@@ -268,12 +265,19 @@ class Parser:
             help="Show this help message and exit.",
         )
 
-        logs_cmd = parser.add_argument_group("Logs mode arguments")
+        # logs command
 
-        logs_cmd.add_argument(
-            "-l",
-            "--logs",
-            action="store_true",
+        usage = f"1. argos.py {subparser_configs['name']} logs [(-d | --dest) <path>]"
+        usage += f"\n  2. argos.py {subparser_configs['name']} logs (-h | --help)"
+
+        logs_cmd = subparsers.add_parser(
+            name="logs",
+            aliases="l",
+            description=description + " (logs)",
+            allow_abbrev=False,
+            formatter_class=self._HelpFormatterModes,
+            add_help=False,
+            usage=usage,
             help=f"Access the logs of the {subparser_configs['name'] if 'name' in subparser_configs.keys() else ''} mode.",  # pylint: disable=line-too-long
         )
 
@@ -283,19 +287,16 @@ class Parser:
             help="Specify where to exports the logs to. If not specified the logs will be printed to the console.",  # pylint: disable=line-too-long
             metavar="path",
             dest="logs_dest",
+            type=_non_empty_string_type,
         )
 
-        run_cmd = parser.add_argument_group("Run mode arguments")
-
-        run_cmd.add_argument(
-            "-r",
-            "--run",
-            action="store_true",
-            help=f"Run the {subparser_configs['name'] if 'name' in subparser_configs.keys() else ''} mode.",  # pylint: disable=line-too-long
+        logs_cmd.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="Show this help message and exit.",
         )
-
-        for args in subparser_args:
-            run_cmd.add_argument(*args[0], **args[1])
 
     # methods
 
