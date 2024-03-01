@@ -277,7 +277,7 @@ class AcquireNamespace(utils.ModeNamespace):
         else:
             string += "\tOperation time: Allways\n"
 
-        string += super().__str__()
+        string += self._str_cameras()
 
         return string.rstrip()
 
@@ -286,6 +286,7 @@ class AcquireNamespace(utils.ModeNamespace):
         """
         Returns the schema of the mode.
         """
+
         schema = {
             "type": "object",
             "properties": {
@@ -371,7 +372,7 @@ class Acquire(utils.Mode):
 
     # logger
 
-    _logger: utils.Logger
+    _logger: utils.Logger = utils.Logger("", _LOG_FILE)
 
     def __init__(self, args: AcquireNamespace) -> None:
         """
@@ -385,8 +386,6 @@ class Acquire(utils.Mode):
         """
 
         self._args = args
-
-        self._logger = utils.Logger("", Acquire._LOG_FILE)
 
         self._set_default_values()
 
@@ -554,7 +553,7 @@ class Acquire(utils.Mode):
         """
         try:
             self._logger.info(
-                "New acquisition session (%s) started with:\n%s",
+                "New acquisition session (%s) started\n%s",
                 datetime.now().strftime("%Y%m%d_%H%M%S"),
                 self._args,
             )
@@ -569,7 +568,7 @@ class Acquire(utils.Mode):
             # create storage folders
 
             path = self._create_storage_folders()
-            self._logger.info("Defined storage folders:\n%s", path)
+            self._logger.info("Defined storage folders\n%s", path)
 
             # Launch all threads
 
@@ -590,8 +589,6 @@ class Acquire(utils.Mode):
                 self._storage_handler_threads[camera.serial_number].start()  # type: ignore
 
             self._stream_signals.run.set()
-
-            # main loop
 
             utils.print_info("To stop data acquisition press Ctrl + C!\n")
 
