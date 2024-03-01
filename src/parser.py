@@ -170,16 +170,22 @@ class Parser:
                         "help": "Folder where the images to be preprocessed are stored.",
                         "metavar": "path",
                         "type": _non_empty_string_type,
-                        "required": True,
                     },
                 ),
                 (
-                    ["-d", "--dest-folder"],
+                    ["-d", "--destination-folder"],
                     {
                         "help": "Folder where the generated datasets will be stored.",
                         "metavar": "path",
                         "type": _non_empty_string_type,
-                        "required": True,
+                    },
+                ),
+                (
+                    ["-y", "--yaml"],
+                    {
+                        "help": "Path to the yaml configuration file.",
+                        "metavar": "path",
+                        "type": _non_empty_string_type,
                     },
                 ),
             ],

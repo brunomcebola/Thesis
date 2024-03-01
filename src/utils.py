@@ -23,7 +23,7 @@ from types import SimpleNamespace
 from abc import ABC, abstractmethod
 import yaml
 from colorama import Fore, Style
-from jsonschema import validate
+import jsonschema
 
 from . import intel
 
@@ -325,7 +325,7 @@ class ModeNamespace(SimpleNamespace, ABC):
             with open(file, "r", encoding="utf-8") as f:
                 args = yaml.safe_load(f)
 
-                validate(args, cls._get_yaml_schema())
+                jsonschema.validate(args, cls._get_yaml_schema())
 
                 args = cls._format_yaml_args(args)
 
@@ -337,11 +337,13 @@ class ModeNamespace(SimpleNamespace, ABC):
                 raise SyntaxError(f"Wrong syntax on line {line} of the YAML file.") from e
             else:
                 raise RuntimeError("Unknown problem on the specified YAML file.") from e
+        except jsonschema.ValidationError as e:
+            raise cls._EXCEPTION_CLS(str(e).split("\n", maxsplit=1)[0]) from e
 
         try:
             return cls(**args)
         except Exception as e:
-            raise cls._EXCEPTION_CLS(str(e).split("\n", maxsplit=1)[0]) from e
+            raise cls._EXCEPTION_CLS(e) from e
 
     # Abstract class methods
 
@@ -388,7 +390,26 @@ class Mode(ABC):
         """
 
         # print to console
-        if file == "":
+        if file:
+            print_info(f"Exporting logs to {file}...")
+            print()
+
+            with open(
+                cls._LOG_FILE,
+                "r",
+                encoding="utf-8",
+            ) as origin, open(
+                file,
+                "w",
+                encoding="utf-8",
+            ) as destination:
+                destination.write("".join(origin.readlines()))
+
+            print_success("Logs exported!")
+            print()
+
+        # export to file
+        else:
             with open(
                 cls._LOG_FILE,
                 "r",
@@ -396,8 +417,22 @@ class Mode(ABC):
             ) as f:
                 file_lines = f.readlines()
 
-                for line in file_lines[1:]:
-                    print(line, end="")
+                for line in file_lines:
+                    if line[0].isdigit():
+                        line = line.split(" - ", 3)
+                        print(
+                            Fore.GREEN
+                            + line[0]
+                            + " - "
+                            + Fore.LIGHTMAGENTA_EX
+                            + line[1]
+                            + Style.RESET_ALL
+                            + " - "
+                            + line[2],
+                            end="",
+                        )
+                    else:
+                        print(line, end="")
 
                 # session_logs = file.split("\n\n")
 
@@ -412,19 +447,6 @@ class Mode(ABC):
                 #     for line in lines:
                 #         date, level, source, message = line.split(" - ", 3)
                 #         utils.print_log(message, date, source, level)
-
-        # export to file
-        else:
-            with open(
-                cls._LOG_FILE,
-                "r",
-                encoding="utf-8",
-            ) as origin, open(
-                file,
-                "w",
-                encoding="utf-8",
-            ) as destination:
-                destination.write("".join(origin.readlines()[1:]))
 
 
 class Logger(logging.Logger):
@@ -500,36 +522,6 @@ def print_error(message: str) -> None:
         - message: The error message to be printed.
     """
     print(f"{Fore.RED + Style.BRIGHT}Error:{Style.RESET_ALL} {message}")
-
-
-def print_log(
-    message: str, date: str | None = None, source: str | None = None, level: str | None = None
-) -> None:
-    """
-    Prints a log message.
-
-    Args:
-    -----
-        - message: The log message to be printed.
-    """
-
-    if date is None:
-        print(f"{Fore.LIGHTGREEN_EX + Style.BRIGHT}{message}{Style.RESET_ALL}")
-        print()
-
-    else:
-        text = Fore.GREEN + date + Style.RESET_ALL + " - "
-        text += (
-            (Fore.LIGHTRED_EX if level == "ERROR" else Fore.LIGHTCYAN_EX)
-            + Style.BRIGHT
-            + str(level)
-            + Style.RESET_ALL
-            + " - "
-        )
-        text += str(source) + " - "
-        text += message
-
-        print(text)
 
 
 def get_user_confirmation(message: str) -> bool:

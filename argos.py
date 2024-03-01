@@ -19,6 +19,8 @@ import src.modes as modes
 MAP_TO_MODE_CLASS = {
     "acquire": modes.acquire.Acquire,
     "a": modes.acquire.Acquire,
+    "preprocess": modes.preprocess.Preprocess,
+    "p": modes.preprocess.Preprocess,
 }
 
 MAP_TO_MODE_NAMESPACE_CLASS = {
@@ -37,7 +39,7 @@ if __name__ == "__main__":
         print()
         print(
             colorama.Style.BRIGHT
-            + colorama.Fore.CYAN
+            + colorama.Fore.LIGHTBLUE_EX
             + "Welcome to Argos, Real-time Image Analysis for Fraud Detection!"
             + colorama.Style.RESET_ALL
         )

@@ -158,14 +158,15 @@ cython_debug/
 
 .vscode/
 logs/
-data/
+*data*/
+.direnv/
+realsense_so/
+
 *.log
 *.ply
 *.pkl
 *.bag
 *test*
-.direnv/
 .envrc
-runs/
 yolo*
-realsense_so/
+*.npy
