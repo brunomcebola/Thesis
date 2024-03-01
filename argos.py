@@ -19,8 +19,6 @@ import src.modes as modes
 MAP_TO_MODE_CLASS = {
     "acquire": modes.acquire.Acquire,
     "a": modes.acquire.Acquire,
-    "preprocess": modes.preprocess.Preprocess,
-    "p": modes.preprocess.Preprocess,
 }
 
 MAP_TO_MODE_NAMESPACE_CLASS = {
@@ -32,6 +30,10 @@ MAP_TO_MODE_NAMESPACE_CLASS = {
 
 if __name__ == "__main__":
     try:
+        parser = parser.Parser()
+
+        cmd_line_args = parser.get_args()
+
         print()
         print(
             colorama.Style.BRIGHT
@@ -41,25 +43,16 @@ if __name__ == "__main__":
         )
         print()
 
-        parser = parser.Parser()
-
-        cmd_line_args = parser.get_args()
-
         mode = cmd_line_args.mode
 
-        if cmd_line_args.run and cmd_line_args.logs:
-            raise ValueError("Cannot run and log at the same time.")
-
-        elif cmd_line_args.run:
+        if cmd_line_args.command in ["run", "r"]:
             if cmd_line_args.yaml:
                 args = MAP_TO_MODE_NAMESPACE_CLASS[mode].from_yaml(cmd_line_args.yaml)
             else:
                 cmd_line_args = cmd_line_args.__dict__
 
                 del cmd_line_args["mode"]
-                del cmd_line_args["run"]
-                del cmd_line_args["logs"]
-                del cmd_line_args["logs_dest"]
+                del cmd_line_args["command"]
                 args = MAP_TO_MODE_NAMESPACE_CLASS[mode](**cmd_line_args)
 
             # Run the mode
@@ -79,11 +72,8 @@ if __name__ == "__main__":
             if USER_CONFIRM:
                 MAP_TO_MODE_CLASS[mode](args).run()
 
-        elif cmd_line_args.logs:
-            MAP_TO_MODE_CLASS[mode].logs(cmd_line_args.logs_dest)
-
         else:
-            raise ValueError("No mode selected.")
+            MAP_TO_MODE_CLASS[mode].logs(cmd_line_args.logs_dest)
 
     except Exception as e:  # pylint: disable=broad-except
         utils.print_error(str(e) + "\n")

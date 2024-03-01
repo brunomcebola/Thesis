@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import logging
+import copy
 from typing import Type, TypeVar
 from types import SimpleNamespace
 from abc import ABC, abstractmethod
@@ -61,25 +62,57 @@ class ModeNamespace(SimpleNamespace, ABC):
     """
     This class is intended to be used as a namespace for the modes.
 
+    Class Attributes:
+    -----------------
+        - _EXCEPTION_CLS (Type[ModeNamespaceError]):
+            The exception class to be raised if any of the arguments is invalid.
+            It must be overridden by the subclasses.
+
     Attributes:
     -----------
         - cameras (list[intel.RealSenseCamera]):
             The list with the cameras to be used.
+            It only exists if the _init_cameras method is called.
+
+    Instance methods:
+    -----------------
+        - _init_cameras(
+            serial_numbers: list[str] | None = None,
+            stream_configs: list[list[intel.StreamConfig]] | None = None
+        ) -> None:
+            Initializes the cameras attribute.
+            It must be overridden by the subclasses.
+        - _str_cameras() -> str:
+            Returns a string representation of the cameras attribute.
 
     Class methods:
     --------------
-        - from_yaml(file: str):
-            Loads the namespace from a YAML file.
+        - _get_cameras_yaml_schema() -> dict:
+            Returns the schema of the cameras attribute.
+        - _format_cameras_yaml_args(args: dict) -> dict:
+            Formats the arguments parsed from the YAML file related to the cameras.
+        - from_yaml(file: str) -> MN:
+            Loads the mode from a YAML file and returns an instance of the subclass.
+
+    Abstract class methods:
+    -----------------------
+        - _get_yaml_schema() -> dict:
+            Returns the schema of the mode.
+        - _format_yaml_args(args: dict) -> dict:
+            Formats the arguments parsed from the YAML file.
     """
+
+    # Class attributes
 
     _EXCEPTION_CLS: Type[ModeNamespaceError] = ModeNamespaceError
 
-    # type hints
+    # Instance attributes
+
     cameras: list[intel.RealSenseCamera]
 
-    # Instance constructor
+    # Instance methods
 
-    def __init__(
+    def _init_cameras(
         self,
         serial_numbers: list[str] | None = None,
         stream_configs: list[list[intel.StreamConfig]] | None = None,
@@ -108,13 +141,13 @@ class ModeNamespace(SimpleNamespace, ABC):
             serial_numbers = intel.RealSenseCamera.get_available_cameras_serial_numbers()
 
             if len(serial_numbers) == 0:
-                raise self.__class__._EXCEPTION_CLS("No cameras available.")
+                raise type(self)._EXCEPTION_CLS("No cameras available.")
 
         elif len(serial_numbers) == 0:
-            raise self.__class__._EXCEPTION_CLS("At least one serial number must be specified.")
+            raise type(self)._EXCEPTION_CLS("At least one serial number must be specified.")
 
         elif len(set(serial_numbers)) != len(serial_numbers):
-            raise self.__class__._EXCEPTION_CLS("There are repeated serial numbers.")
+            raise type(self)._EXCEPTION_CLS("There are repeated serial numbers.")
 
         # stream configs validations
         if stream_configs is None:
@@ -133,13 +166,13 @@ class ModeNamespace(SimpleNamespace, ABC):
             ]
 
         elif len(stream_configs) != len(serial_numbers):
-            raise self.__class__._EXCEPTION_CLS(
+            raise type(self)._EXCEPTION_CLS(
                 "The number of stream configs must match the number of cameras."
             )
 
         for camera_stream_configs in stream_configs:
             if len(camera_stream_configs) == 0:
-                raise self.__class__._EXCEPTION_CLS(
+                raise type(self)._EXCEPTION_CLS(
                     "At least one stream config must be specified for each camera."
                 )
 
@@ -148,7 +181,7 @@ class ModeNamespace(SimpleNamespace, ABC):
                     camera_stream_config.type.name for camera_stream_config in camera_stream_configs
                 )
             ):
-                raise self.__class__._EXCEPTION_CLS(
+                raise type(self)._EXCEPTION_CLS(
                     "There are repeated stream configs for the same camera."
                 )
 
@@ -157,9 +190,7 @@ class ModeNamespace(SimpleNamespace, ABC):
             intel.RealSenseCamera(sn.strip(), sc) for sn, sc in zip(serial_numbers, stream_configs)
         ]
 
-    # Instance special methods
-
-    def __str__(self) -> str:
+    def _str_cameras(self) -> str:
         string = ""
 
         string += "\tCameras:"
@@ -173,61 +204,6 @@ class ModeNamespace(SimpleNamespace, ABC):
         return (string).rstrip()
 
     # Class methods
-
-    @classmethod
-    def _get_yaml_args(cls, file: str) -> dict:
-        """
-        Loads the mode from a YAML file.
-
-        Args:
-        -----
-            - file: The YAML file to be loaded.
-        """
-        try:
-            with open(file, "r", encoding="utf-8") as f:
-                args = yaml.safe_load(f)
-
-                validate(args, cls._get_full_yaml_schema())
-
-                args["serial_numbers"] = [
-                    str(camera["serial_number"]) for camera in args["cameras"]
-                ]
-
-                if "None" in args["serial_numbers"]:
-                    args["serial_numbers"] = None
-
-                args["stream_configs"] = [
-                    (
-                        [
-                            intel.StreamConfig(
-                                intel.StreamType[stream_config["type"].upper()],
-                                intel.StreamFormat[stream_config["format"].upper()],
-                                intel.StreamResolution[stream_config["resolution"].upper()],
-                                intel.StreamFPS[stream_config["fps"].upper()],
-                            )
-                            for stream_config in camera["stream_configs"]
-                        ]
-                        if camera["stream_configs"] is not None
-                        else None
-                    )
-                    for camera in args["cameras"]
-                ]
-
-                if None in args["stream_configs"]:
-                    args["stream_configs"] = None
-
-                del args["cameras"]
-
-                return args
-
-        except FileNotFoundError as e:
-            raise FileNotFoundError(f"Specified YAML file not found ({file}).") from e
-        except yaml.YAMLError as e:
-            if hasattr(e, "problem_mark"):
-                line = e.problem_mark.line + 1  # type: ignore
-                raise SyntaxError(f"Wrong syntax on line {line} of the YAML file.") from e
-            else:
-                raise RuntimeError("Unknown problem on the specified YAML file.") from e
 
     @classmethod
     def _get_cameras_yaml_schema(cls) -> dict:
@@ -296,6 +272,46 @@ class ModeNamespace(SimpleNamespace, ABC):
         }
 
     @classmethod
+    def _format_cameras_yaml_args(cls, args: dict) -> dict:
+        """
+        Formats the arguments parsed from the YAML file related to the cameras.
+        """
+
+        args = copy.deepcopy(args)
+
+        if "cameras" not in args:
+            return args
+
+        args["serial_numbers"] = [str(camera["serial_number"]) for camera in args["cameras"]]
+
+        if "None" in args["serial_numbers"]:
+            args["serial_numbers"] = None
+
+        args["stream_configs"] = [
+            (
+                [
+                    intel.StreamConfig(
+                        intel.StreamType[stream_config["type"].upper()],
+                        intel.StreamFormat[stream_config["format"].upper()],
+                        intel.StreamResolution[stream_config["resolution"].upper()],
+                        intel.StreamFPS[stream_config["fps"].upper()],
+                    )
+                    for stream_config in camera["stream_configs"]
+                ]
+                if camera["stream_configs"] is not None
+                else None
+            )
+            for camera in args["cameras"]
+        ]
+
+        if None in args["stream_configs"]:
+            args["stream_configs"] = None
+
+        del args["cameras"]
+
+        return args
+
+    @classmethod
     def from_yaml(cls: Type[MN], file: str) -> MN:
         """
         Loads the mode from a YAML file.
@@ -306,9 +322,42 @@ class ModeNamespace(SimpleNamespace, ABC):
         """
 
         try:
-            return cls(**cls._get_yaml_args(file))
+            with open(file, "r", encoding="utf-8") as f:
+                args = yaml.safe_load(f)
+
+                validate(args, cls._get_yaml_schema())
+
+                args = cls._format_yaml_args(args)
+
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Specified YAML file not found ({file}).") from e
+        except yaml.YAMLError as e:
+            if hasattr(e, "problem_mark"):
+                line = e.problem_mark.line + 1  # type: ignore
+                raise SyntaxError(f"Wrong syntax on line {line} of the YAML file.") from e
+            else:
+                raise RuntimeError("Unknown problem on the specified YAML file.") from e
+
+        try:
+            return cls(**args)
         except Exception as e:
             raise cls._EXCEPTION_CLS(str(e).split("\n", maxsplit=1)[0]) from e
+
+    # Abstract class methods
+
+    @classmethod
+    @abstractmethod
+    def _get_yaml_schema(cls) -> dict:
+        """
+        Return the schema of the mode.
+        """
+
+    @classmethod
+    @abstractmethod
+    def _format_yaml_args(cls, args: dict) -> dict:
+        """
+        Formats the arguments parsed from the YAML file.
+        """
 
 
 class Mode(ABC):
