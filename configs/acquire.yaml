@@ -40,3 +40,4 @@ cameras:
         format: rgb8
         resolution: x640_y480
         fps: fps_6
+    align_to: color

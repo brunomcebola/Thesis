@@ -132,6 +132,7 @@ class AcquireNamespace(utils.ModeNamespace):
         op_times: list[dict[str, str]] | None = None,
         serial_numbers: list[str] | None = None,
         stream_configs: list[list[intel.StreamConfig]] | None = None,
+        align_to: list[intel.StreamType | None] | None = None,
         **kwargs,
     ):
         """
@@ -158,7 +159,7 @@ class AcquireNamespace(utils.ModeNamespace):
 
         del kwargs
 
-        super()._init_cameras(serial_numbers, stream_configs)
+        super()._init_cameras(serial_numbers, stream_configs, align_to)
 
         # output_folder validations
         if output_folder is None:
