@@ -3,6 +3,7 @@
 build_folder="build"
 ssh_addr="argos-master"
 dest_folder="/rpi/shared/Argos"
+node_folder="/home/thales/Argos"
 
 blue='\033[1;34m'
 green='\033[1;32m'
@@ -79,8 +80,17 @@ ssh $ssh_addr "mkdir $dest_folder"
 echo "$ scp -T -r ./$build_folder/* $ssh_addr:$dest_folder/"
 scp -T -r ./$build_folder/* $ssh_addr:$dest_folder/
 
-echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts /home/thales/Argos/Argos_venv/bin/pip install -q -r /home/thales/Argos/Argos_code/requirements.txt\""
-ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts /home/thales/Argos/Argos_venv/bin/pip install -q -r /home/thales/Argos/Argos_code/requirements.txt"
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts rm -rf $node_folder/code\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts rm -rf $node_folder/code"
+
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts mkdir $node_folder/code\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts mkdir $node_folder/code"
+
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts cp -r $node_folder/Argos_link/* $node_folder/code\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts cp -r $node_folder/Argos_link/* $node_folder/code"
+
+echo "$ ssh $ssh_addr \"parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts $node_folder/Argos_venv/bin/pip install -q -r $node_folder/code/requirements.txt\""
+ssh $ssh_addr "parallel-ssh -i -t 0 -h /home/thales/.rpi_hosts $node_folder/Argos_venv/bin/pip install -q -r $node_folder/code/requirements.txt"
 
 # remove deployment folder
 echo
