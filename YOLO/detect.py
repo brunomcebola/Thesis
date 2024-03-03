@@ -38,11 +38,18 @@ try:
         depth_image = frames[0].data
         color_image = frames[1].data
 
-        results = model.predict(source=color_image, classes=[0])
+        # img2 = np.zeros((depth_image.shape[0], depth_image.shape[1], 3))
+        # img2[:, :, 0] = depth_image  # same value in each channel
+        # img2[:, :, 1] = depth_image
+        # img2[:, :, 2] = depth_image
+
+        # print(np.min(img2))
+        # print(np.min(color_image))
 
         depth_image = cv2.applyColorMap(
             cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET
         )
+        results = model.predict(source=depth_image)
 
         depth_image = cv2.resize(depth_image, (640, 480))
         color_image = cv2.resize(color_image, (640, 480))

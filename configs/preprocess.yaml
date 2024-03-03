@@ -1,2 +1,5 @@
 origin_folder: ./data/939622075103
+
 destination_folder: ./processed_data//939622075103
+
+threshold: [2000, 6000]
