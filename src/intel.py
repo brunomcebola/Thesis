@@ -45,6 +45,12 @@ class StreamConfigError(Exception):
     """
 
 
+class AlignmentError(Exception):
+    """
+    Exception raised when there is an error in the alignment of the video stream.
+    """
+
+
 class CameraUnavailableError(Exception):
     """
     Exception raised when the camera is not available.
@@ -364,10 +370,18 @@ class RealSenseCamera:
         self._config = rs.config()  # type: ignore
         self._config.enable_device(self._serial_number)
         self._align_to = align_to
-        if self._align_to is None:
-            self._align_method = lambda x: x
-        else:
+
+        if self._align_to is not None:
+            # check if align_to is in stream_configs
+            if self._align_to not in [stream_config.type for stream_config in self._stream_configs]:
+                raise StreamConfigError(
+                    f"Alignment to stream type {self._align_to.name} is not possible as {self._align_to.name} is not being streamed."  # pylint: disable=line-too-long
+                )
+
             self._align_method = lambda x: rs.align(self._align_to.value).process(x)  # type: ignore
+
+        else:
+            self._align_method = lambda x: x
 
         self._is_streaming = False
         self._frames_streamed = 0
