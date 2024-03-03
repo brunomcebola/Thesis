@@ -20,11 +20,10 @@ Exceptions:
 from __future__ import annotations
 
 import os
-import calendar
-import threading
 from datetime import datetime
+import numpy as np
+import cv2
 
-from .. import intel
 from .. import utils
 
 # Exceptions
@@ -75,8 +74,15 @@ class PreprocessNamespace(utils.ModeNamespace):
     # type hints
     origin_folder: str
     destination_folder: str
+    threshold: tuple[int, int] | None
 
-    def __init__(self, origin_folder: str, destination_folder: str, **kwargs) -> None:
+    def __init__(
+        self,
+        origin_folder: str,
+        destination_folder: str,
+        threshold: tuple[int, int] | None = None,
+        **kwargs,
+    ) -> None:
         """
         TODO
         """
@@ -123,12 +129,32 @@ class PreprocessNamespace(utils.ModeNamespace):
 
         self.destination_folder = os.path.abspath(destination_folder)
 
+        # threshold validations
+        if threshold is not None:
+            if len(threshold) != 2:
+                raise PreprocessNamespaceError("The threshold must be a tuple with two integers.")
+
+            if not all(isinstance(i, int) for i in threshold):
+                raise PreprocessNamespaceError("The threshold min and max must be integers.")
+
+            if threshold[0] < 0 or threshold[1] < 0:
+                raise PreprocessNamespaceError(
+                    "The threshold min and max must be non-negative integers."
+                )
+
+            if threshold[0] > threshold[1]:
+                raise PreprocessNamespaceError("The threshold min must be less than the max.")
+
+        self.threshold = threshold
+
     def __str__(self) -> str:
         string = ""
 
         string += f"\tOrigin folder: {self.origin_folder}\n"
 
         string += f"\tDestination folder: {self.destination_folder}\n"
+
+        string += f"\tThreshold: {str(self.threshold[0]) + ' mm to ' + str(self.threshold[1]) + ' mm' if self.threshold is not None else '-'}\n"  # pylint: disable=line-too-long
 
         return string.rstrip()
 
@@ -143,6 +169,21 @@ class PreprocessNamespace(utils.ModeNamespace):
             "properties": {
                 "origin_folder": {"type": "string"},
                 "destination_folder": {"type": "string"},
+                "threshold": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "prefixItems": [
+                                {"type": "integer", "minimum": 0},
+                                {"type": "integer", "minimum": 0},
+                            ],
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "additionalItems": False,
+                        },
+                        {"type": "null"},
+                    ]
+                },
             },
             "additionalProperties": False,
         }
@@ -219,6 +260,30 @@ class Preprocess(utils.Mode):
         # create destination folders
 
         self._create_destination_folder()
+
+        # loop trough the files in the origin folder
+
+        for filename in sorted(os.listdir(self._args.origin_folder)):
+
+            img = np.load(filename)
+
+            if self._args.threshold is not None:
+                min_threshold = self._args.threshold[0]
+                max_threshold = self._args.threshold[1]
+
+                img[img >= max_threshold] = max_threshold
+                img[img <= min_threshold] = max_threshold
+
+                img = np.uint8(((img - min_threshold) / (max_threshold - min_threshold)) * 255)
+
+            # img = cv2.convertScaleAbs(img, alpha=0.03)
+
+            # img = cv2.applyColorMap(img, cv2.COLORMAP_BONE)
+
+            # Display the image
+            # cv2.imshow("Processed Image", img)
+            # cv2.waitKey(0)  # Wait for a key press to close the image window
+            # cv2.destroyAllWindows()
 
         self._logger.info("Preprocessing session finished.\n")
 
