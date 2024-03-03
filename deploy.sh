@@ -30,15 +30,21 @@ echo
 echo "$ cat deploy.txt | xargs -I % cp -r % $build_folder"
 cat deploy.txt | xargs -I % cp -r % $build_folder
 
-
 # enter build folder
-
 echo
 echo -e "$blue"Entering build folder..."$reset"
 echo
 
 echo "$ cd $build_folder"
 cd $build_folder
+
+# remove specific files and dirs from build folder
+echo
+echo -e "$blue"Removing specific files and dirs from build folder..."$reset"
+echo
+
+echo "$ cat ../remove.txt | xargs -I % rm -rf %"
+cat ../remove.txt | xargs -I % rm -rf %
 
 # extracting .so files
 echo
@@ -50,14 +56,6 @@ mv realsense_so/*.so .
 
 echo "$ rm -r -f realsense_so"
 rm -r -f realsense_so
-
-# remove pycache
-echo
-echo -e "$blue"Removing pycache..."$reset"
-echo
-
-echo "$ find . -name __pycache__ -exec rm -rf {} \;"
-find . -name __pycache__ -exec rm -rf {} \;
 
 # exit build folder
 echo
