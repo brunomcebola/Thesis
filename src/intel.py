@@ -23,7 +23,7 @@ import os
 import queue
 import threading
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Callable
 import numpy as np
 import pyrealsense2 as rs
 import matplotlib.pyplot as plt
@@ -314,6 +314,7 @@ class RealSenseCamera:
 
     _pipeline: rs.pipeline  # type: ignore
     _config: rs.config  # type: ignore
+    _align_method: Callable
 
     _is_streaming: bool
     _frames_streamed: int
@@ -323,7 +324,12 @@ class RealSenseCamera:
 
     # Instance constructor and destructor
 
-    def __init__(self, serial_number: str, stream_configs: list[StreamConfig]) -> None:
+    def __init__(
+        self,
+        serial_number: str,
+        stream_configs: list[StreamConfig],
+        align_to: StreamType | None = None,
+    ) -> None:
         """
         RealSenseCamera constructor.
 
@@ -356,6 +362,10 @@ class RealSenseCamera:
         self._pipeline = rs.pipeline()  # type: ignore
         self._config = rs.config()  # type: ignore
         self._config.enable_device(self._serial_number)
+        if align_to is None:
+            self._align_method = lambda x: x
+        else:
+            self._align_method = lambda x: rs.align(align_to.value).process(x)  # type: ignore
 
         self._is_streaming = False
         self._frames_streamed = 0
@@ -377,13 +387,13 @@ class RealSenseCamera:
         if hasattr(self, "is_streaming") and self.is_streaming:
             try:
                 self._pipeline.stop()
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 pass
 
         if hasattr(self, "serial_number"):
             try:
                 RealSenseCamera._cameras.remove(self.serial_number)
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 pass
 
     # Instance properties
@@ -520,6 +530,8 @@ class RealSenseCamera:
             try:
                 frames = self._pipeline.wait_for_frames()
 
+                frames = self._align_method(frames)
+
                 self._frames_queue.put(  # type: ignore
                     [
                         Frame.from_intel_frame(frames, stream_config.type)
@@ -531,7 +543,7 @@ class RealSenseCamera:
 
                 nb_errors = 0
 
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 print(e)
                 nb_errors += 1
 
@@ -770,4 +782,4 @@ class Frame:
             - OSError: If the input file does not exist or cannot be read.
         """
 
-        return Frame(np.load(path), "", frame_type)
+        return cls(np.load(path), "", frame_type)

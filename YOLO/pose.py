@@ -3,7 +3,6 @@
 import cv2
 import numpy as np
 from ultralytics import YOLO
-import pyrealsense2 as rs
 
 import src.intel as intel
 
@@ -26,10 +25,8 @@ camera = intel.RealSenseCamera(
             intel.StreamFPS.FPS_30,
         ),
     ],
+    intel.StreamType.COLOR,
 )
-
-align_to = rs.stream.color # type: ignore
-align = rs.align(align_to) # type: ignore
 
 camera.start_streaming()
 
@@ -54,31 +51,9 @@ try:
             if len(person_skel):
                 for point in person_skel:
                     if point[0] > 0 and point[1] > 0:
-                        color_image = cv2.circle(
-                            color_image,
-                            (int(point[0]), int(point[1])),
-                            5,
-                            (0, 0, 255)
+                        depth_image = cv2.circle(
+                            depth_image, (int(point[0]), int(point[1])), 5, (0, 0, 255)
                         )
-
-        # for keypoint in results[0].keypoints[0].xy[0]:
-            # color_image = cv2.rectangle(
-            #     color_image,
-            #     (int(box.xyxy[0][0]), int(box.xyxy[0][1])),
-            #     (int(box.xyxy[0][2]), int(box.xyxy[0][3])),
-            #     (0, 0, 255),
-            #     2,
-            # )
-            # if len(keypoint.xy[0]) > 0:
-            #     for
-            #     color_image = cv2.circle(
-            #         color_image,
-            #         (int(keypoint.xy[0][0]), int(keypoint.xy[0][1])),
-            #         5,
-            #         (0, 0, 255),
-            #         -1,
-            #     )
-            # print(keypoint)
 
         images = np.hstack((color_image, depth_image))
 

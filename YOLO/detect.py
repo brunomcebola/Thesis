@@ -3,7 +3,6 @@
 import cv2
 import numpy as np
 from ultralytics import YOLO
-import pyrealsense2 as rs
 
 import src.intel as intel
 
@@ -26,10 +25,8 @@ camera = intel.RealSenseCamera(
             intel.StreamFPS.FPS_30,
         ),
     ],
+    intel.StreamType.COLOR,
 )
-
-align_to = rs.stream.color # type: ignore
-align = rs.align(align_to) # type: ignore
 
 camera.start_streaming()
 
@@ -51,8 +48,8 @@ try:
         color_image = cv2.resize(color_image, (640, 480))
 
         for box in results[0].boxes:
-            color_image = cv2.rectangle(
-                color_image,
+            depth_image = cv2.rectangle(
+                depth_image,
                 (int(box.xyxy[0][0]), int(box.xyxy[0][1])),
                 (int(box.xyxy[0][2]), int(box.xyxy[0][3])),
                 (0, 0, 255),
