@@ -116,6 +116,7 @@ class ModeNamespace(SimpleNamespace, ABC):
         self,
         serial_numbers: list[str] | None = None,
         stream_configs: list[list[intel.StreamConfig]] | None = None,
+        align_to: list[intel.StreamType | None] | None = None,
     ) -> None:
         """
         AcquireNamespace constructor.
@@ -150,7 +151,7 @@ class ModeNamespace(SimpleNamespace, ABC):
             raise type(self)._EXCEPTION_CLS("There are repeated serial numbers.")
 
         # stream configs validations
-        if stream_configs is None:
+        if stream_configs is None or len(stream_configs) == 0:
             print_warning("No stream configurations specified. Using default configurations.")
 
             stream_configs = [
@@ -185,9 +186,21 @@ class ModeNamespace(SimpleNamespace, ABC):
                     "There are repeated stream configs for the same camera."
                 )
 
+        # align_to validations
+        if align_to is None or len(align_to) == 0:
+            print_warning("No align to specified. Not aligning any stream.")
+
+            align_to = [None for _ in range(len(serial_numbers))]
+
+        elif len(align_to) != len(serial_numbers):
+            raise type(self)._EXCEPTION_CLS(
+                "The number of align to must match the number of cameras."
+            )
+
         # create list of camera instances
         self.cameras = [
-            intel.RealSenseCamera(sn.strip(), sc) for sn, sc in zip(serial_numbers, stream_configs)
+            intel.RealSenseCamera(sn.strip(), sc, al)
+            for sn, sc, al in zip(serial_numbers, stream_configs, align_to)
         ]
 
     def _str_cameras(self) -> str:
@@ -200,6 +213,7 @@ class ModeNamespace(SimpleNamespace, ABC):
             string += "\t\tStream configs:\n"
             for stream_config in camera.stream_configs:
                 string += f"\t\t\t{stream_config}\n"
+            string += f"\t\tAlign to: {camera.align_to if camera.align_to is not None else 'Not aligned'}\n"
 
         return (string).rstrip()
 
@@ -264,8 +278,17 @@ class ModeNamespace(SimpleNamespace, ABC):
                                 {"type": "null"},
                             ],
                         },
+                        "align_to": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "enum": [s_type.name.lower() for s_type in intel.StreamType],
+                                },
+                                {"type": "null"},
+                            ]
+                        },
                     },
-                    "required": ["serial_number", "stream_configs"],
+                    "required": ["serial_number", "stream_configs", "align_to"],
                     "additionalProperties": False,
                 },
             },
@@ -306,6 +329,11 @@ class ModeNamespace(SimpleNamespace, ABC):
 
         if None in args["stream_configs"]:
             args["stream_configs"] = None
+
+        args["align_to"] = [
+            intel.StreamType[align_to.upper()] if align_to is not None else None
+            for align_to in [camera["align_to"] for camera in args["cameras"]]
+        ]
 
         del args["cameras"]
 

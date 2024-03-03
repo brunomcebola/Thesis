@@ -311,6 +311,7 @@ class RealSenseCamera:
     # Instance attributes
     _serial_number: str
     _stream_configs: list[StreamConfig]
+    _align_to: StreamType | None
 
     _pipeline: rs.pipeline  # type: ignore
     _config: rs.config  # type: ignore
@@ -362,10 +363,11 @@ class RealSenseCamera:
         self._pipeline = rs.pipeline()  # type: ignore
         self._config = rs.config()  # type: ignore
         self._config.enable_device(self._serial_number)
-        if align_to is None:
+        self._align_to = align_to
+        if self._align_to is None:
             self._align_method = lambda x: x
         else:
-            self._align_method = lambda x: rs.align(align_to.value).process(x)  # type: ignore
+            self._align_method = lambda x: rs.align(self._align_to.value).process(x)  # type: ignore
 
         self._is_streaming = False
         self._frames_streamed = 0
@@ -468,6 +470,14 @@ class RealSenseCamera:
         """
 
         return self._stream_signals
+
+    @property
+    def align_to(self) -> StreamType | None:
+        """
+        Returns the stream type to align to.
+        """
+
+        return self._align_to
 
     # Instance private methods
 
