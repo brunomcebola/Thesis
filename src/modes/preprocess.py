@@ -232,9 +232,9 @@ class Preprocess(utils.Mode):
 
         self._args = args
 
-    def _create_destination_folder(self) -> None:
+    def _create_destination_folders(self) -> None:
         """
-        Creates the destination folder for the processed datas.
+        Creates the destination folder for the processed data, along with any needed subfolder.
 
         Returns:
         --------
@@ -243,6 +243,18 @@ class Preprocess(utils.Mode):
 
         if not os.path.exists(self._args.destination_folder):
             os.makedirs(self._args.destination_folder)
+
+        if not os.path.exists(self._args.destination_folder + "/raw"):
+            os.makedirs(self._args.destination_folder + "/raw")
+
+        if not os.path.exists(self._args.destination_folder + "/labels"):
+            os.makedirs(self._args.destination_folder + "/labels")
+
+        if not os.path.exists(self._args.destination_folder + "/images/depth"):
+            os.makedirs(self._args.destination_folder + "/images/depth")
+
+        if not os.path.exists(self._args.destination_folder + "/images/color"):
+            os.makedirs(self._args.destination_folder + "/images/color")
 
     def run(self) -> None:
         """
@@ -259,31 +271,55 @@ class Preprocess(utils.Mode):
 
         # create destination folders
 
-        self._create_destination_folder()
+        self._create_destination_folders()
 
         # loop trough the files in the origin folder
 
         for filename in sorted(os.listdir(self._args.origin_folder)):
 
-            img = np.load(filename)
+            file = np.load(self._args.origin_folder + "/" + filename)
 
-            if self._args.threshold is not None:
-                min_threshold = self._args.threshold[0]
-                max_threshold = self._args.threshold[1]
+            if "color" in filename:
+                file = cv2.cvtColor(file, cv2.COLOR_BGR2RGB)
 
-                img[img >= max_threshold] = max_threshold
-                img[img <= min_threshold] = max_threshold
+                cv2.imwrite(
+                    self._args.destination_folder
+                    + "/images/color/"
+                    + "_".join(os.path.splitext(filename)[0].split("_")[:-1])
+                    + ".jpg",
+                    file,
+                )
 
-                img = np.uint8(((img - min_threshold) / (max_threshold - min_threshold)) * 255)
+            if "depth" in filename:
+                # Trim the values outside the threshold
+                if self._args.threshold is not None:
+                    min_threshold = self._args.threshold[0]
+                    max_threshold = self._args.threshold[1]
 
-            # img = cv2.convertScaleAbs(img, alpha=0.03)
+                    file[file >= max_threshold] = max_threshold
+                    file[file <= min_threshold] = max_threshold
 
-            # img = cv2.applyColorMap(img, cv2.COLORMAP_BONE)
+                    file = file - min_threshold
 
-            # Display the image
-            # cv2.imshow("Processed Image", img)
-            # cv2.waitKey(0)  # Wait for a key press to close the image window
-            # cv2.destroyAllWindows()
+                # Normalize the values to the range [0, 1]
+                file = file / np.max(file)
+
+                file = (file * 255).astype(np.uint8)
+
+                file = cv2.applyColorMap(file, cv2.COLORMAP_JET)
+
+                cv2.imwrite(
+                    self._args.destination_folder
+                    + "/images/depth/"
+                    + "_".join(os.path.splitext(filename)[0].split("_")[:-1])
+                    + ".jpg",
+                    file,
+                )
+
+            os.rename(
+                self._args.origin_folder + "/" + filename,
+                self._args.destination_folder + "/raw/" + filename,
+            )
 
         self._logger.info("Preprocessing session finished.\n")
 
