@@ -25,6 +25,7 @@ import numpy as np
 import cv2
 from tqdm import tqdm
 import re
+from ultralytics import YOLO
 
 from .. import utils
 
@@ -240,6 +241,10 @@ class Preprocess(utils.Mode):
 
         self._args = args
 
+        self._yolo_model = os.path.abspath(
+            os.path.dirname(os.path.abspath(__file__)) + "/../YOLO_models/yolov8n.pt"
+        )
+
     def _create_destination_folders(self) -> None:
         """
         Creates the destination folder for the processed data, along with any needed subfolder.
@@ -287,7 +292,7 @@ class Preprocess(utils.Mode):
 
         # ensure filenames are in pairs (same initial part)
         # ensure files have shape (X, Y, 3) for color and (X, Y) for depth
-        for i in tqdm(range(0, len(filenames), 2), desc="Checking files   ", unit_scale=2):
+        for i in tqdm(range(0, len(filenames), 2), desc="    Checking files", unit_scale=2):
             if filenames[i].split("_")[:-1] != filenames[i + 1].split("_")[:-1]:
                 raise PreprocessError(
                     "The origin folder must contain pairs of files with the same initial part."
@@ -314,28 +319,78 @@ class Preprocess(utils.Mode):
                     f"The color and depth files must have the same shape. (files: {filenames[i]} and {filenames[i + 1]})"  # pylint: disable=line-too-long
                 )
 
-        # generate the images
-        for i in tqdm(range(0, len(filenames), 2), desc="Generating images", unit_scale=2):
-            # process color
+        print()
+
+        # generating dataset
+        model = YOLO(self._yolo_model)
+
+        counter = 0
+
+        for i in tqdm(range(0, len(filenames), 2), desc="Generating dataset"):
+            # get numpy files and move them to the raw folder
+
             color_file = np.load(self._args.origin_folder + "/" + filenames[i])
+            depth_file = np.load(self._args.origin_folder + "/" + filenames[i + 1])
 
-            color_file = cv2.cvtColor(color_file, cv2.COLOR_BGR2RGB)
-
-            cv2.imwrite(
-                self._args.destination_folder
-                + "/images/color/"
-                + "_".join(os.path.splitext(filenames[i])[0].split("_")[:-1])
-                + ".jpg",
-                color_file,
+            os.rename(
+                f"{self._args.origin_folder}/{filenames[i]}",
+                f"{self._args.destination_folder}/raw/{filenames[i]}",
             )
 
             os.rename(
-                self._args.origin_folder + "/" + filenames[i],
-                self._args.destination_folder + "/raw/" + filenames[i],
+                f"{self._args.origin_folder}/{filenames[i + 1]}",
+                f"{self._args.destination_folder}/raw/{filenames[i + 1]}",
             )
 
-            # process depth
-            depth_file = np.load(self._args.origin_folder + "/" + filenames[i + 1])
+            # generate label file
+
+            predictions = model.predict(source=color_file, classes=[0], verbose=False)
+
+            # if no detections, skip to next image
+            if len(predictions[0].boxes) == 0:
+                continue
+
+            counter += 1
+
+            labels_dest = (
+                self._args.destination_folder
+                + "/labels/"
+                + "_".join(os.path.splitext(filenames[i])[0].split("_")[:-1])
+                + ".txt"
+            )
+
+            with open(labels_dest, "w", encoding="utf-8") as f:
+                for box in predictions[0].boxes:
+                    f.write("0 " + " ".join([f"{x:.6f}" for x in box.xywhn[0].tolist()]) + "\n")
+
+            # generate color image
+
+            color_file = cv2.cvtColor(color_file, cv2.COLOR_BGR2RGB)
+
+            color_dest = (
+                self._args.destination_folder
+                + "/images/color/"
+                + "_".join(os.path.splitext(filenames[i])[0].split("_")[:-1])
+                + ".jpg"
+            )
+
+            for box in predictions[0].boxes:
+                x = box.xywhn[0][0] * color_file.shape[1]
+                y = box.xywhn[0][1] * color_file.shape[0]
+                w = box.xywhn[0][2] * color_file.shape[1]
+                h = box.xywhn[0][3] * color_file.shape[0]
+
+                color_file = cv2.rectangle(
+                    color_file,
+                    (int(x - w / 2), int(y - h / 2)),
+                    (int(x + w / 2), int(y + h / 2)),
+                    (0, 0, 255),
+                    2,
+                )
+
+            cv2.imwrite(color_dest, color_file)
+
+            # generate depth image
 
             # Trim the values outside the threshold
             if self._args.threshold is not None:
@@ -354,18 +409,20 @@ class Preprocess(utils.Mode):
 
             depth_file = cv2.applyColorMap(depth_file, cv2.COLORMAP_JET)
 
-            cv2.imwrite(
+            depth_dest = (
                 self._args.destination_folder
                 + "/images/depth/"
                 + "_".join(os.path.splitext(filenames[i + 1])[0].split("_")[:-1])
-                + ".jpg",
-                depth_file,
+                + ".jpg"
             )
 
-            os.rename(
-                self._args.origin_folder + "/" + filenames[i],
-                self._args.destination_folder + "/raw/" + filenames[i],
-            )
+            cv2.imwrite(depth_dest, depth_file)
+
+        print()
+
+        print(f"Dataset has {counter} images.")
+
+        print()
 
         self._logger.info("Preprocessing session finished.\n")
 
