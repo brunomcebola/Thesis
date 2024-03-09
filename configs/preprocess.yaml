@@ -1,5 +1,5 @@
 origin_folder: ./data/939622075103
 
-destination_folder: ./processed_data/939622075103_dataset_1
+destination_folder: ./data/939622075103_dataset_1
 
 threshold: [100, 4000]
