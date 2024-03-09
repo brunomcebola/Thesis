@@ -24,6 +24,7 @@ from datetime import datetime
 import numpy as np
 import cv2
 from tqdm import tqdm
+import re
 
 from .. import utils
 
@@ -102,8 +103,10 @@ class PreprocessNamespace(utils.ModeNamespace):
         if not os.path.exists(origin_folder):
             raise PreprocessNamespaceError("The origin folder does not exist.")
 
-        if len(os.listdir(origin_folder)) == 0:
-            raise PreprocessNamespaceError("The origin folder is empty.")
+        if len(os.listdir(origin_folder)) % 2 != 0 or len(os.listdir(origin_folder)) == 0:
+            raise PreprocessNamespaceError(
+                "The origin folder must contain an even number of files."
+            )
 
         if len(
             [f for f in os.listdir(origin_folder) if os.path.isfile(os.path.join(origin_folder, f))]
@@ -112,15 +115,12 @@ class PreprocessNamespace(utils.ModeNamespace):
                 "The origin folder must contain only files (no subfolders)."
             )
 
-        if len([f for f in os.listdir(origin_folder) if f.endswith(".npy")]) != len(
-            os.listdir(origin_folder)
-        ):
-            raise PreprocessNamespaceError("The origin folder must contain only .npy files.")
-
-        if len(os.listdir(origin_folder)) % 2 != 0:
-            raise PreprocessNamespaceError(
-                "The origin folder must contain an even number of files (color and depth)."
-            )
+        # check if there is any file that does not end in _color.npy or _depth.npy
+        for filename in os.listdir(origin_folder):
+            if not re.match(r".*_(color|depth)\.npy", filename):
+                raise PreprocessNamespaceError(
+                    "The origin folder must contain only files ending in _color.npy or _depth.npy."
+                )
 
         self.origin_folder = os.path.abspath(origin_folder)
 
@@ -281,6 +281,39 @@ class Preprocess(utils.Mode):
         # create destination folders
 
         self._create_destination_folders()
+
+        # get the filenames
+
+        filenames = sorted(os.listdir(self._args.origin_folder))
+
+        # ensure filenames are in pairs (same initial part)
+        # ensure files have shape (X, Y, 3) for color and (X, Y) for depth
+        for i in tqdm(range(0, len(filenames), 2), desc="Checking files", unit_scale=2):
+            if filenames[i].split("_")[:-1] != filenames[i + 1].split("_")[:-1]:
+                raise PreprocessError(
+                    "The origin folder must contain pairs of files with the same initial part."
+                )
+
+            color_file = np.load(self._args.origin_folder + "/" + filenames[i])
+            depth_file = np.load(self._args.origin_folder + "/" + filenames[i + 1])
+
+            if len(color_file.shape) != 3 or color_file.shape[2] != 3:
+                raise PreprocessError(
+                    f"The color files must have shape (X, Y, 3). (file: {filenames[i]})"
+                )
+
+            if len(depth_file.shape) != 2 or len(depth_file.shape) != 2:
+                raise PreprocessError(
+                    f"The depth files must have shape (X, Y). (file: {filenames[i + 1]})"
+                )
+
+            if (
+                color_file.shape[0] != depth_file.shape[0]
+                or color_file.shape[1] != depth_file.shape[1]
+            ):
+                raise PreprocessError(
+                    f"The color and depth files must have the same shape. (files: {filenames[i]} and {filenames[i + 1]})"  # pylint: disable=line-too-long
+                )
 
         # loop trough the files in the origin folder
 
