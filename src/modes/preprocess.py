@@ -115,7 +115,6 @@ class PreprocessNamespace(utils.ModeNamespace):
                 "The origin folder must contain only files (no subfolders)."
             )
 
-        # check if there is any file that does not end in _color.npy or _depth.npy
         for filename in os.listdir(origin_folder):
             if not re.match(r".*_(color|depth)\.npy", filename):
                 raise PreprocessNamespaceError(
@@ -288,7 +287,7 @@ class Preprocess(utils.Mode):
 
         # ensure filenames are in pairs (same initial part)
         # ensure files have shape (X, Y, 3) for color and (X, Y) for depth
-        for i in tqdm(range(0, len(filenames), 2), desc="Checking files", unit_scale=2):
+        for i in tqdm(range(0, len(filenames), 2), desc="Checking files   ", unit_scale=2):
             if filenames[i].split("_")[:-1] != filenames[i + 1].split("_")[:-1]:
                 raise PreprocessError(
                     "The origin folder must contain pairs of files with the same initial part."
@@ -315,52 +314,57 @@ class Preprocess(utils.Mode):
                     f"The color and depth files must have the same shape. (files: {filenames[i]} and {filenames[i + 1]})"  # pylint: disable=line-too-long
                 )
 
-        # loop trough the files in the origin folder
+        # generate the images
+        for i in tqdm(range(0, len(filenames), 2), desc="Generating images", unit_scale=2):
+            # process color
+            color_file = np.load(self._args.origin_folder + "/" + filenames[i])
 
-        for filename in sorted(os.listdir(self._args.origin_folder)):
+            color_file = cv2.cvtColor(color_file, cv2.COLOR_BGR2RGB)
 
-            file = np.load(self._args.origin_folder + "/" + filename)
-
-            if "color" in filename:
-                file = cv2.cvtColor(file, cv2.COLOR_BGR2RGB)
-
-                cv2.imwrite(
-                    self._args.destination_folder
-                    + "/images/color/"
-                    + "_".join(os.path.splitext(filename)[0].split("_")[:-1])
-                    + ".jpg",
-                    file,
-                )
-
-            if "depth" in filename:
-                # Trim the values outside the threshold
-                if self._args.threshold is not None:
-                    min_threshold = self._args.threshold[0]
-                    max_threshold = self._args.threshold[1]
-
-                    file[file >= max_threshold] = max_threshold
-                    file[file <= min_threshold] = max_threshold
-
-                    file = file - min_threshold
-
-                # Normalize the values to the range [0, 1]
-                file = file / np.max(file)
-
-                file = (file * 255).astype(np.uint8)
-
-                file = cv2.applyColorMap(file, cv2.COLORMAP_JET)
-
-                cv2.imwrite(
-                    self._args.destination_folder
-                    + "/images/depth/"
-                    + "_".join(os.path.splitext(filename)[0].split("_")[:-1])
-                    + ".jpg",
-                    file,
-                )
+            cv2.imwrite(
+                self._args.destination_folder
+                + "/images/color/"
+                + "_".join(os.path.splitext(filenames[i])[0].split("_")[:-1])
+                + ".jpg",
+                color_file,
+            )
 
             os.rename(
-                self._args.origin_folder + "/" + filename,
-                self._args.destination_folder + "/raw/" + filename,
+                self._args.origin_folder + "/" + filenames[i],
+                self._args.destination_folder + "/raw/" + filenames[i],
+            )
+
+            # process depth
+            depth_file = np.load(self._args.origin_folder + "/" + filenames[i + 1])
+
+            # Trim the values outside the threshold
+            if self._args.threshold is not None:
+                min_threshold = self._args.threshold[0]
+                max_threshold = self._args.threshold[1]
+
+                depth_file[depth_file >= max_threshold] = max_threshold
+                depth_file[depth_file <= min_threshold] = max_threshold
+
+                depth_file = depth_file - min_threshold
+
+            # Normalize the values to the range [0, 1]
+            depth_file = depth_file / np.max(depth_file)
+
+            depth_file = (depth_file * 255).astype(np.uint8)
+
+            depth_file = cv2.applyColorMap(depth_file, cv2.COLORMAP_JET)
+
+            cv2.imwrite(
+                self._args.destination_folder
+                + "/images/depth/"
+                + "_".join(os.path.splitext(filenames[i + 1])[0].split("_")[:-1])
+                + ".jpg",
+                depth_file,
+            )
+
+            os.rename(
+                self._args.origin_folder + "/" + filenames[i],
+                self._args.destination_folder + "/raw/" + filenames[i],
             )
 
         self._logger.info("Preprocessing session finished.\n")
