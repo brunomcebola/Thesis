@@ -23,6 +23,7 @@ import os
 from datetime import datetime
 import numpy as np
 import cv2
+from tqdm import tqdm
 
 from .. import utils
 
@@ -98,7 +99,7 @@ class PreprocessNamespace(utils.ModeNamespace):
         if origin_folder == "":
             raise PreprocessNamespaceError("The origin folder cannot be a empty string.")
 
-        if not os.path.isdir(origin_folder):
+        if not os.path.exists(origin_folder):
             raise PreprocessNamespaceError("The origin folder does not exist.")
 
         if len(os.listdir(origin_folder)) == 0:
@@ -116,6 +117,11 @@ class PreprocessNamespace(utils.ModeNamespace):
         ):
             raise PreprocessNamespaceError("The origin folder must contain only .npy files.")
 
+        if len(os.listdir(origin_folder)) % 2 != 0:
+            raise PreprocessNamespaceError(
+                "The origin folder must contain an even number of files (color and depth)."
+            )
+
         self.origin_folder = os.path.abspath(origin_folder)
 
         # destination_folder validations
@@ -126,6 +132,9 @@ class PreprocessNamespace(utils.ModeNamespace):
 
         if destination_folder == "":
             raise PreprocessNamespaceError("The destination folder cannot be a empty string.")
+
+        if os.path.exists(destination_folder):
+            raise PreprocessNamespaceError("The destination folder already exists.")
 
         self.destination_folder = os.path.abspath(destination_folder)
 
