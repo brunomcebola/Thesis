@@ -3,3 +3,5 @@ origin_folder: ./data/raw
 destination_folder: ./data/939622075103_dataset
 
 threshold: [100, 4000]
+
+val_size: "0"

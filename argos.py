@@ -59,7 +59,6 @@ if __name__ == "__main__":
 
             # Run the mode
 
-            print()
             utils.print_info(
                 colorama.Style.BRIGHT
                 + f"{MAP_TO_MODE_CLASS[mode].__name__} settings"
