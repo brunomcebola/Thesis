@@ -20,12 +20,14 @@ Exceptions:
 from __future__ import annotations
 
 import os
+import math
 from datetime import datetime
+import re
 import numpy as np
 import cv2
 from tqdm import tqdm
-import re
 from ultralytics import YOLO
+from sklearn.model_selection import train_test_split
 
 from .. import utils
 
@@ -78,12 +80,14 @@ class PreprocessNamespace(utils.ModeNamespace):
     origin_folder: str
     destination_folder: str
     threshold: tuple[int, int] | None
+    val_size: float
 
     def __init__(
         self,
         origin_folder: str,
         destination_folder: str,
         threshold: tuple[int, int] | None = None,
+        val_size: float | None = None,
         **kwargs,
     ) -> None:
         """
@@ -156,6 +160,27 @@ class PreprocessNamespace(utils.ModeNamespace):
 
         self.threshold = threshold
 
+        # val_size validations
+        if val_size is None:
+            utils.print_warning(
+                "The validation size was not specified. Using the default value (20%)."
+            )
+
+            self.val_size = 0.2
+
+        else:
+            val_size = float(val_size)
+
+            if math.isnan(val_size):
+                raise PreprocessNamespaceError("The validation size must be a number.")
+
+            if not 0 <= val_size <= 1:
+                raise PreprocessNamespaceError(
+                    "The validation size must be a number between 0 and 1."
+                )
+
+            self.val_size = val_size
+
     def __str__(self) -> str:
         string = ""
 
@@ -164,6 +189,10 @@ class PreprocessNamespace(utils.ModeNamespace):
         string += f"\tDestination folder: {self.destination_folder}\n"
 
         string += f"\tThreshold: {str(self.threshold[0]) + ' mm to ' + str(self.threshold[1]) + ' mm' if self.threshold is not None else '-'}\n"  # pylint: disable=line-too-long
+
+        string += (
+            f"\tTrain/Val split: {(1 - self.val_size) * 100:.0f}%/{self.val_size * 100:.0f}%\n"
+        )
 
         return string.rstrip()
 
@@ -193,6 +222,13 @@ class PreprocessNamespace(utils.ModeNamespace):
                         {"type": "null"},
                     ]
                 },
+                "val_size": {
+                    "anyOf": [
+                        {"type": "number", "minimum": 0, "maximum": 1},
+                        {"type": "null"},
+                        {"type": "string"},
+                    ]
+                },
             },
             "additionalProperties": False,
         }
@@ -216,8 +252,8 @@ class Preprocess(utils.Mode):
 
     """
 
-    _LOG_FILE = os.path.abspath(
-        os.path.dirname(os.path.abspath(__file__)) + "/../../logs/preprocess.log"
+    _LOG_FILE = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "../../logs/preprocess.log"
     )
 
     # type hints
@@ -241,38 +277,17 @@ class Preprocess(utils.Mode):
 
         self._args = args
 
-        self._yolo_model = os.path.abspath(
-            os.path.dirname(os.path.abspath(__file__)) + "/../YOLO_models/yolov8n.pt"
+        self._yolo_model = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "../YOLO_models/yolov8n.pt"
         )
-
-    def _create_destination_folders(self) -> None:
-        """
-        Creates the destination folder for the processed data, along with any needed subfolder.
-
-        Returns:
-        --------
-        A string with the paths to the output folders.
-        """
-
-        if not os.path.exists(self._args.destination_folder):
-            os.makedirs(self._args.destination_folder)
-
-        if not os.path.exists(self._args.destination_folder + "/raw"):
-            os.makedirs(self._args.destination_folder + "/raw")
-
-        if not os.path.exists(self._args.destination_folder + "/labels"):
-            os.makedirs(self._args.destination_folder + "/labels")
-
-        if not os.path.exists(self._args.destination_folder + "/images/depth"):
-            os.makedirs(self._args.destination_folder + "/images/depth")
-
-        if not os.path.exists(self._args.destination_folder + "/images/color"):
-            os.makedirs(self._args.destination_folder + "/images/color")
 
     def run(self) -> None:
         """
         Runs the preprocessing mode (in a blocking way).
         """
+
+        # TODO: add a way to cancel if an error or ctrl+c occurs
+        # TODO: generate train yaml file for ultralytics
 
         self._logger.info(
             "New preprocessing session (%s) started\n%s",
@@ -284,7 +299,11 @@ class Preprocess(utils.Mode):
 
         # create destination folders
 
-        self._create_destination_folders()
+        os.makedirs(self._args.destination_folder)
+        os.makedirs(os.path.join(self._args.destination_folder, "raw"))
+        os.makedirs(os.path.join(self._args.destination_folder, "images/depth"))
+        os.makedirs(os.path.join(self._args.destination_folder, "images/color"))
+        os.makedirs(os.path.join(self._args.destination_folder, "labels"))
 
         # get the filenames
 
@@ -298,8 +317,8 @@ class Preprocess(utils.Mode):
                     "The origin folder must contain pairs of files with the same initial part."
                 )
 
-            color_file = np.load(self._args.origin_folder + "/" + filenames[i])
-            depth_file = np.load(self._args.origin_folder + "/" + filenames[i + 1])
+            color_file = np.load(os.path.join(self._args.origin_folder, filenames[i]))
+            depth_file = np.load(os.path.join(self._args.origin_folder, filenames[i + 1]))
 
             if len(color_file.shape) != 3 or color_file.shape[2] != 3:
                 raise PreprocessError(
@@ -321,7 +340,7 @@ class Preprocess(utils.Mode):
 
         print()
 
-        # generating dataset
+        # generate dataset
         model = YOLO(self._yolo_model)
 
         counter = 0
@@ -329,18 +348,10 @@ class Preprocess(utils.Mode):
         for i in tqdm(range(0, len(filenames), 2), desc="Generating dataset"):
             # get numpy files and move them to the raw folder
 
-            color_file = np.load(self._args.origin_folder + "/" + filenames[i])
-            depth_file = np.load(self._args.origin_folder + "/" + filenames[i + 1])
+            color_file = np.load(os.path.join(self._args.origin_folder, filenames[i]))
+            depth_file = np.load(os.path.join(self._args.origin_folder, filenames[i + 1]))
 
-            os.rename(
-                f"{self._args.origin_folder}/{filenames[i]}",
-                f"{self._args.destination_folder}/raw/{filenames[i]}",
-            )
-
-            os.rename(
-                f"{self._args.origin_folder}/{filenames[i + 1]}",
-                f"{self._args.destination_folder}/raw/{filenames[i + 1]}",
-            )
+            filename = "_".join(os.path.splitext(filenames[i])[0].split("_")[:-1])
 
             # generate label file
 
@@ -352,12 +363,7 @@ class Preprocess(utils.Mode):
 
             counter += 1
 
-            labels_dest = (
-                self._args.destination_folder
-                + "/labels/"
-                + "_".join(os.path.splitext(filenames[i])[0].split("_")[:-1])
-                + ".txt"
-            )
+            labels_dest = os.path.join(self._args.destination_folder, "labels", filename + ".txt")
 
             with open(labels_dest, "w", encoding="utf-8") as f:
                 for box in predictions[0].boxes:
@@ -367,11 +373,8 @@ class Preprocess(utils.Mode):
 
             color_file = cv2.cvtColor(color_file, cv2.COLOR_BGR2RGB)
 
-            color_dest = (
-                self._args.destination_folder
-                + "/images/color/"
-                + "_".join(os.path.splitext(filenames[i])[0].split("_")[:-1])
-                + ".jpg"
+            color_dest = os.path.join(
+                self._args.destination_folder, "images/color", filename + ".jpg"
             )
 
             for box in predictions[0].boxes:
@@ -409,20 +412,111 @@ class Preprocess(utils.Mode):
 
             depth_file = cv2.applyColorMap(depth_file, cv2.COLORMAP_JET)
 
-            depth_dest = (
-                self._args.destination_folder
-                + "/images/depth/"
-                + "_".join(os.path.splitext(filenames[i + 1])[0].split("_")[:-1])
-                + ".jpg"
+            depth_dest = os.path.join(
+                self._args.destination_folder, "images/depth", filename + ".jpg"
             )
 
             cv2.imwrite(depth_dest, depth_file)
 
         print()
 
-        print(f"Dataset has {counter} images.")
+        # move raw files to the raw folder
+
+        for i in tqdm(range(0, len(filenames), 2), desc="  Moving raw files"):
+            os.rename(
+                os.path.join(self._args.origin_folder, filenames[i]),
+                os.path.join(self._args.destination_folder, "raw", filenames[i]),
+            )
+
+            os.rename(
+                os.path.join(self._args.origin_folder, filenames[i + 1]),
+                os.path.join(self._args.destination_folder, "raw", filenames[i + 1]),
+            )
 
         print()
+
+        os.rmdir(self._args.origin_folder)
+
+        msg = f"Generated dataset has {counter} out of the initial {len(filenames) // 2} images ({(counter * 100) / (len(filenames) // 2):.2f}%)."  # pylint: disable=line-too-long
+
+        self._logger.info(msg)
+        utils.print_info(msg + "\n")
+
+        # split in train and val
+
+        if self._args.val_size != 0:
+
+            # get filenames
+
+            filenames = sorted(os.listdir(self._args.destination_folder + "/labels"))
+
+            # create test/val folders
+
+            os.makedirs(os.path.join(self._args.destination_folder, "images/train/depth"))
+            os.makedirs(os.path.join(self._args.destination_folder, "images/train/color"))
+            os.makedirs(os.path.join(self._args.destination_folder, "labels/train"))
+
+            os.makedirs(os.path.join(self._args.destination_folder, "images/val/depth"))
+            os.makedirs(os.path.join(self._args.destination_folder, "images/val/color"))
+            os.makedirs(os.path.join(self._args.destination_folder, "labels/val"))
+
+            # split dataset
+
+            train_filenames, _ = train_test_split(
+                filenames, test_size=self._args.val_size, random_state=42, shuffle=True
+            )
+
+            for i in tqdm(range(len(filenames)), desc=" Splitting dataset"):
+                dest_folder = "train" if filenames[i] in train_filenames else "val"
+
+                os.rename(
+                    os.path.join(
+                        self._args.destination_folder,
+                        "images/color",
+                        os.path.splitext(filenames[i])[0] + ".jpg",
+                    ),
+                    os.path.join(
+                        self._args.destination_folder,
+                        "images",
+                        dest_folder,
+                        "color",
+                        os.path.splitext(filenames[i])[0] + ".jpg",
+                    ),
+                )
+
+                os.rename(
+                    os.path.join(
+                        self._args.destination_folder,
+                        "images/depth",
+                        os.path.splitext(filenames[i])[0] + ".jpg",
+                    ),
+                    os.path.join(
+                        self._args.destination_folder,
+                        "images",
+                        dest_folder,
+                        "depth",
+                        os.path.splitext(filenames[i])[0] + ".jpg",
+                    ),
+                )
+
+                os.rename(
+                    os.path.join(self._args.destination_folder, "labels", filenames[i]),
+                    os.path.join(
+                        self._args.destination_folder, "labels", dest_folder, filenames[i]
+                    ),
+                )
+
+            print()
+
+            # remove empty folders
+
+            os.rmdir(os.path.join(self._args.destination_folder, "images/color"))
+            os.rmdir(os.path.join(self._args.destination_folder, "images/depth"))
+
+            msg = f"Train folder has {len(filenames) - len(train_filenames)} images and validation folder has {len(train_filenames)} images."  # pylint: disable=line-too-long
+
+            self._logger.info(msg)
+            utils.print_info(msg + "\n")
 
         self._logger.info("Preprocessing session finished.\n")
 
