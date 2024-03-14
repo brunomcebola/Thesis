@@ -1,3 +1,5 @@
+action: create_dataset
+
 origin_folder: ./data/raw
 
 destination_folder: ./data/939622075103_dataset

@@ -1,21 +1,5 @@
 """
 This module holds the tools to acquire data from the realsense cameras.
-
-Methods:
---------
-- parse_acquire_yaml(file: str) -> dict:
-    Parses a YAML file and returns its contents as a dictionary.
-
-Classes:
---------
-- AcquireNamespace: Holds the arguments for the acquire mode.
-- Acquire: Holds the tools to acquire data from the realsense cameras.
-
-Exceptions:
------------
-- AcquireNamespaceError: Exception raised when errors related to the acquire namespace occur.
-- AcquireError: Exception raised when errors related to the acquire mode occur.
-
 """
 
 # pylint: disable=pointless-string-statement
@@ -27,8 +11,9 @@ import calendar
 import threading
 from datetime import datetime
 
+from .. import base
 from .. import intel
-from .. import utils
+from .... import utils
 
 # Exceptions
 """
@@ -41,7 +26,7 @@ from .. import utils
 """
 
 
-class AcquireNamespaceError(utils.ModeNamespaceError):
+class AcquireNamespaceError(base.ServiceNamespaceError):
     """
     Exception raised when errors related to the acquire namespace occur.
     """
@@ -49,7 +34,7 @@ class AcquireNamespaceError(utils.ModeNamespaceError):
 
 class AcquireError(Exception):
     """
-    Exception raised when errors related to the acquire mode occur.
+    Exception raised when errors related to the acquire service occur.
     """
 
 
@@ -106,9 +91,9 @@ def convert_seconds_interval_to_string(interval: tuple[int, int]):
     return f"({start_day}, {start_hour:02d}h{start_minute:02d} - {stop_day}, {stop_hour:02d}h{stop_minute:02d})"  # pylint: disable=line-too-long
 
 
-class AcquireNamespace(utils.ModeNamespace):
+class AcquireNamespace(base.ServiceNamespace):
     """
-    This class holds the arguments for the acquire mode.
+    This class holds the arguments for the acquire service.
 
     Attributes:
     -----------
@@ -285,7 +270,7 @@ class AcquireNamespace(utils.ModeNamespace):
     @classmethod
     def _get_yaml_schema(cls) -> dict:
         """
-        Returns the schema of the mode.
+        Returns the schema of the service.
         """
 
         schema = {
@@ -338,13 +323,13 @@ class AcquireNamespace(utils.ModeNamespace):
         return cls._format_cameras_yaml_args(args)
 
 
-class Acquire(utils.Mode):
+class Acquire(base.Service):
     """
     This class holds the tools to acquire data from the realsense cameras.
 
     Methods:
     --------
-        - run: Runs the acquire mode (in a blocking way).
+        - run: Runs the acquire service (in a blocking way).
 
     """
 
@@ -373,7 +358,7 @@ class Acquire(utils.Mode):
 
     # logger
 
-    _logger: utils.Logger = utils.Logger("", _LOG_FILE)
+    _logger: base.Logger = base.Logger("", _LOG_FILE)
 
     def __init__(self, args: AcquireNamespace) -> None:
         """
@@ -381,7 +366,7 @@ class Acquire(utils.Mode):
 
         Args:
         -----
-            - args: The arguments for the acquire mode (matching the constructor of
+            - args: The arguments for the acquire service (matching the constructor of
                     AcquireNamespace).
 
         """
@@ -550,7 +535,7 @@ class Acquire(utils.Mode):
 
     def run(self) -> None:
         """
-        Runs the acquire mode (in a blocking way).
+        Runs the acquire service (in a blocking way).
         """
         try:
             self._logger.info(
@@ -647,7 +632,7 @@ class Acquire(utils.Mode):
 
         self._logger.info("Acquisition session finished.\n")
 
-        utils.print_info("Acquire mode terminated!\n")
+        utils.print_info("Acquire service terminated!\n")
 
 
 # pylint: disable=invalid-name
