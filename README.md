@@ -1,2 +1,1 @@
-# Generate a readme based on the developed so far
-
+# Argos, Real-time Image Analysis for Fraud Detection

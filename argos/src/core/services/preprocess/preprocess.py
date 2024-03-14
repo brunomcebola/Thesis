@@ -29,7 +29,7 @@ from tqdm import tqdm
 from ultralytics import YOLO
 from sklearn.model_selection import train_test_split
 
-from .. import utils
+from .....src import utils
 
 # Exceptions
 """
@@ -163,10 +163,10 @@ class PreprocessNamespace(utils.ModeNamespace):
         # val_size validations
         if val_size is None:
             utils.print_warning(
-                "The validation size was not specified. Using the default value (20%)."
+                "The validation size was not specified. The validation folder will be empty."
             )
 
-            self.val_size = 0.2
+            self.val_size = 0
 
         else:
             val_size = float(val_size)
@@ -205,35 +205,63 @@ class PreprocessNamespace(utils.ModeNamespace):
         schema = {
             "type": "object",
             "properties": {
-                "origin_folder": {"type": "string"},
-                "destination_folder": {"type": "string"},
-                "threshold": {
-                    "anyOf": [
-                        {
-                            "type": "array",
-                            "prefixItems": [
-                                {"type": "integer", "minimum": 0},
-                                {"type": "integer", "minimum": 0},
-                            ],
-                            "minItems": 2,
-                            "maxItems": 2,
-                            "additionalItems": False,
-                        },
-                        {"type": "null"},
-                    ]
+                "action": {"type": "string", "enum": ["create_dataset", "edit_dataset"]},
+            },
+            "required": ["action"],
+            "if": {"properties": {"action": {"const": "create_dataset"}}},
+            "then": {
+                "properties": {
+                    "action": {"const": "create_dataset"},
+                    "origin_folder": {"type": "string"},
+                    "destination_folder": {"type": "string"},
+                    "threshold": {
+                        "anyOf": [
+                            {
+                                "type": "array",
+                                "prefixItems": [
+                                    {"type": "integer", "minimum": 0},
+                                    {"type": "integer", "minimum": 0},
+                                ],
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "additionalItems": False,
+                            },
+                            {"type": "null"},
+                        ]
+                    },
+                    "val_size": {
+                        "anyOf": [
+                            {"type": "number", "minimum": 0, "maximum": 1},
+                            {"type": "null"},
+                            {"type": "string"},
+                        ]
+                    },
                 },
-                "val_size": {
-                    "anyOf": [
-                        {"type": "number", "minimum": 0, "maximum": 1},
-                        {"type": "null"},
-                        {"type": "string"},
-                    ]
+                "required": [
+                    "origin_folder",
+                    "destination_folder",
+                    "threshold",
+                    "val_size",
+                ],
+                "additionalProperties": False,
+            },
+            "else": {
+                "if": {"properties": {"action": {"const": "edit_dataset"}}},
+                "then": {
+                    "properties": {
+                        "action": {"const": "join_dataset"},
+                        "origin_folders": {"type": "array", "items": {"type": "string"}},
+                        "destination_folder": {"type": "string"},
+                    },
+                    "required": [
+                        "action",
+                    ],
+                    "additionalProperties": False,
                 },
             },
-            "additionalProperties": False,
         }
 
-        schema["required"] = list(schema["properties"].keys())
+        # schema["required"] = list(schema["properties"].keys())
 
         return schema
 
@@ -300,10 +328,17 @@ class Preprocess(utils.Mode):
         # create destination folders
 
         os.makedirs(self._args.destination_folder)
+
         os.makedirs(os.path.join(self._args.destination_folder, "raw"))
-        os.makedirs(os.path.join(self._args.destination_folder, "images/depth"))
-        os.makedirs(os.path.join(self._args.destination_folder, "images/color"))
+
+        os.makedirs(os.path.join(self._args.destination_folder, "images"))
+        os.makedirs(os.path.join(self._args.destination_folder, "images/box"))
+        os.makedirs(os.path.join(self._args.destination_folder, "images/train"))
+        os.makedirs(os.path.join(self._args.destination_folder, "images/val"))
+
         os.makedirs(os.path.join(self._args.destination_folder, "labels"))
+        os.makedirs(os.path.join(self._args.destination_folder, "labels/train"))
+        os.makedirs(os.path.join(self._args.destination_folder, "labels/val"))
 
         # get the filenames
 
@@ -374,7 +409,7 @@ class Preprocess(utils.Mode):
             color_file = cv2.cvtColor(color_file, cv2.COLOR_BGR2RGB)
 
             color_dest = os.path.join(
-                self._args.destination_folder, "images/color", filename + ".jpg"
+                self._args.destination_folder, "images/box", filename + ".jpg"
             )
 
             for box in predictions[0].boxes:
@@ -444,79 +479,49 @@ class Preprocess(utils.Mode):
 
         # split in train and val
 
-        if self._args.val_size != 0:
+        # get filenames
 
-            # get filenames
+        filenames = sorted(os.listdir(self._args.destination_folder + "/labels"))
 
-            filenames = sorted(os.listdir(self._args.destination_folder + "/labels"))
+        # split dataset
 
-            # create test/val folders
+        train_filenames, _ = train_test_split(
+            filenames, test_size=self._args.val_size, random_state=42, shuffle=True
+        )
 
-            os.makedirs(os.path.join(self._args.destination_folder, "images/train/depth"))
-            os.makedirs(os.path.join(self._args.destination_folder, "images/train/color"))
-            os.makedirs(os.path.join(self._args.destination_folder, "labels/train"))
+        for i in tqdm(range(len(filenames)), desc=" Splitting dataset"):
+            dest_folder = "train" if filenames[i] in train_filenames else "val"
 
-            os.makedirs(os.path.join(self._args.destination_folder, "images/val/depth"))
-            os.makedirs(os.path.join(self._args.destination_folder, "images/val/color"))
-            os.makedirs(os.path.join(self._args.destination_folder, "labels/val"))
-
-            # split dataset
-
-            train_filenames, _ = train_test_split(
-                filenames, test_size=self._args.val_size, random_state=42, shuffle=True
+            os.rename(
+                os.path.join(
+                    self._args.destination_folder,
+                    "images/depth",
+                    os.path.splitext(filenames[i])[0] + ".jpg",
+                ),
+                os.path.join(
+                    self._args.destination_folder,
+                    "images",
+                    dest_folder,
+                    "depth",
+                    os.path.splitext(filenames[i])[0] + ".jpg",
+                ),
             )
 
-            for i in tqdm(range(len(filenames)), desc=" Splitting dataset"):
-                dest_folder = "train" if filenames[i] in train_filenames else "val"
+            os.rename(
+                os.path.join(self._args.destination_folder, "labels", filenames[i]),
+                os.path.join(self._args.destination_folder, "labels", dest_folder, filenames[i]),
+            )
 
-                os.rename(
-                    os.path.join(
-                        self._args.destination_folder,
-                        "images/color",
-                        os.path.splitext(filenames[i])[0] + ".jpg",
-                    ),
-                    os.path.join(
-                        self._args.destination_folder,
-                        "images",
-                        dest_folder,
-                        "color",
-                        os.path.splitext(filenames[i])[0] + ".jpg",
-                    ),
-                )
+        print()
 
-                os.rename(
-                    os.path.join(
-                        self._args.destination_folder,
-                        "images/depth",
-                        os.path.splitext(filenames[i])[0] + ".jpg",
-                    ),
-                    os.path.join(
-                        self._args.destination_folder,
-                        "images",
-                        dest_folder,
-                        "depth",
-                        os.path.splitext(filenames[i])[0] + ".jpg",
-                    ),
-                )
+        # remove empty folders
 
-                os.rename(
-                    os.path.join(self._args.destination_folder, "labels", filenames[i]),
-                    os.path.join(
-                        self._args.destination_folder, "labels", dest_folder, filenames[i]
-                    ),
-                )
+        os.rmdir(os.path.join(self._args.destination_folder, "images/depth"))
 
-            print()
+        msg = f"Train folder has {len(filenames) - len(train_filenames)} images and validation folder has {len(train_filenames)} images."  # pylint: disable=line-too-long
 
-            # remove empty folders
-
-            os.rmdir(os.path.join(self._args.destination_folder, "images/color"))
-            os.rmdir(os.path.join(self._args.destination_folder, "images/depth"))
-
-            msg = f"Train folder has {len(filenames) - len(train_filenames)} images and validation folder has {len(train_filenames)} images."  # pylint: disable=line-too-long
-
-            self._logger.info(msg)
-            utils.print_info(msg + "\n")
+        self._logger.info(msg)
+        utils.print_info(msg + "\n")
 
         self._logger.info("Preprocessing session finished.\n")
 

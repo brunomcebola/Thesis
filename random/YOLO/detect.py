@@ -4,10 +4,10 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
-import src.intel as intel
+import service.intel as intel
 
 # Load model
-model = YOLO("yolov8n-pose.pt")
+model = YOLO("yolov8n.pt")
 
 camera = intel.RealSenseCamera(
     "939622075103",
@@ -38,22 +38,30 @@ try:
         depth_image = frames[0].data
         color_image = frames[1].data
 
-        results = model.predict(source=color_image, classes=[0])
+        # img2 = np.zeros((depth_image.shape[0], depth_image.shape[1], 3))
+        # img2[:, :, 0] = depth_image  # same value in each channel
+        # img2[:, :, 1] = depth_image
+        # img2[:, :, 2] = depth_image
+
+        # print(np.min(img2))
+        # print(np.min(color_image))
 
         depth_image = cv2.applyColorMap(
             cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET
         )
+        results = model.predict(source=depth_image)
 
         depth_image = cv2.resize(depth_image, (640, 480))
         color_image = cv2.resize(color_image, (640, 480))
 
-        for person_skel in results[0].keypoints.xy:
-            if len(person_skel):
-                for point in person_skel:
-                    if point[0] > 0 and point[1] > 0:
-                        depth_image = cv2.circle(
-                            depth_image, (int(point[0]), int(point[1])), 5, (0, 0, 255)
-                        )
+        for box in results[0].boxes:
+            depth_image = cv2.rectangle(
+                depth_image,
+                (int(box.xyxy[0][0]), int(box.xyxy[0][1])),
+                (int(box.xyxy[0][2]), int(box.xyxy[0][3])),
+                (0, 0, 255),
+                2,
+            )
 
         images = np.hstack((color_image, depth_image))
 

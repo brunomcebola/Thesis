@@ -1,5 +1,5 @@
 """
-Init file for modes sub package.
+Init file for the services module.
 """
 
 from . import acquire

@@ -26,7 +26,6 @@ from enum import Enum
 from typing import NamedTuple, Callable
 import numpy as np
 import pyrealsense2 as rs
-import matplotlib.pyplot as plt
 
 # Exceptions
 """
@@ -756,15 +755,6 @@ class Frame:
             ),
             self.data,
         )
-
-    def show(self) -> None:
-        """
-        Show the frame.
-        """
-        if self.data is not None:
-            plt.figure()
-            plt.imshow(self.data)
-            plt.show()
 
     # Class public methods
 

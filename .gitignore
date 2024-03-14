@@ -167,6 +167,7 @@ realsense_so/
 *.pkl
 *.bag
 *test*
-.envrc
 yolo*
 *.npy
+
+*.so

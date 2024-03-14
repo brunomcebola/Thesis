@@ -1,14 +1,5 @@
 """
-This module contains utility functions.
-
-Functions:
-----------
-- parse_yaml(file) -> dict: Validates a YAML file at the given file path.
-- print_info(message): Prints an info message.
-- print_success(message): Prints a success message.
-- print_warning(message): Prints a warning message.
-- print_error(message): Prints an error message.
-- get_user_confirmation(message) -> bool: Asks the user for confirmation.
+This module contains the base classes to implement the services.
 """
 
 # pylint: disable=pointless-string-statement
@@ -22,49 +13,31 @@ from typing import Type, TypeVar
 from types import SimpleNamespace
 from abc import ABC, abstractmethod
 import yaml
-from colorama import Fore, Style
 import jsonschema
+from colorama import Fore, Style
 
+from ... import utils
 from . import intel
 
-
-# Exceptions
-"""
-███████╗██╗  ██╗ ██████╗███████╗██████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
-██╔════╝╚██╗██╔╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
-█████╗   ╚███╔╝ ██║     █████╗  ██████╔╝   ██║   ██║██║   ██║██╔██╗ ██║███████╗
-██╔══╝   ██╔██╗ ██║     ██╔══╝  ██╔═══╝    ██║   ██║██║   ██║██║╚██╗██║╚════██║
-███████╗██╔╝ ██╗╚██████╗███████╗██║        ██║   ██║╚██████╔╝██║ ╚████║███████║
-╚══════╝╚═╝  ╚═╝ ╚═════╝╚══════╝╚═╝        ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
-"""
+__all__ = ["ServiceNamespaceError", "ServiceNamespace", "Service"]
 
 
-class ModeNamespaceError(Exception):
+class ServiceNamespaceError(Exception):
     """
     Exception raised when errors related to the serial number occur.
     """
 
 
-# Classes
-"""
- ██████╗██╗      █████╗ ███████╗███████╗███████╗███████╗
-██╔════╝██║     ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝
-██║     ██║     ███████║███████╗███████╗█████╗  ███████╗
-██║     ██║     ██╔══██║╚════██║╚════██║██╔══╝  ╚════██║
-╚██████╗███████╗██║  ██║███████║███████║███████╗███████║
- ╚═════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝
-"""
-
-MN = TypeVar("MN", bound="ModeNamespace")
+MN = TypeVar("MN", bound="ServiceNamespace")
 
 
-class ModeNamespace(SimpleNamespace, ABC):
+class ServiceNamespace(SimpleNamespace, ABC):
     """
-    This class is intended to be used as a namespace for the modes.
+    This class is intended to be used as a namespace for the services.
 
     Class Attributes:
     -----------------
-        - _EXCEPTION_CLS (Type[ModeNamespaceError]):
+        - _EXCEPTION_CLS (Type[ServiceNamespaceError]):
             The exception class to be raised if any of the arguments is invalid.
             It must be overridden by the subclasses.
 
@@ -92,19 +65,19 @@ class ModeNamespace(SimpleNamespace, ABC):
         - _format_cameras_yaml_args(args: dict) -> dict:
             Formats the arguments parsed from the YAML file related to the cameras.
         - from_yaml(file: str) -> MN:
-            Loads the mode from a YAML file and returns an instance of the subclass.
+            Loads the service from a YAML file and returns an instance of the subclass.
 
     Abstract class methods:
     -----------------------
         - _get_yaml_schema() -> dict:
-            Returns the schema of the mode.
+            Returns the schema of the service.
         - _format_yaml_args(args: dict) -> dict:
             Formats the arguments parsed from the YAML file.
     """
 
     # Class attributes
 
-    _EXCEPTION_CLS: Type[ModeNamespaceError] = ModeNamespaceError
+    _EXCEPTION_CLS: Type[ServiceNamespaceError] = ServiceNamespaceError
 
     # Instance attributes
 
@@ -131,13 +104,13 @@ class ModeNamespace(SimpleNamespace, ABC):
 
         Raises:
         -------
-            - Type[ModeNamespaceError]: If any of the arguments is invalid.
+            - Type[ServiceNamespaceError]: If any of the arguments is invalid.
 
         """
 
         # serial_numbers validations
         if serial_numbers is None:
-            print_warning("No cameras specified. Using all available cameras.")
+            utils.print_warning("No cameras specified. Using all available cameras.")
 
             serial_numbers = intel.RealSenseCamera.get_available_cameras_serial_numbers()
 
@@ -152,7 +125,7 @@ class ModeNamespace(SimpleNamespace, ABC):
 
         # stream configs validations
         if stream_configs is None or len(stream_configs) == 0:
-            print_warning("No stream configurations specified. Using default configurations.")
+            utils.print_warning("No stream configurations specified. Using default configurations.")
 
             stream_configs = [
                 [
@@ -188,7 +161,7 @@ class ModeNamespace(SimpleNamespace, ABC):
 
         # align_to validations
         if align_to is None or len(align_to) == 0:
-            print_warning("No align to specified. Not aligning any stream.")
+            utils.print_warning("No align to specified. Not aligning any stream.")
 
             align_to = [None for _ in range(len(serial_numbers))]
 
@@ -213,7 +186,7 @@ class ModeNamespace(SimpleNamespace, ABC):
             string += "\t\tStream configs:\n"
             for stream_config in camera.stream_configs:
                 string += f"\t\t\t{stream_config}\n"
-            string += f"\t\tAlign to: {camera.align_to if camera.align_to is not None else 'Not aligned'}\n"
+            string += f"\t\tAlign to: {camera.align_to if camera.align_to is not None else 'Not aligned'}\n"  # pylint: disable=line-too-long
 
         return (string).rstrip()
 
@@ -342,7 +315,7 @@ class ModeNamespace(SimpleNamespace, ABC):
     @classmethod
     def from_yaml(cls: Type[MN], file: str) -> MN:
         """
-        Loads the mode from a YAML file.
+        Loads the service from a YAML file.
 
         Args:
         -----
@@ -379,7 +352,7 @@ class ModeNamespace(SimpleNamespace, ABC):
     @abstractmethod
     def _get_yaml_schema(cls) -> dict:
         """
-        Return the schema of the mode.
+        Return the schema of the service.
         """
 
     @classmethod
@@ -390,13 +363,13 @@ class ModeNamespace(SimpleNamespace, ABC):
         """
 
 
-class Mode(ABC):
+class Service(ABC):
     """
-    Abstract class for modes.
+    Abstract class for services.
 
     Subclasses must implement the following methods:
-        - run(): Runs the mode.
-        - stop(): Stops the mode.
+        - run(): Runs the service.
+        - stop(): Stops the service.
     """
 
     _LOG_FILE: str
@@ -404,13 +377,13 @@ class Mode(ABC):
     @abstractmethod
     def run(self) -> None:
         """
-        Runs the mode.
+        Runs the service.
         """
 
     @classmethod
     def logs(cls, file: str) -> None:
         """
-        Prints or exports the logs of the mode.
+        Prints or exports the logs of the service.
 
         Args:
         -----
@@ -419,7 +392,7 @@ class Mode(ABC):
 
         # print to console
         if file:
-            print_info(f"Exporting logs to {file}...")
+            utils.print_info(f"Exporting logs to {file}...")
             print()
 
             with open(
@@ -433,7 +406,7 @@ class Mode(ABC):
             ) as destination:
                 destination.write("".join(origin.readlines()))
 
-            print_success("Logs exported!")
+            utils.print_success("Logs exported!")
             print()
 
         # export to file
@@ -461,6 +434,8 @@ class Mode(ABC):
                         )
                     else:
                         print(line, end="")
+
+                # TODO: limit console lines
 
                 # session_logs = file.split("\n\n")
 
@@ -495,73 +470,3 @@ class Logger(logging.Logger):
         file_handler.setFormatter(Logger.formatter)
 
         self.addHandler(file_handler)
-
-
-# Methods
-"""
-███╗   ███╗███████╗████████╗██╗  ██╗ ██████╗ ██████╗ ███████╗
-████╗ ████║██╔════╝╚══██╔══╝██║  ██║██╔═══██╗██╔══██╗██╔════╝
-██╔████╔██║█████╗     ██║   ███████║██║   ██║██║  ██║███████╗
-██║╚██╔╝██║██╔══╝     ██║   ██╔══██║██║   ██║██║  ██║╚════██║
-██║ ╚═╝ ██║███████╗   ██║   ██║  ██║╚██████╔╝██████╔╝███████║
-╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝
-"""
-
-
-def print_info(message: str) -> None:
-    """
-    Prints an info message.
-
-    Args:
-    -----
-        - message: The info message to be printed.
-    """
-    print(f"{Fore.LIGHTCYAN_EX + Style.BRIGHT}Info:{Style.RESET_ALL} {message}")
-
-
-def print_success(message: str) -> None:
-    """
-    Prints a success message.
-
-    Args:
-    -----
-        - message: The success message to be printed.
-    """
-    print(f"{Fore.LIGHTGREEN_EX + Style.BRIGHT}Success:{Style.RESET_ALL} {message}")
-
-
-def print_warning(message: str) -> None:
-    """
-    Prints a warning message.
-
-    Args:
-    -----
-        - message: The warning message to be printed.
-    """
-    print(f"{Fore.LIGHTYELLOW_EX + Style.BRIGHT}Warning:{Style.RESET_ALL} {message}")
-
-
-def print_error(message: str) -> None:
-    """
-    Prints an error message.
-
-    Args:
-    -----
-        - message: The error message to be printed.
-    """
-    print(f"{Fore.RED + Style.BRIGHT}Error:{Style.RESET_ALL} {message}")
-
-
-def get_user_confirmation(message: str) -> bool:
-    """
-    Asks the user for confirmation.
-    """
-    while True:
-        response = input(f"{message} (y/n): ")
-        if response in ["y", "Y", "yes", "Yes", "YES"]:
-            return True
-        elif response in ["n", "N", "no", "No", "NO"]:
-            return False
-        else:
-            print_warning("Invalid response. Please enter y or n.")
-            print()

@@ -1,9 +1,5 @@
 """
-This module defines the CmdParser class, which provides a command line interface for Argos.
-It defines the available modes and their arguments, and parses the cmd line args into a dict.
-
-Classes:
-    - CmdParser: Object for parsing command line arguments into Python objects.
+This module defines the Parser class, which provides a command line interface for Argos.
 """
 
 import argparse
@@ -13,13 +9,11 @@ from colorama import Style
 
 from . import utils
 
+__all__ = ["Parser"]
 
 class Parser:
     """
     A class for parsing command line arguments into Python objects.
-
-    Methods:
-        get_args(): Parses the command line arguments and returns them as a dictionary.
     """
 
     class _ArgumentParser(argparse.ArgumentParser):
