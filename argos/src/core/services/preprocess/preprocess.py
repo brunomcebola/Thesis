@@ -294,9 +294,7 @@ class PreprocessService(base.Service):
 
     """
 
-    _LOG_FILE = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "../../logs/preprocess.log"
-    )
+    _LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "preprocess.log")
 
     # type hints
 

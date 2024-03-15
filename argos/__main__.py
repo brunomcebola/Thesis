@@ -2,21 +2,21 @@
 This module is the entry point of Argos, a real-time image analysis tool for fraud detection.
 """
 
+from __future__ import annotations
+
+from typing import Type
+
 import argos.src.utils as utils
 import argos.src.core.services as services
 
-MAP_TO_MODE_CLASS = {
+MAP_TO_SERVICE_CLASS: dict[str, Type[services.base.Service]] = {
     "acquire": services.acquire.AcquireService,
-    "a": services.acquire.AcquireService,
     "preprocess": services.preprocess.PreprocessService,
-    "p": services.preprocess.PreprocessService,
 }
 
-MAP_TO_MODE_NAMESPACE_CLASS = {
+MAP_TO_SERVICE_NAMESPACE_CLASS: dict[str, Type[services.base.ServiceNamespace]] = {
     "acquire": services.acquire.AcquireServiceNamespace,
-    "a": services.acquire.AcquireServiceNamespace,
     "preprocess": services.preprocess.PreprocessServiceNamespace,
-    "p": services.preprocess.PreprocessServiceNamespace,
 }
 
 if __name__ == "__main__":
@@ -29,32 +29,47 @@ if __name__ == "__main__":
         utils.print_header()
         print()
 
-        mode = cmd_line_args.mode
+        if cmd_line_args.resource == "api":
+            utils.print_warning("API not implemented yet!\n")
 
-        if cmd_line_args.command in ["run", "r"]:
-            if cmd_line_args.yaml:
-                args = MAP_TO_MODE_NAMESPACE_CLASS[mode].from_yaml(cmd_line_args.yaml)
+        elif cmd_line_args.resource == "client":
+            utils.print_warning("Client not implemented yet!\n")
+
+        elif cmd_line_args.resource == "service":
+            service = cmd_line_args.service
+            command = cmd_line_args.command
+
+            cmd_line_args = cmd_line_args.__dict__
+
+            del cmd_line_args["resource"]
+            del cmd_line_args["service"]
+            del cmd_line_args["command"]
+
+            if command == "run":
+                if "yaml" in cmd_line_args and cmd_line_args["yaml"] is not None:
+                    args = MAP_TO_SERVICE_NAMESPACE_CLASS[service].from_yaml(cmd_line_args["yaml"])
+                else:
+                    args = MAP_TO_SERVICE_NAMESPACE_CLASS[service](**cmd_line_args)
+
+                # Run the service
+
+                utils.print_info(f"{MAP_TO_SERVICE_CLASS[service].__name__} settings")
+                print(args)
+                print()
+
+                USER_CONFIRM = utils.get_user_confirmation(
+                    "Do you wish to start the data acquisition?"
+                )
+                print()
+
+                if USER_CONFIRM:
+                    MAP_TO_SERVICE_CLASS[service](args).run()
+
+            elif command == "logs":
+                MAP_TO_SERVICE_CLASS[service].logs(cmd_line_args["logs_dest"])
+
             else:
-                cmd_line_args = cmd_line_args.__dict__
-
-                del cmd_line_args["mode"]
-                del cmd_line_args["command"]
-                args = MAP_TO_MODE_NAMESPACE_CLASS[mode](**cmd_line_args)
-
-            # Run the mode
-
-            utils.print_info(f"{MAP_TO_MODE_CLASS[mode].__name__} settings")
-            print(args)
-            print()
-
-            USER_CONFIRM = utils.get_user_confirmation("Do you wish to start the data acquisition?")
-            print()
-
-            if USER_CONFIRM:
-                MAP_TO_MODE_CLASS[mode](args).run()
-
-        else:
-            MAP_TO_MODE_CLASS[mode].logs(cmd_line_args.logs_dest)
+                utils.print_error("Invalid command!\n")
 
     except Exception as e:  # pylint: disable=broad-except
         utils.print_error(str(e) + "\n")
@@ -70,5 +85,7 @@ if __name__ == "__main__":
         utils.print_warning("Terminating program!\n")
 
         exit(1)
+
+    utils.print_warning("Terminating program!\n")
 
     exit(0)

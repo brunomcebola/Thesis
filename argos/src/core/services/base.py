@@ -390,7 +390,7 @@ class Service(ABC):
             - file: The file to print the logs to. If None, the logs are printed to the console.
         """
 
-        # print to console
+        # export to file
         if file:
             utils.print_info(f"Exporting logs to {file}...")
             print()
@@ -409,7 +409,7 @@ class Service(ABC):
             utils.print_success("Logs exported!")
             print()
 
-        # export to file
+        # print to console
         else:
             with open(
                 cls._LOG_FILE,
@@ -417,6 +417,10 @@ class Service(ABC):
                 encoding="utf-8",
             ) as f:
                 file_lines = f.readlines()
+
+                if len(file_lines) == 0:
+                    utils.print_warning("No logs available.\n")
+                    return
 
                 for line in file_lines:
                     if line[0].isdigit():
