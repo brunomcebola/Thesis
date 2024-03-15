@@ -2,6 +2,8 @@
 This module defines the Parser class, which provides a command line interface for Argos.
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 
@@ -11,92 +13,93 @@ from . import utils
 
 __all__ = ["Parser"]
 
+
+class _ArgumentParser(argparse.ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._optionals.title = "Optional arguments"
+        self._positionals.title = "Positional arguments"
+
+    def format_help(self):
+        formatter = self._get_formatter()
+
+        if self.description:
+            formatter.add_text(Style.BRIGHT + self.description + Style.RESET_ALL)
+
+        # usage
+        formatter.add_usage(self.usage, self._actions, self._mutually_exclusive_groups)
+
+        # positionals, optionals and user-defined groups
+        for action_group in self._action_groups[::-1]:
+            formatter.start_section(
+                Style.BRIGHT + action_group.title + Style.RESET_ALL
+                if action_group.title is not None
+                else None
+            )
+            formatter.add_text(action_group.description)
+
+            formatter.add_arguments(action_group._group_actions)  # pylint: disable=protected-access
+
+            formatter.end_section()
+
+        # epilog
+        formatter.add_text(self.epilog)
+
+        # determine help from format above
+        return formatter.format_help()
+
+    def error(self, message):
+        utils.print_error(message)
+        print()
+
+        if not self._subparsers:
+            self.print_help()
+        else:
+            actions = self._subparsers._group_actions  # pylint: disable=protected-access
+            keys = actions[0].choices.keys()  # type: ignore
+
+            if len(sys.argv) > 1 and sys.argv[1] in keys:
+                self.parse_args([sys.argv[1], "-h"])
+            else:
+                self.print_help()
+
+        exit(2)
+
+
+class _HelpFormatter(argparse.HelpFormatter):
+    def add_usage(self, usage, actions, groups, prefix=None):
+        if prefix is None:
+            prefix = Style.BRIGHT + "Usage:\n  " + Style.RESET_ALL
+            return super().add_usage(usage, actions, groups, prefix)
+
+    def _format_action(self, action):
+        parts = super()._format_action(action)
+
+        if action.nargs == argparse.PARSER:
+            parts = parts.split("\n")[1:]
+            parts = list(map(lambda p: ")  ".join(p.split(")")), parts))
+            parts = list(map(lambda p: "  " + p.strip(), parts))
+            parts = "\n".join(parts)
+            parts = parts.rstrip()
+
+        return parts
+
+
 class Parser:
     """
     A class for parsing command line arguments into Python objects.
     """
 
-    class _ArgumentParser(argparse.ArgumentParser):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self._optionals.title = "Optional arguments"
-            self._positionals.title = "Positional arguments"
-
-        def format_help(self):
-            formatter = self._get_formatter()
-
-            if self.description:
-                formatter.add_text(Style.BRIGHT + self.description + Style.RESET_ALL)
-
-            # usage
-            formatter.add_usage(self.usage, self._actions, self._mutually_exclusive_groups)
-
-            # positionals, optionals and user-defined groups
-            for action_group in self._action_groups[::-1]:
-                formatter.start_section(
-                    Style.BRIGHT + action_group.title + Style.RESET_ALL
-                    if action_group.title is not None
-                    else None
-                )
-                formatter.add_text(action_group.description)
-
-                formatter.add_arguments(
-                    action_group._group_actions  # pylint: disable=protected-access
-                )
-
-                formatter.end_section()
-
-            # epilog
-            formatter.add_text(self.epilog)
-
-            # determine help from format above
-            return formatter.format_help()
-
-        def error(self, message):
-            utils.print_error(message)
-            print()
-
-            if not self._subparsers:
-                self.print_help()
-            else:
-                actions = self._subparsers._group_actions  # pylint: disable=protected-access
-                keys = actions[0].choices.keys()  # type: ignore
-
-                if len(sys.argv) > 1 and sys.argv[1] in keys:
-                    self.parse_args([sys.argv[1], "-h"])
-                else:
-                    self.print_help()
-
-            exit(2)
-
-    class _HelpFormatter(argparse.HelpFormatter):
-        def add_usage(self, usage, actions, groups, prefix=None):
-            if prefix is None:
-                prefix = Style.BRIGHT + "Usage:\n  " + Style.RESET_ALL
-                return super().add_usage(usage, actions, groups, prefix)
-
-        def _format_action(self, action):
-            parts = super()._format_action(action)
-
-            if action.nargs == argparse.PARSER:
-                parts = parts.split("\n")[1:]
-                parts = list(map(lambda p: ")  ".join(p.split(")")), parts))
-                parts = list(map(lambda p: "  " + p.strip(), parts))
-                parts = "\n".join(parts)
-                parts = parts.rstrip()
-
-            return parts
-
-    class _HelpFormatterModes(_HelpFormatter):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self._max_help_position = 100
+    # class _HelpFormatterModes(_HelpFormatter):
+    #     def __init__(self, *args, **kwargs):
+    #         super().__init__(*args, **kwargs)
+    #         self._max_help_position = 100
 
     def __init__(self):
-        self._parser = self._ArgumentParser(
+        self._parser = _ArgumentParser(
             description="Argos, Real-time Image Analysis for Fraud Detection",
-            formatter_class=self._HelpFormatter,
-            usage="1. argos.py <mode> [<args>]\n" + "  2. argos.py (-h | --help)",
+            formatter_class=_HelpFormatter,
+            usage="1. argos.py <resource> [<args>]\n" + "  2. argos.py (-h | --help)",
             add_help=False,
         )
 
@@ -108,19 +111,58 @@ class Parser:
             help="Show this help message and exit.",
         )
 
-        self._subparsers = self._parser.add_subparsers(
-            title="Modes",
-            dest="mode",
+        resources_subparsers = self._parser.add_subparsers(
+            title="Resources",
+            dest="resource",
             required=True,
         )
 
-        self._add_subparsers()
+        # api
 
-    def _add_subparsers(self):
+        api_parser = self._add_middle_subparser(
+            resources_subparsers,
+            {
+                "description": "API launcher",
+                "name": "api",
+                "help": "Mode to start the Argos API.",
+            },
+        )
 
-        # acquire mode
-        self._add_subparser(
-            {"name": "acquire", "aliases": "a", "help": "Mode to capture and store video."},
+        # client
+
+        client_parser = self._add_middle_subparser(
+            resources_subparsers,
+            {
+                "description": "Client launcher",
+                "name": "client",
+                "help": "Mode to start the Argos Client Interface.",
+            },
+        )
+
+        # services
+
+        services_parser = self._add_middle_subparser(
+            resources_subparsers,
+            {
+                "description": "Services launcher",
+                "name": "service",
+                "help": "Mode to launch an Argos service.",
+            },
+            "service",
+        )
+
+        services_subparsers = services_parser.add_subparsers(
+            title="Services",
+            dest="service",
+            required=True,
+        )
+
+        self._add_final_subparser(
+            services_subparsers,
+            {
+                "name": "acquire",
+                "help": "Mode to capture and store video.",
+            },
             [
                 (
                     ["-c", "--camera"],
@@ -151,10 +193,10 @@ class Parser:
             ],
         )
 
-        self._add_subparser(
+        self._add_final_subparser(
+            services_subparsers,
             {
                 "name": "preprocess",
-                "aliases": "p",
                 "help": "Mode to preprocess the acquired data.",
             },
             [
@@ -185,18 +227,56 @@ class Parser:
             ],
         )
 
-    # subparsers
+    def _add_middle_subparser(
+        self,
+        subparser_dest: argparse._SubParsersAction,
+        configs: dict,
+        child_subparsers_name: str | None = None,
+    ) -> _ArgumentParser:
+        configs["description"] = (
+            f"Argos, Real-time Image Analysis for Fraud Detection {'- ' + str(configs['description']) if 'description' in list(configs.keys()) else ''}"  # pylint: disable=line-too-long
+        )
 
-    def _add_subparser(self, subparser_configs: dict, subparser_args: list[tuple[list, dict]]):
+        count = 1
+        usage = ""
+        if child_subparsers_name is not None:
+            usage += f"{count}. argos.py {configs['name']} <{child_subparsers_name}> [<args>]\n  "
+            count += 1
+        usage += f"{count}. argos.py {configs['name']} (-h | --help)"
+
+        parser: _ArgumentParser = subparser_dest.add_parser(
+            allow_abbrev=False,
+            formatter_class=_HelpFormatter,
+            add_help=False,
+            **configs,
+            usage=usage,
+        )
+
+        parser.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="Show this help message and exit.",
+        )
+
+        return parser
+
+    def _add_final_subparser(
+        self,
+        subparser_dest: argparse._SubParsersAction,
+        subparser_configs: dict,
+        subparser_args: list[tuple[list, dict]],
+    ):
         description = f"Argos, Real-time Image Analysis for Fraud Detection - {subparser_configs['name'].capitalize()} mode"  # pylint: disable=line-too-long
 
         usage = f"1. argos.py {subparser_configs['name']} <command> [<args>]"
         usage += f"\n  2. argos.py {subparser_configs['name']} (-h | --help)"
 
-        parser = self._subparsers.add_parser(
+        parser: _ArgumentParser = subparser_dest.add_parser(
             description=description,
             allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
+            formatter_class=_HelpFormatter,
             add_help=False,
             **subparser_configs,
             usage=usage,
@@ -213,6 +293,7 @@ class Parser:
         subparsers = parser.add_subparsers(
             title="Commands",
             dest="command",
+            required=True,
         )
 
         # run command
@@ -246,9 +327,8 @@ class Parser:
 
         run_cmd = subparsers.add_parser(
             name="run",
-            aliases="r",
             description=description + " (run)",
-            formatter_class=self._HelpFormatterModes,
+            formatter_class=_HelpFormatter,
             add_help=False,
             usage=usage,
             help=f"Run the {subparser_configs['name'] if 'name' in subparser_configs.keys() else ''} mode.",  # pylint: disable=line-too-long
@@ -272,10 +352,9 @@ class Parser:
 
         logs_cmd = subparsers.add_parser(
             name="logs",
-            aliases="l",
             description=description + " (logs)",
             allow_abbrev=False,
-            formatter_class=self._HelpFormatterModes,
+            formatter_class=_HelpFormatter,
             add_help=False,
             usage=usage,
             help=f"Access the logs of the {subparser_configs['name'] if 'name' in subparser_configs.keys() else ''} mode.",  # pylint: disable=line-too-long
