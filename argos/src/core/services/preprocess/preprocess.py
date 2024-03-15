@@ -1,5 +1,5 @@
 """
-This module holds the tools to preprocess the data acquired from the realsense cameras.
+This module holds the tools to preprocess the data  preprocessd from the realsense cameras.
 
 Methods:
 --------
@@ -29,7 +29,15 @@ from tqdm import tqdm
 from ultralytics import YOLO
 from sklearn.model_selection import train_test_split
 
-from .....src import utils
+from .. import base
+from .... import utils
+
+__all__ = [
+    "PreprocessServiceNamespace",
+    "PreprocessService",
+    "PreprocessServiceNamespaceError",
+    "PreprocessServiceError",
+]
 
 # Exceptions
 """
@@ -42,15 +50,15 @@ from .....src import utils
 """
 
 
-class PreprocessNamespaceError(utils.ModeNamespaceError):
+class PreprocessServiceNamespaceError(base.ServiceNamespaceError):
     """
-    Exception raised when errors related to the acquire namespace occur.
+    Exception raised when errors related to the preprocess service namespace occur.
     """
 
 
-class PreprocessError(Exception):
+class PreprocessServiceError(Exception):
     """
-    Exception raised when errors related to the acquire mode occur.
+    Exception raised when errors related to the preprocess service occur.
     """
 
 
@@ -65,16 +73,16 @@ class PreprocessError(Exception):
 """
 
 
-class PreprocessNamespace(utils.ModeNamespace):
+class PreprocessServiceNamespace(base.ServiceNamespace):
     """
-    This class holds the arguments for the preprocess mode.
+    This class holds the arguments for the preprocess  service.
 
     Attributes:
     -----------
         - TODO
     """
 
-    _EXCEPTION_CLS = PreprocessNamespaceError
+    _EXCEPTION_CLS = PreprocessServiceNamespaceError
 
     # type hints
     origin_folder: str
@@ -98,31 +106,31 @@ class PreprocessNamespace(utils.ModeNamespace):
 
         # origin_folder validations
         if origin_folder is None:
-            raise PreprocessNamespaceError("The origin folder must be specified.")
+            raise PreprocessServiceNamespaceError("The origin folder must be specified.")
 
         origin_folder = origin_folder.strip()
 
         if origin_folder == "":
-            raise PreprocessNamespaceError("The origin folder cannot be a empty string.")
+            raise PreprocessServiceNamespaceError("The origin folder cannot be a empty string.")
 
         if not os.path.exists(origin_folder):
-            raise PreprocessNamespaceError("The origin folder does not exist.")
+            raise PreprocessServiceNamespaceError("The origin folder does not exist.")
 
         if len(os.listdir(origin_folder)) % 2 != 0 or len(os.listdir(origin_folder)) == 0:
-            raise PreprocessNamespaceError(
+            raise PreprocessServiceNamespaceError(
                 "The origin folder must contain an even number of files."
             )
 
         if len(
             [f for f in os.listdir(origin_folder) if os.path.isfile(os.path.join(origin_folder, f))]
         ) != len(os.listdir(origin_folder)):
-            raise PreprocessNamespaceError(
+            raise PreprocessServiceNamespaceError(
                 "The origin folder must contain only files (no subfolders)."
             )
 
         for filename in os.listdir(origin_folder):
             if not re.match(r".*_(color|depth)\.npy", filename):
-                raise PreprocessNamespaceError(
+                raise PreprocessServiceNamespaceError(
                     "The origin folder must contain only files ending in _color.npy or _depth.npy."
                 )
 
@@ -130,33 +138,39 @@ class PreprocessNamespace(utils.ModeNamespace):
 
         # destination_folder validations
         if destination_folder is None:
-            raise PreprocessNamespaceError("The destination folder must be specified.")
+            raise PreprocessServiceNamespaceError("The destination folder must be specified.")
 
         destination_folder = destination_folder.strip()
 
         if destination_folder == "":
-            raise PreprocessNamespaceError("The destination folder cannot be a empty string.")
+            raise PreprocessServiceNamespaceError(
+                "The destination folder cannot be a empty string."
+            )
 
         if os.path.exists(destination_folder):
-            raise PreprocessNamespaceError("The destination folder already exists.")
+            raise PreprocessServiceNamespaceError("The destination folder already exists.")
 
         self.destination_folder = os.path.abspath(destination_folder)
 
         # threshold validations
         if threshold is not None:
             if len(threshold) != 2:
-                raise PreprocessNamespaceError("The threshold must be a tuple with two integers.")
+                raise PreprocessServiceNamespaceError(
+                    "The threshold must be a tuple with two integers."
+                )
 
             if not all(isinstance(i, int) for i in threshold):
-                raise PreprocessNamespaceError("The threshold min and max must be integers.")
+                raise PreprocessServiceNamespaceError("The threshold min and max must be integers.")
 
             if threshold[0] < 0 or threshold[1] < 0:
-                raise PreprocessNamespaceError(
+                raise PreprocessServiceNamespaceError(
                     "The threshold min and max must be non-negative integers."
                 )
 
             if threshold[0] > threshold[1]:
-                raise PreprocessNamespaceError("The threshold min must be less than the max.")
+                raise PreprocessServiceNamespaceError(
+                    "The threshold min must be less than the max."
+                )
 
         self.threshold = threshold
 
@@ -172,10 +186,10 @@ class PreprocessNamespace(utils.ModeNamespace):
             val_size = float(val_size)
 
             if math.isnan(val_size):
-                raise PreprocessNamespaceError("The validation size must be a number.")
+                raise PreprocessServiceNamespaceError("The validation size must be a number.")
 
             if not 0 <= val_size <= 1:
-                raise PreprocessNamespaceError(
+                raise PreprocessServiceNamespaceError(
                     "The validation size must be a number between 0 and 1."
                 )
 
@@ -199,7 +213,7 @@ class PreprocessNamespace(utils.ModeNamespace):
     @classmethod
     def _get_yaml_schema(cls) -> dict:
         """
-        Returns the schema of the mode.
+        Returns the schema of the  service.
         """
 
         schema = {
@@ -270,13 +284,13 @@ class PreprocessNamespace(utils.ModeNamespace):
         return args
 
 
-class Preprocess(utils.Mode):
+class PreprocessService(base.Service):
     """
-    This class holds the tools to acquire data from the realsense cameras.
+    This class holds the tools to preprocess data from the realsense cameras.
 
     Methods:
     --------
-        - run: Runs the acquire mode (in a blocking way).
+        - run: Runs the preprocess service (in a blocking way).
 
     """
 
@@ -286,19 +300,19 @@ class Preprocess(utils.Mode):
 
     # type hints
 
-    _args: PreprocessNamespace
+    _args: PreprocessServiceNamespace
 
     # logger
 
-    _logger: utils.Logger = utils.Logger("", _LOG_FILE)
+    _logger: base.Logger = base.Logger("", _LOG_FILE)
 
-    def __init__(self, args: PreprocessNamespace) -> None:
+    def __init__(self, args: PreprocessServiceNamespace) -> None:
         """
         Acquire constructor.
 
         Args:
         -----
-            - args: The arguments for the acquire mode (matching the constructor of
+            - args: The arguments for the preprocess service (matching the constructor of
                     AcquireNamespace).
 
         """
@@ -311,7 +325,7 @@ class Preprocess(utils.Mode):
 
     def run(self) -> None:
         """
-        Runs the preprocessing mode (in a blocking way).
+        Runs the preprocessing service (in a blocking way).
         """
 
         # TODO: add a way to cancel if an error or ctrl+c occurs
@@ -348,7 +362,7 @@ class Preprocess(utils.Mode):
         # ensure files have shape (X, Y, 3) for color and (X, Y) for depth
         for i in tqdm(range(0, len(filenames), 2), desc="    Checking files", unit_scale=2):
             if filenames[i].split("_")[:-1] != filenames[i + 1].split("_")[:-1]:
-                raise PreprocessError(
+                raise PreprocessServiceError(
                     "The origin folder must contain pairs of files with the same initial part."
                 )
 
@@ -356,12 +370,12 @@ class Preprocess(utils.Mode):
             depth_file = np.load(os.path.join(self._args.origin_folder, filenames[i + 1]))
 
             if len(color_file.shape) != 3 or color_file.shape[2] != 3:
-                raise PreprocessError(
+                raise PreprocessServiceError(
                     f"The color files must have shape (X, Y, 3). (file: {filenames[i]})"
                 )
 
             if len(depth_file.shape) != 2 or len(depth_file.shape) != 2:
-                raise PreprocessError(
+                raise PreprocessServiceError(
                     f"The depth files must have shape (X, Y). (file: {filenames[i + 1]})"
                 )
 
@@ -369,7 +383,7 @@ class Preprocess(utils.Mode):
                 color_file.shape[0] != depth_file.shape[0]
                 or color_file.shape[1] != depth_file.shape[1]
             ):
-                raise PreprocessError(
+                raise PreprocessServiceError(
                     f"The color and depth files must have the same shape. (files: {filenames[i]} and {filenames[i + 1]})"  # pylint: disable=line-too-long
                 )
 
@@ -525,4 +539,4 @@ class Preprocess(utils.Mode):
 
         self._logger.info("Preprocessing session finished.\n")
 
-        utils.print_info("Preprocess mode terminated!\n")
+        utils.print_info("Preprocess service terminated!\n")

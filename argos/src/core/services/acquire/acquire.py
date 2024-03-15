@@ -1,5 +1,5 @@
 """
-This module holds the tools to acquire data from the realsense cameras.
+This module holds the tools to acquire service data from the realsense cameras.
 """
 
 # pylint: disable=pointless-string-statement
@@ -15,6 +15,13 @@ from .. import base
 from .. import intel
 from .... import utils
 
+__all__ = [
+    "AcquireServiceNamespace",
+    "AcquireService",
+    "AcquireServiceNamespaceError",
+    "AcquireServiceError",
+]
+
 # Exceptions
 """
 ███████╗██╗  ██╗ ██████╗███████╗██████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
@@ -26,13 +33,13 @@ from .... import utils
 """
 
 
-class AcquireNamespaceError(base.ServiceNamespaceError):
+class AcquireServiceNamespaceError(base.ServiceNamespaceError):
     """
-    Exception raised when errors related to the acquire namespace occur.
+    Exception raised when errors related to the acquire service namespace occur.
     """
 
 
-class AcquireError(Exception):
+class AcquireServiceError(Exception):
     """
     Exception raised when errors related to the acquire service occur.
     """
@@ -91,7 +98,7 @@ def convert_seconds_interval_to_string(interval: tuple[int, int]):
     return f"({start_day}, {start_hour:02d}h{start_minute:02d} - {stop_day}, {stop_hour:02d}h{stop_minute:02d})"  # pylint: disable=line-too-long
 
 
-class AcquireNamespace(base.ServiceNamespace):
+class AcquireServiceNamespace(base.ServiceNamespace):
     """
     This class holds the arguments for the acquire service.
 
@@ -105,7 +112,7 @@ class AcquireNamespace(base.ServiceNamespace):
             The list with the cameras to be used.
     """
 
-    _EXCEPTION_CLS = AcquireNamespaceError
+    _EXCEPTION_CLS = AcquireServiceNamespaceError
 
     # type hints
     output_folder: str
@@ -121,7 +128,7 @@ class AcquireNamespace(base.ServiceNamespace):
         **kwargs,
     ):
         """
-        AcquireNamespace constructor.
+        AcquireServiceNamespace constructor.
 
         Args:
         -----
@@ -138,7 +145,7 @@ class AcquireNamespace(base.ServiceNamespace):
 
         Raises:
         -------
-            - AcquireNamespaceError: If any of the arguments is invalid.
+            - AcquireServiceNamespaceError: If any of the arguments is invalid.
 
         """
 
@@ -148,12 +155,12 @@ class AcquireNamespace(base.ServiceNamespace):
 
         # output_folder validations
         if output_folder is None:
-            raise AcquireNamespaceError("The output folder must be specified.")
+            raise AcquireServiceNamespaceError("The output folder must be specified.")
 
         output_folder = output_folder.strip()
 
         if output_folder == "":
-            raise AcquireNamespaceError("The output folder cannot be a empty string.")
+            raise AcquireServiceNamespaceError("The output folder cannot be a empty string.")
 
         self.output_folder = os.path.abspath(output_folder)
 
@@ -167,7 +174,7 @@ class AcquireNamespace(base.ServiceNamespace):
 
         else:
             if len(op_times) == 0:
-                raise AcquireNamespaceError(
+                raise AcquireServiceNamespaceError(
                     "At least one operation time must be specified.",
                 )
 
@@ -181,32 +188,32 @@ class AcquireNamespace(base.ServiceNamespace):
             else:
                 for op_time in op_times:
                     if op_time["start_day"].capitalize() not in list(calendar.day_abbr):
-                        raise AcquireNamespaceError(
+                        raise AcquireServiceNamespaceError(
                             "The start day must be one of the following: mon, tue, wed, thu, fri, sat, sun."  # pylint: disable=line-too-long
                         )
 
                     if op_time["stop_day"].lower().capitalize() not in list(calendar.day_abbr):
-                        raise AcquireNamespaceError(
+                        raise AcquireServiceNamespaceError(
                             "The stop day must be one of the following: mon, tue, wed, thu, fri, sat, sun."  # pylint: disable=line-too-long
                         )
 
                     if int(op_time["start_time"].split(":")[0]) not in range(24):
-                        raise AcquireNamespaceError(
+                        raise AcquireServiceNamespaceError(
                             "The start hour must be a value between 0 and 23.",
                         )
 
                     if int(op_time["stop_time"].split(":")[0]) not in range(24):
-                        raise AcquireNamespaceError(
+                        raise AcquireServiceNamespaceError(
                             "The stop hour must be a value between 0 and 23.",
                         )
 
                     if int(op_time["start_time"].split(":")[1]) not in range(60):
-                        raise AcquireNamespaceError(
+                        raise AcquireServiceNamespaceError(
                             "The start minute must be a value between 0 and 59.",
                         )
 
                     if int(op_time["stop_time"].split(":")[1]) not in range(60):
-                        raise AcquireNamespaceError(
+                        raise AcquireServiceNamespaceError(
                             "The stop minute must be a value between 0 and 59.",
                         )
 
@@ -230,7 +237,7 @@ class AcquireNamespace(base.ServiceNamespace):
                     current_stop_time = op_tinterval[1]
 
                     if current_start_time >= current_stop_time:
-                        raise AcquireNamespaceError(
+                        raise AcquireServiceNamespaceError(
                             "The start time must be before the stop time.",
                         )
 
@@ -239,7 +246,7 @@ class AcquireNamespace(base.ServiceNamespace):
 
                         # Check if current end time is after next start time
                         if current_stop_time > next_start_time:
-                            raise AcquireNamespaceError(
+                            raise AcquireServiceNamespaceError(
                                 "The operation times must not overlap.",
                             )
 
@@ -323,7 +330,7 @@ class AcquireNamespace(base.ServiceNamespace):
         return cls._format_cameras_yaml_args(args)
 
 
-class Acquire(base.Service):
+class AcquireService(base.Service):
     """
     This class holds the tools to acquire data from the realsense cameras.
 
@@ -339,7 +346,7 @@ class Acquire(base.Service):
 
     # type hints
 
-    _args: AcquireNamespace
+    _args: AcquireServiceNamespace
 
     # operation time
 
@@ -360,14 +367,14 @@ class Acquire(base.Service):
 
     _logger: base.Logger = base.Logger("", _LOG_FILE)
 
-    def __init__(self, args: AcquireNamespace) -> None:
+    def __init__(self, args: AcquireServiceNamespace) -> None:
         """
-        Acquire constructor.
+        AcquireService constructor.
 
         Args:
         -----
             - args: The arguments for the acquire service (matching the constructor of
-                    AcquireNamespace).
+                    AcquireServiceNamespace).
 
         """
 
@@ -600,7 +607,7 @@ class Acquire(base.Service):
                 self._storage_handler_threads[camera.serial_number].join()  # type: ignore
                 self._storage_handler_threads[camera.serial_number] = None
 
-        stats = "Acquire statistics:\n\n"
+        stats = "Acquire service statistics:\n\n"
 
         for camera in self._args.cameras:
             self._logger.info(
