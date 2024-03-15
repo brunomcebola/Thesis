@@ -6,17 +6,17 @@ import argos.src.utils as utils
 import argos.src.core.services as services
 
 MAP_TO_MODE_CLASS = {
-    "acquire": services.acquire.Acquire,
-    "a": services.acquire.Acquire,
-    "preprocess": services.preprocess.Preprocess,
-    "p": services.preprocess.Preprocess,
+    "acquire": services.acquire.AcquireService,
+    "a": services.acquire.AcquireService,
+    "preprocess": services.preprocess.PreprocessService,
+    "p": services.preprocess.PreprocessService,
 }
 
 MAP_TO_MODE_NAMESPACE_CLASS = {
-    "acquire": services.acquire.AcquireNamespace,
-    "a": services.acquire.AcquireNamespace,
-    "preprocess": services.preprocess.PreprocessNamespace,
-    "p": services.preprocess.PreprocessNamespace,
+    "acquire": services.acquire.AcquireServiceNamespace,
+    "a": services.acquire.AcquireServiceNamespace,
+    "preprocess": services.preprocess.PreprocessServiceNamespace,
+    "p": services.preprocess.PreprocessServiceNamespace,
 }
 
 if __name__ == "__main__":
