@@ -17,7 +17,7 @@ import jsonschema
 from colorama import Fore, Style
 
 from ... import utils
-from . import intel
+from .. import intel
 
 __all__ = ["ServiceNamespaceError", "ServiceNamespace", "Service"]
 

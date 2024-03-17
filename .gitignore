@@ -5,7 +5,10 @@
 !.gitignore
 !.envrc
 !README.md
-!setup.py
+!setup_rpi.py
+!deploy_rpi.sh
+!setup_master.py
+!deploy_master.sh
 
 !argos/
 !argos/**
@@ -19,7 +22,6 @@ argos/src/core/models/*
 
 !bash/
 !bash/*
-
 
 # but keep ignoring these
 *.npy
