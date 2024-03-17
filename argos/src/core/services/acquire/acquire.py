@@ -12,7 +12,7 @@ import threading
 from datetime import datetime
 
 from .. import base
-from .. import intel
+from ... import intel
 from .... import utils
 
 __all__ = [

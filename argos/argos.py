@@ -19,7 +19,11 @@ MAP_TO_SERVICE_NAMESPACE_CLASS: dict[str, Type[services.base.ServiceNamespace]] 
     "preprocess": services.preprocess.PreprocessServiceNamespace,
 }
 
-if __name__ == "__main__":
+
+def main():
+    """
+    Main function of the program
+    """
     try:
         parser = utils.parser.Parser()
 
@@ -57,12 +61,12 @@ if __name__ == "__main__":
                 print(args)
                 print()
 
-                USER_CONFIRM = utils.get_user_confirmation(
+                user_confirm = utils.get_user_confirmation(
                     "Do you wish to start the data acquisition?"
                 )
                 print()
 
-                if USER_CONFIRM:
+                if user_confirm:
                     MAP_TO_SERVICE_CLASS[service](args).run()
 
             elif command == "logs":
@@ -78,7 +82,7 @@ if __name__ == "__main__":
 
         exit(1)
 
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt as e:  # pylint: disable=unused-variable
         print()
         print()
 
@@ -89,3 +93,7 @@ if __name__ == "__main__":
     utils.print_warning("Terminating program!\n")
 
     exit(0)
+
+
+if __name__ == "__main__":
+    main()
