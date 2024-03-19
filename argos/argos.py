@@ -8,6 +8,7 @@ from typing import Type
 
 import argos.src.utils as utils
 import argos.src.core.services as services
+import argos.src.client as client
 
 MAP_TO_SERVICE_CLASS: dict[str, Type[services.base.Service]] = {
     "acquire": services.acquire.AcquireService,
