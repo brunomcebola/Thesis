@@ -2,7 +2,7 @@
   <nav class="navbar sticky-top navbar-expand-sm p-0">
     <div class="container-fluid">
       <a
-        class="navbar-brand pe-2"
+        class="navbar-brand mx-0"
         href="https://www.thalesgroup.com/en"
         target="_blank"
       >
@@ -13,8 +13,14 @@
           width="auto"
         />
       </a>
+      <div class="mx-3" id="location">
+        <p class="m-0 text-secondary" id="name">{{ title }}</p>
+        <p class="m-0 text-secondary" id="ip" @click="open_new_window">
+          {{ base_url }}
+        </p>
+      </div>
       <button
-        class="navbar-toggler"
+        class="navbar-toggler pe-0"
         type="button"
         data-bs-toggle="collapse"
         data-bs-target="#navbarNav"
@@ -40,16 +46,14 @@
               {{ m.title }}
             </router-link>
           </li>
-          <li class="nav-item logout">
-            <a class="nav-link" href="#">
+          <li class="nav-item user">
+            <!-- <a class="nav-link">
               Logout
-              <img
-                src="@/assets/images/logout.svg"
-                class="ms-1"
-                alt="Menu"
-                height="auto"
-                width="14px"
-              />
+              <i class="mdi mdi-logout ms-1"></i>
+            </a> -->
+            <a class="nav-link" @click="login">
+              Login
+              <i class="mdi mdi-login ms-1"></i>
             </a>
           </li>
         </ul>
@@ -64,15 +68,26 @@ export default {
   data() {
     return {
       menu: [
-        { url: "stations", title: "Stations" },
-        { url: "areas", title: "Areas" },
-        { url: "analytics", title: "Analytics" },
-        { url: "admin", title: "Admin" },
+        { url: "sections", title: "Sections" },
+        { url: "datasets", title: "Datasets" },
       ],
     };
   },
-  created() {
-    alert(this.$route.name);
+  methods: {
+    open_new_window() {
+      window.open(this.base_url);
+    },
+    login() {
+      alert("Not implemented yet!");
+    },
+  },
+  computed: {
+    title() {
+      return process.env.VUE_APP_TITLE;
+    },
+    base_url() {
+      return window.location.origin;
+    },
   },
 };
 </script>
@@ -82,6 +97,17 @@ export default {
 
 .navbar {
   background-color: #0c0d29;
+
+  #location {
+    #name {
+      font-size: 0.9rem;
+    }
+    #ip {
+      font-size: 0.7rem;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  }
 
   .navbar-toggler {
     margin: 6px 0px;
@@ -151,7 +177,12 @@ export default {
         padding-left: 10px;
       }
 
-      &.logout {
+      &.user {
+        cursor: pointer;
+        &::after {
+          display: none;
+        }
+
         a {
           display: flex;
         }
@@ -195,7 +226,7 @@ export default {
           transform: scaleX(1);
         }
 
-        &.logout {
+        &.user {
           margin-left: auto !important;
           border-right: none;
         }

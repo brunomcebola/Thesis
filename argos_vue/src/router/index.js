@@ -1,8 +1,6 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 
-import HomePage from "@/views/HomePage.vue";
-
 Vue.use(VueRouter);
 
 const router = new VueRouter({
@@ -10,22 +8,14 @@ const router = new VueRouter({
   routes: [
     {
       path: "/",
-      component: HomePage,
     },
     {
-      path: "/stations",
-      name: "stations",
-      component: HomePage,
+      path: "/sections",
+      name: "sections",
     },
     {
-      path: "/areas",
-      name: "areas",
-      component: HomePage,
-    },
-    {
-      path: "/stations",
-      name: "stations",
-      component: HomePage,
+      path: "/datasets",
+      name: "datasets",
     },
     {
       path: "*",
