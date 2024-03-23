@@ -1,6 +1,8 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 
+import datasetsPage from "@/views/datasetsPage.vue";
+
 Vue.use(VueRouter);
 
 const router = new VueRouter({
@@ -16,6 +18,7 @@ const router = new VueRouter({
     {
       path: "/datasets",
       name: "datasets",
+      component: datasetsPage,
     },
     {
       path: "*",
