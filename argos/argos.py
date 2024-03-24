@@ -8,7 +8,7 @@ from typing import Type
 
 import argos.src.utils as utils
 import argos.src.core.services as services
-import argos.src.client as client
+import argos.src.interface as interface
 
 MAP_TO_SERVICE_CLASS: dict[str, Type[services.base.Service]] = {
     "acquire": services.acquire.AcquireService,
@@ -34,11 +34,8 @@ def main():
         utils.print_header()
         print()
 
-        if cmd_line_args.resource == "api":
-            utils.print_warning("API not implemented yet!\n")
-
-        elif cmd_line_args.resource == "client":
-            utils.print_warning("Client not implemented yet!\n")
+        if cmd_line_args.resource == "interface":
+            utils.print_warning("Interface not implemented yet!\n")
 
         elif cmd_line_args.resource == "service":
             service = cmd_line_args.service

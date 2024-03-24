@@ -117,25 +117,14 @@ class Parser:
             required=True,
         )
 
-        # api
-
-        api_parser = self._add_middle_subparser(
-            resources_subparsers,
-            {
-                "description": "API launcher",
-                "name": "api",
-                "help": "Mode to start the Argos API.",
-            },
-        )
-
         # client
 
-        client_parser = self._add_middle_subparser(
+        interface_parser = self._add_middle_subparser(
             resources_subparsers,
             {
-                "description": "Client launcher",
-                "name": "client",
-                "help": "Mode to start the Argos Client Interface.",
+                "description": "Interface launcher",
+                "name": "interface",
+                "help": "Mode to start the Argos Interface.",
             },
         )
 
