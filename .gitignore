@@ -20,6 +20,7 @@ argos/src/client/.env
 
 !argos_vue/
 !argos_vue/**
+argos_vue/dist/*
 argos_vue/node_modules/*
 
 !configs

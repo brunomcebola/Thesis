@@ -35,7 +35,7 @@ def main():
         print()
 
         if cmd_line_args.resource == "interface":
-            utils.print_warning("Interface not implemented yet!\n")
+            interface.run()
 
         elif cmd_line_args.resource == "service":
             service = cmd_line_args.service
