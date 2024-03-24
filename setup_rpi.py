@@ -33,7 +33,7 @@ setup(
     python_requires=">=3.9.2",
     entry_points={
         "console_scripts": [
-            "argos=argos.argos:main",  # Assuming 'main' is your entry function in argos.py
+            "argos=argos.__main__:main",  # Assuming 'main' is your entry function in argos.py
         ],
     },
 )
