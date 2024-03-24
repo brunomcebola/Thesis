@@ -42,7 +42,7 @@
             :key="m.title"
             :class="'nav-item ' + ($route.name == m.url ? 'active' : '')"
           >
-            <router-link class="nav-link" aria-current="page" :to="m.url">
+            <router-link class="nav-link" aria-current="page" :to="'/' + m.url">
               {{ m.title }}
             </router-link>
           </li>
