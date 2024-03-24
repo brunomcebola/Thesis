@@ -5,7 +5,10 @@ Main file for the Flask app.
 import os
 from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from waitress import serve
 
+from .. import utils
 
 app = Flask(__name__, static_folder="client", static_url_path="")
 
@@ -15,6 +18,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "ar
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 from .server import models  # pylint: disable=unused-import disable=wrong-import-position
 
@@ -37,20 +41,21 @@ def serve_vue_app(path):
         return send_from_directory(app.static_folder, "index.html")  # type: ignore
 
 
-def run():
+def run_interface():
     """
     Run the Flask app
     """
 
+    utils.print_success("Argos interface is running at http://localhost:5000/")
+
     with app.app_context():
         db.create_all()
 
-    app.run()
+    serve(app, host="0.0.0.0", port=5000)
 
 
 if __name__ == "__main__":
-    run()
+    with app.app_context():
+        db.create_all()
 
-
-# from waitress import serve
-# serve(app, host="0.0.0.0", port=5000)
+    app.run(debug=True)
