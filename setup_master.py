@@ -13,6 +13,7 @@ dependencies = [
     "PyYAML",
     "scikit-learn",
     "pyrealsense2",
+    "flask",
 ]
 
 

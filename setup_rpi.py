@@ -12,6 +12,7 @@ dependencies = [
     "jsonschema",
     "PyYAML",
     "scikit-learn",
+    "flask",
 ]
 
 setup(
