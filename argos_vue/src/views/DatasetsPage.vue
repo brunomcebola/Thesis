@@ -92,6 +92,8 @@
 </template>
 
 <script>
+import api from "@/axios";
+
 export default {
   name: "DatasetsPage",
   data() {
@@ -148,6 +150,12 @@ export default {
     go_to_edit() {
       alert("Not implemented yet");
     },
+  },
+  created() {
+    api.get("/datasets").then((response) => {
+      console.log(response);
+      // this.datasets = response.data;
+    });
   },
 };
 </script>

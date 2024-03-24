@@ -8,7 +8,7 @@ from typing import Type
 
 import argos.src.utils as utils
 import argos.src.core.services as services
-import argos.src.interface as interface
+import argos.src.interface.app as app
 
 MAP_TO_SERVICE_CLASS: dict[str, Type[services.base.Service]] = {
     "acquire": services.acquire.AcquireService,
@@ -35,7 +35,7 @@ def main():
         print()
 
         if cmd_line_args.resource == "interface":
-            interface.run()
+            app.run()
 
         elif cmd_line_args.resource == "service":
             service = cmd_line_args.service

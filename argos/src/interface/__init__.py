@@ -1,5 +1,5 @@
 """
-Init file for the client module
+Init file for the interface package.
 """
 
-from .server import run
+from .app import run
