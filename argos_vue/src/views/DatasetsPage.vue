@@ -153,8 +153,7 @@ export default {
   },
   created() {
     api.get("/datasets").then((response) => {
-      console.log(response);
-      // this.datasets = response.data;
+      this.datasets = response.data;
     });
   },
 };

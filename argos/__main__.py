@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from typing import Type
 
-import argos.src.utils as utils
-import argos.src.core.services as services
-import argos.src.interface.app as app
+from .src import utils
+from .src.core import services
+from .src.interface import run_interface
 
 MAP_TO_SERVICE_CLASS: dict[str, Type[services.base.Service]] = {
     "acquire": services.acquire.AcquireService,
@@ -35,7 +35,7 @@ def main():
         print()
 
         if cmd_line_args.resource == "interface":
-            app.run()
+            run_interface()
 
         elif cmd_line_args.resource == "service":
             service = cmd_line_args.service
@@ -87,6 +87,9 @@ def main():
         utils.print_warning("Terminating program!\n")
 
         exit(1)
+
+    print()
+    print()
 
     utils.print_warning("Terminating program!\n")
 

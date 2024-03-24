@@ -34,5 +34,6 @@ argos_vue/node_modules/
 *.npy
 *.log
 *.so
+*.db
 
 *__pycache__/
