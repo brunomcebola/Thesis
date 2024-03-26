@@ -20,6 +20,4 @@ def get_all() -> tuple[Response, int]:
     """
     datasets = Dataset.query.all()
 
-    print("ola")
-
     return jsonify(datasets), HTTPStatus.OK

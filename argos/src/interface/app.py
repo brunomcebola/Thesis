@@ -26,6 +26,7 @@ from .server import models  # pylint: disable=unused-import disable=wrong-import
 from .server import controllers  # pylint: disable=wrong-import-position
 
 app.register_blueprint(controllers.datasets.blueprint, url_prefix="/api")
+app.register_blueprint(controllers.system.blueprint, url_prefix="/api")
 
 
 # serve the Vue app
@@ -46,12 +47,14 @@ def run_interface():
     Run the Flask app
     """
 
-    utils.print_success("Argos interface is running at http://localhost:5000/")
+    utils.print_success("Argos interface is running at http://localhost:5000/\n")
 
     with app.app_context():
         db.create_all()
 
-    serve(app, host="0.0.0.0", port=5000)
+    # TODO: change this comments
+    # serve(app, host="0.0.0.0", port=5000)
+    app.run(debug=True)
 
 
 if __name__ == "__main__":

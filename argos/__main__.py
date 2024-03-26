@@ -4,7 +4,10 @@ This module is the entry point of Argos, a real-time image analysis tool for fra
 
 from __future__ import annotations
 
+import os
+
 from typing import Type
+from dotenv import load_dotenv
 
 from .src import utils
 from .src.core import services
@@ -25,6 +28,9 @@ def main():
     """
     Main function of the program
     """
+
+    load_dotenv()
+
     try:
         parser = utils.parser.Parser()
 
@@ -35,6 +41,7 @@ def main():
         print()
 
         if cmd_line_args.resource == "interface":
+            print(os.getenv("TITLE"))
             run_interface()
 
         elif cmd_line_args.resource == "service":
