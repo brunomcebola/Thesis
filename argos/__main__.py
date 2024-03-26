@@ -41,7 +41,6 @@ def main():
         print()
 
         if cmd_line_args.resource == "interface":
-            print(os.getenv("TITLE"))
             run_interface()
 
         elif cmd_line_args.resource == "service":

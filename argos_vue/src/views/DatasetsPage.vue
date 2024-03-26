@@ -38,15 +38,17 @@
           v-for="item in list"
           :key="item.id"
           class="list-item d-flex justify-content-center mb-3 p-2"
-          :to="'/datasets/' + item.id"
+          :to="'/' + tab + '/' + item.id"
         >
           <div class="type-icon p-0 ps-1 d-flex align-items-center">
             <i :class="'mdi mdi-' + (tab == 'datasets' ? 'database' : 'raw')">
             </i>
           </div>
-          <div class="text-container p-0 ms-3 text-start">
+          <div class="text-container p-0 mx-3 text-start">
             <p class="m-0">{{ item.name }}</p>
-            <p class="m-0 text-secondary">{{ item.path }}</p>
+            <p class="m-0 text-secondary">
+              {{ item.path + "" }}
+            </p>
           </div>
           <div class="actions-container p-0 pe-1 d-flex align-items-center">
             <button type="button" class="btn">
@@ -69,40 +71,8 @@ export default {
   name: "DatasetsPage",
   data() {
     return {
-      datasets: [
-        {
-          id: 1,
-          name: "Dataset 1",
-          path: "/path/to/dataset1",
-        },
-        {
-          id: 2,
-          name: "Dataset 2",
-          path: "/path/to/dataset2",
-        },
-        {
-          id: 3,
-          name: "Dataset 3",
-          path: "/path/to/dataset3",
-        },
-      ],
-      raw_data: [
-        {
-          id: 1,
-          name: "Raw 1",
-          path: "/path/to/raw1",
-        },
-        {
-          id: 2,
-          name: "Raw 2",
-          path: "/path/to/raw2",
-        },
-        {
-          id: 3,
-          name: "Raw 3",
-          path: "/path/to/raw3",
-        },
-      ],
+      datasets: [],
+      raw: [],
       search_key: "",
     };
   },
@@ -111,8 +81,8 @@ export default {
       return this.$route.query.tab;
     },
     list() {
-      return (this.tab == "datasets" ? this.datasets : this.raw_data).filter(
-        (item) => item.name.includes(this.search_key)
+      return this[this.tab].filter((item) =>
+        item.name.includes(this.search_key)
       );
     },
   },
@@ -121,8 +91,14 @@ export default {
       alert("Not implemented yet");
     },
     changeTab(tab) {
+      if (this.tab == tab) return;
+
       this.$router.push({
         query: { ...this.$route.query, ...{ tab: tab } },
+      });
+
+      api.get("/" + tab).then((response) => {
+        this[tab] = response.data;
       });
     },
   },
@@ -134,8 +110,11 @@ export default {
     }
 
     api.get("/datasets").then((response) => {
-      // this.datasets = response.data;
-      console.log(response.data);
+      this.datasets = response.data;
+    });
+
+    api.get("/raw").then((response) => {
+      this.raw = response.data;
     });
   },
 };
@@ -203,9 +182,12 @@ export default {
 
         .text-container {
           color: #0c0d29;
+          max-width: calc(100% - 8px - 36px - 16px - 32px - 16px - 32px - 8px);
 
           p {
             line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
         }
       }
