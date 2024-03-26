@@ -26,7 +26,6 @@ from .server import models  # pylint: disable=unused-import disable=wrong-import
 from .server import controllers  # pylint: disable=wrong-import-position
 
 app.register_blueprint(controllers.datasets.blueprint, url_prefix="/api")
-app.register_blueprint(controllers.system.blueprint, url_prefix="/api")
 
 
 # serve the Vue app
