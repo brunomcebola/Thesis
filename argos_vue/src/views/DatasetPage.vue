@@ -7,7 +7,7 @@
         :key="image.name"
       >
         <div class="image-card">
-          <img src="@/assets/images/no_media.png" class="card-img-top" />
+          <img :src="image.src" class="card-img-top" />
           <input
             class="form-check-input m-0"
             type="checkbox"
@@ -17,84 +17,41 @@
           />
           <i class="mdi mdi-arrow-expand text-secondary"></i>
         </div>
-        <p class="text-start text-secondary">jdjdj</p>
+        <p class="text-start text-secondary">{{ image.name }}</p>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import api from "@/axios";
+
 export default {
   name: "DatasetPage",
   data() {
     return {
-      images: [
-        { name: "image1", selected: true },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image1", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image1", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image1", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-        { name: "image2", selected: false },
-      ],
+      images: [],
     };
+  },
+  created() {
+    // TODO: missing val and test listing images
+    // TODO: missing headers in page and way to show dataset info
+    // TODO: perhaps have multiple tabs for dataset info, images, and annotations
+    api
+      .get("/datasets/" + this.$route.params.name + "/images")
+      .then((response) => {
+        response.data.forEach((image) => {
+          this.images.push({
+            name: image,
+            selected: false,
+            src:
+              "http://localhost:5000/api/datasets/" +
+              this.$route.params.name +
+              "/images/" +
+              image,
+          });
+        });
+      });
   },
 };
 </script>

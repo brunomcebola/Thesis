@@ -22,7 +22,7 @@ const router = new VueRouter({
       component: DatasetsPage,
     },
     {
-      path: "/datasets/:id",
+      path: "/datasets/:name",
       name: "dataset",
       component: DatasetPage,
     },
