@@ -88,7 +88,7 @@ class PreprocessServiceNamespace(base.ServiceNamespace):
     origin_folder: str
     destination_folder: str
     threshold: tuple[int, int] | None
-    val_size: float
+    val_size: float | None
 
     def __init__(
         self,
@@ -180,8 +180,6 @@ class PreprocessServiceNamespace(base.ServiceNamespace):
                 "The validation size was not specified. The validation folder will be empty."
             )
 
-            self.val_size = 0
-
         else:
             val_size = float(val_size)
 
@@ -193,7 +191,7 @@ class PreprocessServiceNamespace(base.ServiceNamespace):
                     "The validation size must be a number between 0 and 1."
                 )
 
-            self.val_size = val_size
+        self.val_size = None if val_size == 0 else val_size
 
     def __str__(self) -> str:
         string = ""
@@ -204,9 +202,7 @@ class PreprocessServiceNamespace(base.ServiceNamespace):
 
         string += f"\tThreshold: {str(self.threshold[0]) + ' mm to ' + str(self.threshold[1]) + ' mm' if self.threshold is not None else '-'}\n"  # pylint: disable=line-too-long
 
-        string += (
-            f"\tTrain/Val split: {(1 - self.val_size) * 100:.0f}%/{self.val_size * 100:.0f}%\n"
-        )
+        string += f"\tTrain/Val split: {(1 - (self.val_size if self.val_size is not None else 0)) * 100:.0f}%/{(self.val_size if self.val_size is not None else 0) * 100:.0f}%\n"  # pylint: disable=line-too-long
 
         return string.rstrip()
 
@@ -318,7 +314,7 @@ class PreprocessService(base.Service):
         self._args = args
 
         self._yolo_model = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../YOLO_models/yolov8n.pt"
+            os.path.dirname(os.path.abspath(__file__)), "../../models/yolov8n.pt"
         )
 
     def run(self) -> None:
@@ -410,7 +406,9 @@ class PreprocessService(base.Service):
 
             counter += 1
 
-            labels_dest = os.path.join(self._args.destination_folder, "labels", filename + ".txt")
+            labels_dest = os.path.join(
+                self._args.destination_folder, "labels/train", filename + ".txt"
+            )
 
             with open(labels_dest, "w", encoding="utf-8") as f:
                 for box in predictions[0].boxes:
@@ -460,7 +458,7 @@ class PreprocessService(base.Service):
             depth_file = cv2.applyColorMap(depth_file, cv2.COLORMAP_JET)
 
             depth_dest = os.path.join(
-                self._args.destination_folder, "images/depth", filename + ".jpg"
+                self._args.destination_folder, "images/train", filename + ".jpg"
             )
 
             cv2.imwrite(depth_dest, depth_file)
@@ -493,47 +491,49 @@ class PreprocessService(base.Service):
 
         # get filenames
 
-        filenames = sorted(os.listdir(self._args.destination_folder + "/labels"))
+        filenames = sorted(os.listdir(self._args.destination_folder + "/labels/train"))
 
         # split dataset
 
-        train_filenames, _ = train_test_split(
-            filenames, test_size=self._args.val_size, random_state=42, shuffle=True
-        )
-
-        for i in tqdm(range(len(filenames)), desc=" Splitting dataset"):
-            dest_folder = "train" if filenames[i] in train_filenames else "val"
-
-            os.rename(
-                os.path.join(
-                    self._args.destination_folder,
-                    "images/depth",
-                    os.path.splitext(filenames[i])[0] + ".jpg",
-                ),
-                os.path.join(
-                    self._args.destination_folder,
-                    "images",
-                    dest_folder,
-                    "depth",
-                    os.path.splitext(filenames[i])[0] + ".jpg",
-                ),
+        if self._args.val_size is not None:
+            train_filenames, validation_filenames = train_test_split(
+                filenames, test_size=self._args.val_size, random_state=42, shuffle=True
             )
 
-            os.rename(
-                os.path.join(self._args.destination_folder, "labels", filenames[i]),
-                os.path.join(self._args.destination_folder, "labels", dest_folder, filenames[i]),
-            )
+            for i in tqdm(range(len(filenames)), desc=" Splitting dataset"):
+                if filenames[i] in validation_filenames:
+                    os.rename(
+                        os.path.join(
+                            self._args.destination_folder,
+                            "images/train",
+                            os.path.splitext(filenames[i])[0] + ".jpg",
+                        ),
+                        os.path.join(
+                            self._args.destination_folder,
+                            "images/val",
+                            os.path.splitext(filenames[i])[0] + ".jpg",
+                        ),
+                    )
 
-        print()
+                    os.rename(
+                        os.path.join(
+                            self._args.destination_folder,
+                            "labels/train",
+                            filenames[i],
+                        ),
+                        os.path.join(
+                            self._args.destination_folder,
+                            "labels/val",
+                            filenames[i],
+                        ),
+                    )
 
-        # remove empty folders
+            print()
 
-        os.rmdir(os.path.join(self._args.destination_folder, "images/depth"))
+            msg = f"Train folder has {len(train_filenames)} images and validation folder has {len(validation_filenames)} images."  # pylint: disable=line-too-long
 
-        msg = f"Train folder has {len(filenames) - len(train_filenames)} images and validation folder has {len(train_filenames)} images."  # pylint: disable=line-too-long
-
-        self._logger.info(msg)
-        utils.print_info(msg + "\n")
+            self._logger.info(msg)
+            utils.print_info(msg + "\n")
 
         self._logger.info("Preprocessing session finished.\n")
 
