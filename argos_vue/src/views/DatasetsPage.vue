@@ -36,9 +36,9 @@
       <div class="data-list">
         <router-link
           v-for="item in list"
-          :key="item.id"
+          :key="item.name"
           class="list-item d-flex justify-content-center mb-3 p-2"
-          :to="'/' + tab + '/' + item.id"
+          :to="'/' + tab + '/' + item.name"
         >
           <div class="type-icon p-0 ps-1 d-flex align-items-center">
             <i :class="'mdi mdi-' + (tab == 'datasets' ? 'database' : 'raw')">
