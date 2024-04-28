@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from dotenv import load_dotenv
 
-from ..printer import Printer
-from ..parser import Parser
+from ..printer import ArgosPrinter
+from ..parser import ArgosParser
 
 
 from .web import run_interface
@@ -21,12 +21,12 @@ def main():
     load_dotenv()
 
     try:
-        parser = Parser()
+        parser = ArgosParser()
 
         cmd_line_args = parser.get_args()
 
         print()
-        Printer.print_header()
+        ArgosPrinter.print_header()
         print()
 
         if cmd_line_args.resource == "interface":
