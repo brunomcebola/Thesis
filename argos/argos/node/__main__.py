@@ -4,24 +4,103 @@ This module is the entry point of Argos, a real-time image analysis tool for fra
 
 from __future__ import annotations
 
-import os
 
 from typing import Type
 from dotenv import load_dotenv
 
-from ..src import utils
-from ..src.core import services
-from ..src.interface import run_interface
+# from ..src.core import services
 
-MAP_TO_SERVICE_CLASS: dict[str, Type[services.base.Service]] = {
-    "acquire": services.acquire.AcquireService,
-    "preprocess": services.preprocess.PreprocessService,
-}
+from ..printer import ArgosPrinter
+from ..parser import ArgosParser
 
-MAP_TO_SERVICE_NAMESPACE_CLASS: dict[str, Type[services.base.ServiceNamespace]] = {
-    "acquire": services.acquire.AcquireServiceNamespace,
-    "preprocess": services.preprocess.PreprocessServiceNamespace,
-}
+# MAP_TO_SERVICE_CLASS: dict[str, Type[services.base.Service]] = {
+# "acquire": services.acquire.AcquireService,
+# "preprocess": services.preprocess.PreprocessService,
+# }
+#
+# MAP_TO_SERVICE_NAMESPACE_CLASS: dict[str, Type[services.base.ServiceNamespace]] = {
+# "acquire": services.acquire.AcquireServiceNamespace,
+# "preprocess": services.preprocess.PreprocessServiceNamespace,
+# }
+
+
+def _generate_parser() -> ArgosParser:
+    """
+    Generates the ArgosParser object.
+
+    Returns:
+    --------
+        - ArgosParser: The generated ArgosParser object.
+    """
+
+    parser = ArgosParser("(node)")
+
+    parser.add_parser(
+        "root",
+        "command",
+        "start",
+        True,
+        {
+            "description": "Services launcher",
+            "help": "Mode to launch an Argos service.",
+        },
+    )
+
+    parser.add_parser(
+        "root",
+        "command",
+        "service",
+        True,
+        {
+            "description": "Services launcher",
+            "help": "Mode to launch an Argos service.",
+        },
+    )
+
+    parser.add_parser(
+        "service",
+        "service",
+        "acquire",
+        True,
+        {
+            "description": "Services launcher",
+            "help": "Mode to launch an Argos service.",
+        },
+    )
+
+    parser.add_arguments_to_parser(
+        "acquire",
+        [
+            (
+                ["-c", "--camera"],
+                {
+                    "nargs": 1,
+                    "help": "Specify the camera to be used by serial number.",
+                    "metavar": "sn",
+                    "dest": "serial_numbers",
+                    "type": ArgosParser.non_empty_string_type,
+                },
+            ),
+            (
+                ["-o", "--output-folder"],
+                {
+                    "help": "Folder where the acquired images will be stored.",
+                    "metavar": "path",
+                    "type": ArgosParser.non_empty_string_type,
+                },
+            ),
+            (
+                ["-y", "--yaml"],
+                {
+                    "help": "Path to the yaml configuration file.",
+                    "metavar": "path",
+                    "type": ArgosParser.non_empty_string_type,
+                },
+            ),
+        ],
+    )
+
+    return parser
 
 
 def main():
@@ -32,57 +111,55 @@ def main():
     load_dotenv()
 
     try:
-        parser = utils.parser.Parser()
+        parser = _generate_parser()
 
         cmd_line_args = parser.get_args()
 
-        print()
-        utils.print_header()
-        print()
+        ArgosPrinter.print_header(ArgosPrinter.Space.BOTH)
 
-        if cmd_line_args.resource == "interface":
-            run_interface()
+        # if cmd_line_args.resource == "interface":
+        #     run_interface()
 
-        elif cmd_line_args.resource == "service":
-            service = cmd_line_args.service
-            command = cmd_line_args.command
+        # elif cmd_line_args.resource == "service":
+        #     service = cmd_line_args.service
+        #     command = cmd_line_args.command
 
-            cmd_line_args = cmd_line_args.__dict__
+        #     cmd_line_args = cmd_line_args.__dict__
 
-            del cmd_line_args["resource"]
-            del cmd_line_args["service"]
-            del cmd_line_args["command"]
+        #     del cmd_line_args["resource"]
+        #     del cmd_line_args["service"]
+        #     del cmd_line_args["command"]
 
-            if command == "run":
-                if "yaml" in cmd_line_args and cmd_line_args["yaml"] is not None:
-                    args = MAP_TO_SERVICE_NAMESPACE_CLASS[service].from_yaml(cmd_line_args["yaml"])
-                else:
-                    args = MAP_TO_SERVICE_NAMESPACE_CLASS[service](**cmd_line_args)
+        #     if command == "run":
+        #         if "yaml" in cmd_line_args and cmd_line_args["yaml"] is not None:
+        #             args = MAP_TO_SERVICE_NAMESPACE_CLASS[service].from_yaml(cmd_line_args["yaml"])
+        #         else:
+        #             args = MAP_TO_SERVICE_NAMESPACE_CLASS[service](**cmd_line_args)
 
-                # Run the service
+        #         # Run the service
 
-                utils.print_info(f"{MAP_TO_SERVICE_CLASS[service].__name__} settings")
-                print(args)
-                print()
+        #         utils.print_info(f"{MAP_TO_SERVICE_CLASS[service].__name__} settings")
+        #         print(args)
+        #         print()
 
-                user_confirm = utils.get_user_confirmation(
-                    "Do you wish to start the data acquisition?"
-                )
-                print()
+        #         user_confirm = utils.get_user_confirmation(
+        #             "Do you wish to start the data acquisition?"
+        #         )
+        #         print()
 
-                if user_confirm:
-                    MAP_TO_SERVICE_CLASS[service](args).run()
+        #         if user_confirm:
+        #             MAP_TO_SERVICE_CLASS[service](args).run()
 
-            elif command == "logs":
-                MAP_TO_SERVICE_CLASS[service].logs(cmd_line_args["logs_dest"])
+        #     elif command == "logs":
+        #         MAP_TO_SERVICE_CLASS[service].logs(cmd_line_args["logs_dest"])
 
-            else:
-                utils.print_error("Invalid command!\n")
+        #     else:
+        #         utils.print_error("Invalid command!\n")
 
     except Exception as e:  # pylint: disable=broad-except
-        utils.print_error(str(e) + "\n")
+        ArgosPrinter.print_error(str(e) + "\n")
 
-        utils.print_warning("Terminating program!\n")
+        ArgosPrinter.print_warning("Terminating program!\n")
 
         exit(1)
 
@@ -90,14 +167,11 @@ def main():
         print()
         print()
 
-        utils.print_warning("Terminating program!\n")
+        ArgosPrinter.print_warning("Terminating program!\n")
 
         exit(1)
 
-    print()
-    print()
-
-    utils.print_warning("Terminating program!\n")
+    ArgosPrinter.print_warning("Terminating program!\n")
 
     exit(0)
 

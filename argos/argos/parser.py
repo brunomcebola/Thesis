@@ -7,6 +7,8 @@ from __future__ import annotations
 import argparse
 import sys
 
+from typing import Any
+
 from colorama import Style
 
 from .printer import ArgosPrinter
@@ -67,6 +69,10 @@ class _ArgumentParser(argparse.ArgumentParser):
 
 
 class _HelpFormatter(argparse.HelpFormatter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._max_help_position = 100
+
     def add_usage(self, usage, actions, groups, prefix=None):
         if prefix is None:
             prefix = Style.BRIGHT + "Usage:\n  " + Style.RESET_ALL
@@ -124,7 +130,7 @@ class _ParserTree:
 
         Args:
             name (str): The name of the node.
-            curr_node (_ParserTree.Node): The current node to start the search from. If None, starts from the root.
+            curr_node (_ParserTree.Node): The current node to start the search from. If None, starts from the root. # pylint: disable=line-too-long
 
         Returns:
             _ParserTree.Node | None: The node if it exists, otherwise None.
@@ -168,11 +174,13 @@ class ArgosParser:
     The ArgosParser class is responsible for parsing the command line arguments.
     """
 
-    base_description = "Real-time Image Analysis for Fraud Detection "
+    base_description = "Argos, Real-time Image Analysis for Fraud Detection"
 
     def __init__(self, extended_description: str = ""):
+        ArgosParser.base_description += f" {extended_description.strip()}"
+
         parser = _ArgumentParser(
-            description=ArgosParser.base_description + extended_description,
+            description=ArgosParser.base_description,
             formatter_class=_HelpFormatter,
             add_help=False,
         )
@@ -187,13 +195,13 @@ class ArgosParser:
 
         self._parser_tree = _ParserTree(_ParserTree.Node("root", parser))
 
-    def add_parser(
+    def add_parser(  # pylint: disable=dangerous-default-value
         self,
         dest: str,
         group: str,
         name: str,
         required: bool,
-        configs: dict,
+        configs: dict[str, Any] = {},
     ) -> None:
         """
         Adds a new parser to the ArgosParser.
@@ -227,7 +235,7 @@ class ArgosParser:
 
         # create parser
         configs["description"] = ArgosParser.base_description + (
-            "- " + str(configs["description"]) if "description" in list(configs.keys()) else ""
+            " - " + str(configs["description"]) if "description" in list(configs.keys()) else ""
         )
 
         parser = dest_parser_node.subparsers_wrapper.add_parser(
@@ -276,15 +284,16 @@ class ArgosParser:
         Returns:
             dict: The command line arguments as a dictionary.
         """
+
         return self._parser_tree.root.parser.parse_args()
 
-
-# type checkers
-def _non_empty_string_type(value: str):
-    """
-    Checks if value is not an empty string.
-    """
-    value = value.strip()
-    if len(value) == 0:
-        raise argparse.ArgumentTypeError("Empty string")
-    return value
+    # type checkers
+    @classmethod
+    def non_empty_string_type(cls, value: str):
+        """
+        Checks if value is not an empty string.
+        """
+        value = value.strip()
+        if len(value) == 0:
+            raise argparse.ArgumentTypeError("Empty string")
+        return value
