@@ -1,59 +1,18 @@
-**/.direnv/
-**/.conda_env/
-**/.vscode/
-**/__pycache__/
-**/node_modules/
-
-**/*.npy*
-**/*.log*
-**/*.so*
-**/*.db*
-**/*.env*
+.direnv/
+.conda_env/
+.vscode/
+__pycache__/
+node_modules/
 
 configs/
 datasets/
 test_env/
 random/
 models/
-libs/
 pose/
 
-# # ignore everything
-# *
-
-# # except for these files
-# !.gitignore
-# !.envrc
-# !README.md
-# !setup_rpi.py
-# !deploy_rpi.sh
-# !setup_master.py
-# !deploy_master.sh
-
-# !argos/
-# !argos/**
-# argos/libs/*
-# !argos/libs/.gitkeep
-# argos/src/core/models/*
-# !argos/src/core/models/.gitkeep
-# argos/src/client/.env
-
-# !argos_vue/
-# !argos_vue/**
-# argos_vue/.env*
-# argos_vue/dist/
-# argos_vue/node_modules/
-
-# !configs
-# !configs/*
-
-# !bash/
-# !bash/*
-
-# # but keep ignoring these
-# *.npy
-# *.log
-# *.so
-# *.db
-
-# *__pycache__/
+*.npy*
+*.log*
+*.so*
+*.db*
+*.env*
