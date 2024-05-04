@@ -1,12 +1,12 @@
 """
-This module contains the ArgosLogger class.
+This module contains the Logger class.
 """
 
 import os
 import logging
 
 
-class ArgosLogger(logging.Logger):
+class Logger(logging.Logger):
     """
     Custom logger for Argos.
     """
