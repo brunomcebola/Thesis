@@ -1,4 +1,0 @@
-colorama==0.4.6
-PyYAML==6.0.1
-jsonschema==4.20.0
-matplotlib==3.8.2
