@@ -1,5 +1,5 @@
 """
-This module contains the ArgosPrinter class.
+This module contains the Printer class.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from enum import Enum
 from colorama import Fore, Style
 
 
-class ArgosPrinter:
+class Printer:
     """
     A class that contains static methods for printing messages to the console.
     """

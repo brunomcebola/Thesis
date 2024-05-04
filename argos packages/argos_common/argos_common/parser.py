@@ -1,5 +1,5 @@
 """
-This module contains the ArgosParser class.
+This module contains the Parser class.
 """
 
 from __future__ import annotations
@@ -9,11 +9,7 @@ import sys
 
 from typing import Any
 
-from colorama import Style
-
-from .printer import ArgosPrinter
-
-__all__ = ["ArgosParser"]
+from colorama import Style, Fore
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -51,8 +47,7 @@ class _ArgumentParser(argparse.ArgumentParser):
         return formatter.format_help()
 
     def error(self, message):
-        ArgosPrinter.print_error(message)
-        print()
+        print(f"{Fore.RED + Style.BRIGHT}Error:{Style.RESET_ALL} {message}\n")
 
         if not self._subparsers:
             self.print_help()
@@ -169,18 +164,18 @@ class _ParserTree:
         self.node_names.append(new_node.name)
 
 
-class ArgosParser:
+class Parser:
     """
-    The ArgosParser class is responsible for parsing the command line arguments.
+    The Parser class is responsible for parsing the command line arguments.
     """
 
     base_description = "Argos, Real-time Image Analysis for Fraud Detection"
 
     def __init__(self, extended_description: str = ""):
-        ArgosParser.base_description += f" {extended_description.strip()}"
+        Parser.base_description += f" {extended_description.strip()}"
 
         parser = _ArgumentParser(
-            description=ArgosParser.base_description,
+            description=Parser.base_description,
             formatter_class=_HelpFormatter,
             add_help=False,
         )
@@ -204,7 +199,7 @@ class ArgosParser:
         configs: dict[str, Any] = {},
     ) -> None:
         """
-        Adds a new parser to the ArgosParser.
+        Adds a new parser to the Parser.
 
         Initially, only the "root" parser exists.
 
@@ -234,7 +229,7 @@ class ArgosParser:
             )
 
         # create parser
-        configs["description"] = ArgosParser.base_description + (
+        configs["description"] = Parser.base_description + (
             " - " + str(configs["description"]) if "description" in list(configs.keys()) else ""
         )
 
@@ -259,7 +254,7 @@ class ArgosParser:
 
     def add_arguments_to_parser(self, name: str, parser_args: list[tuple[list, dict]]) -> None:
         """
-        Adds arguments to a parser in the ArgosParser.
+        Adds arguments to a parser in the Parser.
 
         Args:
             name (str): The name of the parser to add the arguments to.
