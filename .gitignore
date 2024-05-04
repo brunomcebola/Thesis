@@ -1,5 +1,5 @@
 .direnv/
-.conda_env/
+.venv*
 .vscode/
 __pycache__/
 node_modules/
@@ -16,3 +16,4 @@ pose/
 *.so*
 *.db*
 *.env*
+*.code-workspace*

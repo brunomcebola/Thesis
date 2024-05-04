@@ -6,12 +6,11 @@ from __future__ import annotations
 
 
 from typing import Type
-from dotenv import load_dotenv
+
+import argos_common as ac
+
 
 # from ..src.core import services
-
-from ..printer import ArgosPrinter
-from ..parser import ArgosParser
 
 # MAP_TO_SERVICE_CLASS: dict[str, Type[services.base.Service]] = {
 # "acquire": services.acquire.AcquireService,
@@ -24,7 +23,7 @@ from ..parser import ArgosParser
 # }
 
 
-def _generate_parser() -> ArgosParser:
+def _generate_parser() -> ac.Parser:
     """
     Generates the ArgosParser object.
 
@@ -33,7 +32,7 @@ def _generate_parser() -> ArgosParser:
         - ArgosParser: The generated ArgosParser object.
     """
 
-    parser = ArgosParser("(node)")
+    parser = ac.Parser("(node)")
 
     parser.add_parser(
         "root",
@@ -78,7 +77,7 @@ def _generate_parser() -> ArgosParser:
                     "help": "Specify the camera to be used by serial number.",
                     "metavar": "sn",
                     "dest": "serial_numbers",
-                    "type": ArgosParser.non_empty_string_type,
+                    "type": ac.Parser.non_empty_string_type,
                 },
             ),
             (
@@ -86,7 +85,7 @@ def _generate_parser() -> ArgosParser:
                 {
                     "help": "Folder where the acquired images will be stored.",
                     "metavar": "path",
-                    "type": ArgosParser.non_empty_string_type,
+                    "type": ac.Parser.non_empty_string_type,
                 },
             ),
             (
@@ -94,7 +93,7 @@ def _generate_parser() -> ArgosParser:
                 {
                     "help": "Path to the yaml configuration file.",
                     "metavar": "path",
-                    "type": ArgosParser.non_empty_string_type,
+                    "type": ac.Parser.non_empty_string_type,
                 },
             ),
         ],
@@ -108,14 +107,12 @@ def main():
     Main function of the program
     """
 
-    load_dotenv()
-
     try:
         parser = _generate_parser()
 
         cmd_line_args = parser.get_args()
 
-        ArgosPrinter.print_header(ArgosPrinter.Space.BOTH)
+        ac.Printer.print_header(ac.Printer.Space.BOTH)
 
         # if cmd_line_args.resource == "interface":
         #     run_interface()
@@ -157,9 +154,9 @@ def main():
         #         utils.print_error("Invalid command!\n")
 
     except Exception as e:  # pylint: disable=broad-except
-        ArgosPrinter.print_error(str(e) + "\n")
+        ac.Printer.print_error(str(e) + "\n")
 
-        ArgosPrinter.print_warning("Terminating program!\n")
+        ac.Printer.print_warning("Terminating program!\n")
 
         exit(1)
 
@@ -167,11 +164,11 @@ def main():
         print()
         print()
 
-        ArgosPrinter.print_warning("Terminating program!\n")
+        ac.Printer.print_warning("Terminating program!\n")
 
         exit(1)
 
-    ArgosPrinter.print_warning("Terminating program!\n")
+    ac.Printer.print_warning("Terminating program!\n")
 
     exit(0)
 
