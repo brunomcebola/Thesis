@@ -6,6 +6,9 @@ import os
 import logging
 
 
+__all__ = ["Logger"]
+
+
 class Logger(logging.Logger):
     """
     Custom logger for Argos.
