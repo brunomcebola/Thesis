@@ -169,13 +169,9 @@ class Parser:
     The Parser class is responsible for parsing the command line arguments.
     """
 
-    base_description = "Argos, Real-time Image Analysis for Fraud Detection"
-
-    def __init__(self, extended_description: str = ""):
-        Parser.base_description += f" {extended_description.strip()}"
+    def __init__(self):
 
         parser = _ArgumentParser(
-            description=Parser.base_description,
             formatter_class=_HelpFormatter,
             add_help=False,
         )
@@ -192,10 +188,8 @@ class Parser:
 
     def add_parser(  # pylint: disable=dangerous-default-value
         self,
-        dest: str,
-        group: str,
+        nest_under: str,
         name: str,
-        required: bool,
         configs: dict[str, Any] = {},
     ) -> None:
         """
@@ -204,36 +198,37 @@ class Parser:
         Initially, only the "root" parser exists.
 
         Args:
-            dest (str): The destination parser to add the new parser to.
-            group (str): The group of the new parser.
+            nest_under (str): The name of the parser to nest the new parser under.
             name (str): The name of the new parser.
+            dest (str): The group to which the new parser belongs.
         """
 
-        # gets the destination parser node
-        dest_parser_node = self._parser_tree.get_node(dest)
+        # gets the parser where the new parser will be nested under
+        nest_under_parser_node = self._parser_tree.get_node(nest_under)
         # if the parser does not exist, raises an error
-        if dest_parser_node is None:
-            raise ValueError(f"The destination parser '{dest}' does not exist.")
+        if nest_under_parser_node is None:
+            raise ValueError(f"The parser '{nest_under}' to nest under does not exist.")
 
-        # if the destination parser node does not have a subparsers_wrapper, creates one
-        if dest_parser_node.subparsers_wrapper is None:
-            dest_parser_node.subparsers_wrapper = dest_parser_node.parser.add_subparsers(
-                title=group.capitalize(),
-                dest=group,
-                required=required,
+        dest = nest_under + "_command"
+
+        # if the parser to nest under does not have a subparsers_wrapper, creates one
+        if nest_under_parser_node.subparsers_wrapper is None:
+            nest_under_parser_node.subparsers_wrapper = (
+                nest_under_parser_node.parser.add_subparsers(
+                    title=nest_under.capitalize() + " Commands",
+                    dest=dest,
+                    required=True,
+                )
             )
-        # if the destination parser node has a subparsers_wrapper, checks if the group is the same
-        elif dest_parser_node.subparsers_wrapper.dest != group:
+        # if the parser to nest under has a subparsers_wrapper, checks if the group is the same
+        elif nest_under_parser_node.subparsers_wrapper.dest != dest:
             raise ValueError(
-                f"The destination parser '{dest}' already has a group '{dest_parser_node.subparsers_wrapper.dest}'."  # pylint: disable=line-too-long
+                f"The parser '{nest_under}' to nest under already has a group '{nest_under_parser_node.subparsers_wrapper.dest}'."  # pylint: disable=line-too-long
             )
 
-        # create parser
-        configs["description"] = Parser.base_description + (
-            " - " + str(configs["description"]) if "description" in list(configs.keys()) else ""
-        )
+        # creates the new parser
 
-        parser = dest_parser_node.subparsers_wrapper.add_parser(
+        parser = nest_under_parser_node.subparsers_wrapper.add_parser(
             allow_abbrev=False,
             formatter_class=_HelpFormatter,
             add_help=False,
@@ -250,7 +245,7 @@ class Parser:
         )
 
         # add parser to tree
-        self._parser_tree.add_node(_ParserTree.Node(name, parser), dest_parser_node)
+        self._parser_tree.add_node(_ParserTree.Node(name, parser), nest_under_parser_node)
 
     def add_arguments_to_parser(self, name: str, parser_args: list[tuple[list, dict]]) -> None:
         """

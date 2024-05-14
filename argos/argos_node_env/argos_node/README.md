@@ -1,1 +1,1 @@
-# Argos, Real-time Image Analysis for Fraud Detection
+# ARGOS, Automated Real-time Guardian Observation System
