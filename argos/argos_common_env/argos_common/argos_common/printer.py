@@ -49,6 +49,17 @@ class Printer:
         )
 
     @classmethod
+    def print_goodbye(cls, space: Space = Space.NONE) -> None:
+        """
+        Prints the goodbye message.
+        """
+
+        cls._base_print(
+            f"{Style.BRIGHT + Fore.LIGHTBLUE_EX}Goodbye!{Style.RESET_ALL}",  # pylint: disable=line-too-long
+            space,
+        )
+
+    @classmethod
     def print_info(cls, message: str, space: Space = Space.NONE) -> None:
         """
         Prints an info message.
