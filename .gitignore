@@ -17,3 +17,5 @@ pose/
 *.db*
 *.env*
 *.code-workspace*
+*.tar*
+*.whl*

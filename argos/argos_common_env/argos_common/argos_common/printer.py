@@ -44,7 +44,7 @@ class Printer:
         """
 
         cls._base_print(
-            f"{Style.BRIGHT + Fore.LIGHTBLUE_EX}Welcome to Argos, Real-time Image Analysis for Fraud Detection!{Style.RESET_ALL}",  # pylint: disable=line-too-long
+            f"{Style.BRIGHT + Fore.LIGHTBLUE_EX}Welcome to ARGOS, Automated Real-time Guardian Observation System!{Style.RESET_ALL}",  # pylint: disable=line-too-long
             space,
         )
 
