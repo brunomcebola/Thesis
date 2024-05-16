@@ -15,7 +15,8 @@ pose/
 *.log*
 *.so*
 *.db*
-*.env*
 *.code-workspace*
 *.tar*
 *.whl*
+*.env
+*.env.*
