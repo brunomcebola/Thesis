@@ -20,3 +20,5 @@ pose/
 *.whl*
 *.env
 *.env.*
+
+*test*
