@@ -12,18 +12,17 @@ Exceptions:
     - StreamConfigError: Raised when there is an error in the configuration of the video stream.
     - CameraUnavailableError: Raised when the camera is not available.
     - PipelineRunningError: Raised when the pipeline is running.
-    - CameraAlreadyExistsError: Raised when the camera is already instantiated.
+    - CameraAlreadyInstantiatedError: Raised when the camera is already instantiated.
 """
 
 # pylint: disable=pointless-string-statement
 
 from __future__ import annotations
 
-import os
 import queue
 import threading
 from enum import Enum
-from typing import NamedTuple, Callable
+from typing import NamedTuple, Callable, Union
 import numpy as np
 import pyrealsense2 as rs
 
@@ -44,12 +43,6 @@ class StreamConfigError(Exception):
     """
 
 
-class AlignmentError(Exception):
-    """
-    Exception raised when there is an error in the alignment of the video stream.
-    """
-
-
 class CameraUnavailableError(Exception):
     """
     Exception raised when the camera is not available.
@@ -62,20 +55,20 @@ class PipelineRunningError(Exception):
     """
 
 
-class CameraAlreadyExistsError(Exception):
+class CameraAlreadyInstantiatedError(Exception):
     """
     Exception raised when the camera is already instantiated.
     """
 
 
-# Main content
+# Helper Classes
 """
-███╗   ███╗ █████╗ ██╗███╗   ██╗     ██████╗ ██████╗ ███╗   ██╗████████╗███████╗███╗   ██╗████████╗
-████╗ ████║██╔══██╗██║████╗  ██║    ██╔════╝██╔═══██╗████╗  ██║╚══██╔══╝██╔════╝████╗  ██║╚══██╔══╝
-██╔████╔██║███████║██║██╔██╗ ██║    ██║     ██║   ██║██╔██╗ ██║   ██║   █████╗  ██╔██╗ ██║   ██║
-██║╚██╔╝██║██╔══██║██║██║╚██╗██║    ██║     ██║   ██║██║╚██╗██║   ██║   ██╔══╝  ██║╚██╗██║   ██║
-██║ ╚═╝ ██║██║  ██║██║██║ ╚████║    ╚██████╗╚██████╔╝██║ ╚████║   ██║   ███████╗██║ ╚████║   ██║
-╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝   ╚═╝
+██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗      ██████╗██╗      █████╗ ███████╗███████╗███████╗███████╗
+██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗    ██╔════╝██║     ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝
+███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝    ██║     ██║     ███████║███████╗███████╗█████╗  ███████╗
+██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗    ██║     ██║     ██╔══██║╚════██║╚════██║██╔══╝  ╚════██║
+██║  ██║███████╗███████╗██║     ███████╗██║  ██║    ╚██████╗███████╗██║  ██║███████║███████║███████╗███████║
+╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝     ╚═════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝
 """
 
 
@@ -85,27 +78,17 @@ class StreamType(Enum):
 
     Attributes:
     -----------
-        - ANY: Any stream type.
-        - ACCEL: Accelerometer data.
-        - COLOR: Color data.
-        - CONFIDENCE: Confidence data.
-        - DEPTH: Depth data.
-        - FISHEYE: Fisheye data.
-        - GPIO: GPIO data.
-        - GYRO: Gyroscope data.
-        - INFRARED: Infrared data.
-        - POSE: Pose data.
+        - COLOR: Color stream.
+        - DEPTH: Depth stream.
+        - FISHEYE: Fisheye stream.
+        - INFRARED: Infrared stream.
+        - POSE: Pose stream.
 
     """
 
-    ANY = rs.stream.any  # type: ignore
-    ACCEL = rs.stream.accel  # type: ignore
     COLOR = rs.stream.color  # type: ignore
-    CONFIDENCE = rs.stream.confidence  # type: ignore
     DEPTH = rs.stream.depth  # type: ignore
     FISHEYE = rs.stream.fisheye  # type: ignore
-    GPIO = rs.stream.gpio  # type: ignore
-    GYRO = rs.stream.gyro  # type: ignore
     INFRARED = rs.stream.infrared  # type: ignore
     POSE = rs.stream.pose  # type: ignore
 
@@ -261,20 +244,27 @@ class StreamConfig(NamedTuple):
         return f"type = {self.type}, format = {self.format}, resolution = {self.resolution}, fps = {self.fps}"  # pylint: disable=line-too-long
 
 
-class StreamSignals(NamedTuple):
+class Frame(NamedTuple):
     """
-    Named tuple representing the signals used to control the stream.
-
-    Attributes:
-    -----------
-        - start: The signal to indicate that all threads are ready.
-        - pause: The signal to pause the stream.
-        - terminate: The signal to terminate the stream.
+    Named tuple containing the data of a frame.
     """
 
-    run: threading.Event = threading.Event()
-    stop: threading.Event = threading.Event()
-    error: threading.Event = threading.Event()
+    COLOR = Union[np.ndarray, None]
+    DEPTH = Union[np.ndarray, None]
+    FISHEYE = Union[np.ndarray, None]
+    INFRARED = Union[np.ndarray, None]
+    POSE = Union[np.ndarray, None]
+
+
+# Main Classes
+"""
+███╗   ███╗ █████╗ ██╗███╗   ██╗     ██████╗██╗      █████╗ ███████╗███████╗███████╗███████╗
+████╗ ████║██╔══██╗██║████╗  ██║    ██╔════╝██║     ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝
+██╔████╔██║███████║██║██╔██╗ ██║    ██║     ██║     ███████║███████╗███████╗█████╗  ███████╗
+██║╚██╔╝██║██╔══██║██║██║╚██╗██║    ██║     ██║     ██╔══██║╚════██║╚════██║██╔══╝  ╚════██║
+██║ ╚═╝ ██║██║  ██║██║██║ ╚████║    ╚██████╗███████╗██║  ██║███████║███████║███████╗███████║
+╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝     ╚═════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝
+"""
 
 
 class RealSenseCamera:
@@ -282,31 +272,18 @@ class RealSenseCamera:
     A class to abstract the interaction with Intel Realsense cameras.
 
     Attributes:
-    -----------
         - serial_number: The serial number of the camera.
-        - stream_configs: The configuration of the streams.
+        - frames_queue: The queue of frames.
+        - control_signal: The signal used to control the stream.
+        - is_stopped: Whether the camera is stopped.
         - is_streaming: The status of the camera stream.
-        - frames_streamed: The number of frames streamed.
-        - frames_queue: The queue of frames streamed.
-        - stream_signals: The signals used to control the stream.
-
 
     Instance Methods:
-    --------
-        - start_streaming:
-            Starts the camera stream.
-        - stop_streaming:
-            Stops the camera stream.
-        - capture:
-            Captures a frame from the camera.
+        - start_streaming: Starts the camera stream.
+        - pause_streaming: Pauses the camera stream.
 
     Class Methods:
-    --------------
-        - get_available_cameras_serial_numbers:
-            Returns a list with the serial numbers of the available cameras
-            or an empty list if no cameras are available.
-        - is_camera_available:
-            Checks if camera is available.
+        - list_connected_cameras: Returns a list with the serial numbers of the connected cameras.
 
     """
 
@@ -314,19 +291,17 @@ class RealSenseCamera:
     _cameras: list[str] = []
 
     # Instance attributes
-    _serial_number: str
-    _stream_configs: list[StreamConfig]
-    _align_to: StreamType | None
-
-    _pipeline: rs.pipeline  # type: ignore
+    _device: rs.device  # type: ignore
     _config: rs.config  # type: ignore
-    _align_method: Callable
+    _pipeline: rs.pipeline  # type: ignore
 
-    _is_streaming: bool
-    _frames_streamed: int
-    _frames_queue: queue.Queue[list[Frame]] | None
-    _stream_signals: StreamSignals | None
-    _stream_thread: threading.Thread | None
+    _alignment_method: Callable
+    _frames_splitter: Callable
+    _frames_queue: queue.Queue[Frame]
+
+    _control_signal: threading.Event
+    _kill_signal: threading.Event
+    _stream_thread: threading.Thread
 
     # Instance constructor and destructor
 
@@ -334,82 +309,129 @@ class RealSenseCamera:
         self,
         serial_number: str,
         stream_configs: list[StreamConfig],
-        align_to: StreamType | None = None,
+        alignment: StreamType | None = None,
+        control_signal: threading.Event | None = None,
     ) -> None:
         """
         RealSenseCamera constructor.
 
         Args:
-        -----
             - serial_number: The serial number of the camera.
             - stream_configs: The configuration of the streams.
+            - alignment: The stream type to align the frames.
+            - control_signal: The signal to control the stream.
 
         Raises:
-        -------
             - CameraUnavailableError: If the camera is not available.
-            - CameraAlreadyExistsError: If the camera is already instanciated.
-            - StreamConfigError: If the configuration is not correct.
+            - CameraAlreadyInstantiatedError: If the camera is already instantiated.
+            - StreamConfigError: If there is an error in the configuration of the video stream.
+
+        Notes:
+            - The alignment stream must be one of the streams enabled in the stream_configs.
+              If None is passed, no alignment will be done.
+            - If no control_signal is passed, a new one will be created. This signal can be used
+              to control multiple cameras at the same time.
         """
 
+        context = rs.context()  # type: ignore
+        devices = context.query_devices()
+
+        # gets the camera device
+        for device in devices:
+            if device.get_info(rs.camera_info.serial_number) == serial_number:  # type: ignore
+                self._device = device
+
         # checks if camera is available
-        if not RealSenseCamera.is_camera_available(serial_number):
+        if not self._device:
             raise CameraUnavailableError(f"Camera {serial_number} is not available.")
 
         # checks if camera is already instanciated
         if serial_number in RealSenseCamera._cameras:
-            raise CameraAlreadyExistsError(
-                f"Camera with serial number {serial_number} already exists."
+            raise CameraAlreadyInstantiatedError(
+                f"Trying to instantiate camera {serial_number} twice."
             )
 
-        # Initializes attributes
-        self._serial_number = serial_number
-        self._stream_configs = stream_configs
+        # initializes the control signal
+        if control_signal is None:
+            self._control_signal = threading.Event()
+            self._control_signal.clear()
+        else:
+            self._control_signal = control_signal
 
-        self._pipeline = rs.pipeline()  # type: ignore
+        # initializes the kill signal
+        self._kill_signal = threading.Event()
+        self._kill_signal.clear()
+
+        # applies stream configs
         self._config = rs.config()  # type: ignore
-        self._config.enable_device(self._serial_number)
-        self._align_to = align_to
+        self._config.enable_device(serial_number)
+        self._config.disable_all_streams()
+        for stream_config in stream_configs:
+            self._config.enable_stream(
+                stream_config.type.value,
+                stream_config.resolution.value[0],
+                stream_config.resolution.value[1],
+                stream_config.format.value,
+                stream_config.fps.value,
+            )
 
-        if self._align_to is not None:
-            # check if align_to is in stream_configs
-            if self._align_to not in [stream_config.type for stream_config in self._stream_configs]:
+            # checks if added config is valid
+            if not self._config.can_resolve(rs.pipeline()):  # type: ignore
                 raise StreamConfigError(
-                    f"Alignment to stream type {self._align_to.name} is not possible as {self._align_to.name} is not being streamed."  # pylint: disable=line-too-long
+                    f"Stream config for stream type {stream_config.type.name} is not valid."
                 )
 
-            self._align_method = lambda x: rs.align(self._align_to.value).process(x)  # type: ignore
+        # initializes the frames queue
+        self._frames_queue = queue.Queue()
 
+        # defines the alignment method
+        if alignment is None:
+            self._alignment_method = lambda x: x
         else:
-            self._align_method = lambda x: x
+            # check if desired alignment is an enabled stream
+            if alignment not in [stream_config.type for stream_config in stream_configs]:
+                raise StreamConfigError(
+                    f"Alignment to stream type {alignment.name} is not possible as {alignment.name} stream is not enabled."  # pylint: disable=line-too-long
+                )
 
-        self._is_streaming = False
-        self._frames_streamed = 0
-        self._frames_queue = None
-        self._stream_signals = None
-        self._stream_thread = None
+            self._alignment_method = lambda x: rs.align(alignment.value).process(x)  # type: ignore
 
-        # applies stream configs explicitly
-        self.__apply_stream_configs()
+        # defines the frames_splitter method
+        self._frames_splitter = lambda x: Frame(
+            *[
+                (
+                    np.array(getattr(x, f"get_{str(s_type).lower()}_frame")().get_data())
+                    if any(stream_config.type == s_type for stream_config in stream_configs)
+                    else None
+                )
+                for s_type in StreamType
+            ]
+        )
+
+        # starts the pipeline and allows for some auto exposure to happen
+        self._pipeline = rs.pipeline()  # type: ignore
+        self._pipeline.start(self._config)
+        for _ in range(30):
+            self._pipeline.wait_for_frames()
+
+        # Launches the stream thread
+        self._stream_thread = threading.Thread(target=self.__stream_thread_target)
+        self._stream_thread.daemon = True
+        self._stream_thread.start()
 
         # adds camera sn to the list of cameras
-        RealSenseCamera._cameras.append(self._serial_number)
+        RealSenseCamera._cameras.append(serial_number)
 
     def __del__(self):
         """
         RealSenseCamera destructor.
         """
 
-        if hasattr(self, "is_streaming") and self.is_streaming:
-            try:
-                self._pipeline.stop()
-            except Exception:  # pylint: disable=broad-except
-                pass
-
-        if hasattr(self, "serial_number"):
-            try:
-                RealSenseCamera._cameras.remove(self.serial_number)
-            except Exception:  # pylint: disable=broad-except
-                pass
+        if self._stream_thread and self._stream_thread.is_alive():
+            self._kill_signal.set()
+            self._stream_thread.join()
+            self._pipeline.stop()
+            RealSenseCamera._cameras.remove(self._device.get_info(rs.camera_info.serial_number))  # type: ignore # pylint: disable=line-too-long
 
     # Instance properties
 
@@ -419,35 +441,31 @@ class RealSenseCamera:
         Returns the serial number of the camera.
         """
 
-        return self._serial_number
+        return self._device.get_info(rs.camera_info.serial_number)  # type: ignore
 
     @property
-    def stream_configs(self) -> list[StreamConfig]:
+    def frames_queue(self) -> queue.Queue[Frame]:
         """
-        Returns the configuration of the streams.
+        Returns the queue of frames.
         """
 
-        return self._stream_configs
+        return self._frames_queue
 
-    @stream_configs.setter
-    def stream_configs(self, stream_configs: list[StreamConfig]) -> None:
+    @property
+    def control_signal(self) -> threading.Event:
         """
-        Sets the configuration of the streams.
-
-        Raises:
-        -------
-            - StreamConfigError: If the configuration is not correct.
-            - PipelineRunningError: If the pipeline is running.
+        Returns the signals used to control the stream.
         """
-        old_configs = self._stream_configs
 
-        try:
-            self._stream_configs = stream_configs
-            self.__apply_stream_configs()
-        except Exception:
-            self._stream_configs = old_configs
-            self.__apply_stream_configs()
-            raise
+        return self._control_signal
+
+    @property
+    def is_stopped(self) -> bool:
+        """
+        Returns whether the camera is stopped.
+        """
+
+        return self._stream_thread.is_alive()
 
     @property
     def is_streaming(self) -> bool:
@@ -455,89 +473,9 @@ class RealSenseCamera:
         Returns the status of the camera stream.
         """
 
-        return self._is_streaming
-
-    @property
-    def frames_streamed(self) -> int:
-        """
-        Returns the number of frames streamed.
-        """
-
-        return self._frames_streamed
-
-    @property
-    def frames_queue(self) -> queue.Queue[list[Frame]]:
-        """
-        Returns the queue of frames.
-        """
-
-        if self._frames_queue is None:
-            self._frames_queue = queue.Queue()
-
-        return self._frames_queue
-
-    @property
-    def stream_signals(self) -> StreamSignals | None:
-        """
-        Returns the signals used to control the stream.
-        """
-
-        return self._stream_signals
-
-    @property
-    def align_to(self) -> StreamType | None:
-        """
-        Returns the stream type to align to.
-        """
-
-        return self._align_to
+        return self._control_signal.is_set() and self._stream_thread.is_alive()
 
     # Instance private methods
-
-    def __apply_stream_configs(self):
-        """
-        Applies the stream configurations.
-
-        Raises:
-        -------
-            - StreamConfigError: If the configuration is not correct.
-            - PipelineRunningError: If the pipeline is running.
-        """
-
-        if not self.is_streaming:
-            # checks if all configs are valid
-            for stream_config in self._stream_configs:
-                test_config = rs.config()  # type: ignore
-
-                test_config.enable_device(self._serial_number)
-
-                test_config.enable_stream(
-                    stream_config.type.value,
-                    stream_config.resolution.value[0],
-                    stream_config.resolution.value[1],
-                    stream_config.format.value,
-                    stream_config.fps.value,
-                )
-
-                if not test_config.can_resolve(rs.pipeline()):  # type: ignore
-                    raise StreamConfigError(
-                        f"Stream config for stream type {stream_config.type.name} is not valid."
-                    )
-
-            # applies configs if all are valid
-            self._config.disable_all_streams()
-
-            for stream_config in self._stream_configs:
-                self._config.enable_stream(
-                    stream_config.type.value,
-                    stream_config.resolution.value[0],
-                    stream_config.resolution.value[1],
-                    stream_config.format.value,
-                    stream_config.fps.value,
-                )
-
-        else:
-            raise PipelineRunningError()
 
     def __stream_thread_target(self) -> None:
         """
@@ -547,117 +485,53 @@ class RealSenseCamera:
         nb_errors = 0
         max_nb_errors = 5
 
-        while not self._stream_signals.stop.is_set():  # type: ignore
-            self._stream_signals.run.wait()  # type: ignore
+        while not self._kill_signal.is_set():
+            self._control_signal.wait()  # type: ignore
 
             try:
                 frames = self._pipeline.wait_for_frames()
 
-                frames = self._align_method(frames)
+                frames = self._alignment_method(frames)
 
-                self._frames_queue.put(  # type: ignore
-                    [
-                        Frame.from_intel_frame(frames, stream_config.type)
-                        for stream_config in self._stream_configs
-                    ]
-                )
-
-                self._frames_streamed += 1
+                self._frames_queue.put(self._frames_splitter(frames))
 
                 nb_errors = 0
 
-            except Exception as e:  # pylint: disable=broad-except
-                print(e)
+            except Exception:  # pylint: disable=broad-except
                 nb_errors += 1
 
                 if nb_errors >= max_nb_errors:
-                    self._stream_signals.error.set()  # type: ignore
                     break
 
-        self._pipeline.stop()
-        self._is_streaming = False
-
     # Instance public methods
-
-    def start_streaming(self, signals: StreamSignals | None = None) -> None:
+    def start_streaming(self) -> None:
         """
         Starts the camera stream.
-        """
-
-        if self.is_streaming:
-            raise PipelineRunningError()
-
-        self._is_streaming = True
-        self._frames_streamed = 0
-        self._frames_queue = queue.Queue()
-
-        if signals is None:
-            self._stream_signals = StreamSignals()
-
-            self._stream_signals.stop.clear()
-            self._stream_signals.error.clear()
-
-            self._stream_signals.run.set()
-
-        else:
-            self._stream_signals = signals
-
-        self._pipeline.start(self._config)
-
-        # allow for some auto exposure to happen
-        for _ in range(30):
-            self._pipeline.wait_for_frames()
-
-        self._stream_thread = threading.Thread(target=self.__stream_thread_target)
-
-        self._stream_thread.start()
-
-    def stop_streaming(self) -> None:
-        """
-        Stops the camera stream.
 
         Note:
-            If a signals class was passed to the start_streaming method,
-            all streams using that signals class will be stopped.
+            If a control_signal was passed during initialization,
+            all streams using that signal will be started.
         """
 
-        if self._is_streaming and self._stream_thread:
-            self._stream_signals.stop.set()  # type: ignore
+        self._control_signal.set()
 
-            self._stream_thread.join()
-
-    def capture(self) -> list[Frame]:  # type: ignore
+    def pause_streaming(self) -> None:
         """
-        Captures a frame from the camera.
+        Pauses the camera stream.
 
-        Returns:
-        --------
-            A list of the different frames captured from the camera in that instant.
+        Note:
+            If a control_signal was passed during initialization,
+            all streams using that signal will be paused.
         """
 
-        if self.is_streaming:
-            raise PipelineRunningError()
-
-        self._is_streaming = True
-        self._pipeline.start(self._config)
-
-        frames = self._pipeline.wait_for_frames()
-
-        self._pipeline.stop()
-        self._is_streaming = False
-
-        return [
-            Frame.from_intel_frame(frames, stream_config.type)
-            for stream_config in self._stream_configs
-        ]
+        self._control_signal.clear()
 
     # Class public methods
 
     @classmethod
-    def get_available_cameras_serial_numbers(cls) -> list[str]:
+    def list_connected_cameras(cls) -> list[str]:
         """
-        Returns a list with the serial numbers of the available cameras
-        or an empty list if no cameras are available.
+        Returns a list with the serial numbers of the connected cameras.
         """
         cameras_sn = []
 
@@ -668,132 +542,3 @@ class RealSenseCamera:
             cameras_sn.append(device.get_info(rs.camera_info.serial_number))  # type: ignore
 
         return cameras_sn
-
-    @classmethod
-    def is_camera_available(cls, sn: str) -> bool:
-        """
-        Checks if camera is available.
-
-        Args:
-        -----
-            - sn: The serial number of the camera.
-        """
-
-        context = rs.context()  # type: ignore
-        devices = context.query_devices()
-
-        for device in devices:
-            if device.get_info(rs.camera_info.serial_number) == sn:  # type: ignore
-                return True
-
-        return False
-
-
-class Frame:
-    """
-    A class to represent a frame from the camera.
-    """
-
-    _data: np.ndarray
-    _timestamp: str
-    _frame_type: StreamType
-
-    # Instance constructor
-
-    def __init__(self, data: np.ndarray, timestamp: str, frame_type: StreamType) -> None:
-        """
-        Frame constructor.
-
-        Args:
-        -----
-            - data: The data of the frame.
-            - timestamp: The timestamp of the frame.
-        """
-        self._data = data
-        self._timestamp = timestamp
-        self._frame_type = frame_type
-
-    # Instance properties
-
-    @property
-    def data(self) -> np.ndarray:
-        """
-        Returns the data of the frame.
-        """
-
-        return self._data
-
-    @property
-    def timestamp(self) -> str:
-        """
-        Returns the timestamp of the frame.
-        """
-
-        return self._timestamp
-
-    @property
-    def frame_type(self) -> StreamType:
-        """
-        Returns the type of the frame.
-        """
-
-        return self._frame_type
-
-    # Instance public methods
-
-    def save(self, folder: str) -> None:
-        """
-        Saves the frame in the specified folder with the timestamp and type as name.
-
-        Example: 1705944438145_0425_depth.npy
-        """
-
-        np.save(
-            os.path.join(
-                folder,
-                self._timestamp + "_" + self.frame_type.name.lower() + ".npy",
-            ),
-            self.data,
-        )
-
-    # Class public methods
-
-    @classmethod
-    def from_intel_frame(
-        cls,
-        intel_frame: rs.composite_frame,  # type: ignore
-        frame_type: StreamType,
-    ) -> Frame:
-        """
-        Creates a frame from an intel frame.
-        """
-        get_frame_method = getattr(intel_frame, f"get_{frame_type.name.lower()}_frame", None)
-
-        if get_frame_method is None:
-            raise ValueError("Invalid frame type.")
-
-        return cls(
-            np.array(get_frame_method().get_data()),
-            str(intel_frame.get_timestamp()).replace(".", "_"),
-            frame_type,
-        )
-
-    @classmethod
-    def from_file(
-        cls,
-        path: str,
-        frame_type: StreamType,
-    ) -> Frame:
-        """
-        Creates a frame from a file.
-
-        Note:
-            If an attempt is made to resave the frame, the result will be
-            a file named "_<type>.npy" as no timestamp is available.
-
-        Raises:
-        -------
-            - OSError: If the input file does not exist or cannot be read.
-        """
-
-        return cls(np.load(path), "", frame_type)
