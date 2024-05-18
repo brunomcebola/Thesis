@@ -249,11 +249,11 @@ class Frame(NamedTuple):
     Named tuple containing the data of a frame.
     """
 
-    COLOR = Union[np.ndarray, None]
-    DEPTH = Union[np.ndarray, None]
-    FISHEYE = Union[np.ndarray, None]
-    INFRARED = Union[np.ndarray, None]
-    POSE = Union[np.ndarray, None]
+    color: Union[np.ndarray, None]
+    depth: Union[np.ndarray, None]
+    fisheye: Union[np.ndarray, None]
+    infrared: Union[np.ndarray, None]
+    pose: Union[np.ndarray, None]
 
 
 # Main Classes
@@ -422,19 +422,6 @@ class RealSenseCamera:
         # adds camera sn to the list of cameras
         RealSenseCamera._cameras.append(serial_number)
 
-    def __del__(self):
-        """
-        RealSenseCamera destructor.
-        """
-
-        if self._stream_thread and self._stream_thread.is_alive():
-            self._kill_signal.set()
-            self._stream_thread.join()
-            self._pipeline.stop()
-            RealSenseCamera._cameras.remove(self._device.get_info(rs.camera_info.serial_number))  # type: ignore # pylint: disable=line-too-long
-
-    # Instance properties
-
     @property
     def serial_number(self) -> str:
         """
@@ -442,14 +429,6 @@ class RealSenseCamera:
         """
 
         return self._device.get_info(rs.camera_info.serial_number)  # type: ignore
-
-    @property
-    def frames_queue(self) -> queue.Queue[Frame]:
-        """
-        Returns the queue of frames.
-        """
-
-        return self._frames_queue
 
     @property
     def control_signal(self) -> threading.Event:
@@ -482,26 +461,14 @@ class RealSenseCamera:
         Target function of the acquisition threads.
         """
 
-        nb_errors = 0
-        max_nb_errors = 5
-
         while not self._kill_signal.is_set():
             self._control_signal.wait()  # type: ignore
 
-            try:
-                frames = self._pipeline.wait_for_frames()
+            frames = self._pipeline.wait_for_frames()
 
-                frames = self._alignment_method(frames)
+            frames = self._alignment_method(frames)
 
-                self._frames_queue.put(self._frames_splitter(frames))
-
-                nb_errors = 0
-
-            except Exception:  # pylint: disable=broad-except
-                nb_errors += 1
-
-                if nb_errors >= max_nb_errors:
-                    break
+            self._frames_queue.put(self._frames_splitter(frames))
 
     # Instance public methods
     def start_streaming(self) -> None:
@@ -525,6 +492,35 @@ class RealSenseCamera:
         """
 
         self._control_signal.clear()
+
+    def cleanup(self):
+        """
+        Cleans up the camera resources.
+
+        Note:
+            This method should be called before the camera object is deleted.
+        """
+
+        if self._stream_thread.is_alive():
+            self.control_signal.set()
+            self._kill_signal.set()
+            self._stream_thread.join()
+
+        self._pipeline.stop()
+        RealSenseCamera._cameras.remove(self._device.get_info(rs.camera_info.serial_number))  # type: ignore # pylint: disable=line-too-long
+
+    def next_frame(self) -> Frame | None:
+        """
+        Returns the next frame in the queue.
+
+        Note: If the queue is empty, returns None.
+        """
+
+        try:
+            frame = self._frames_queue.get(block=False)
+            return frame
+        except queue.Empty:
+            return None
 
     # Class public methods
 
