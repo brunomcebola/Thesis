@@ -13,9 +13,15 @@ import yaml
 class YAMLParser:
     """
     This class is responsible for parsing YAML files and creating instances of the target class.
+
+    Attributes
+    - cls: The target class to create instances of.
+
+    Methods
+    - parse(file_path): Parses a YAML file and creates an instance of the target class.
     """
 
-    def __init__(self, cls: Type):
+    def __init__(self, cls: Type) -> None:
         """
         Initializes the YAMLParser object.
 
@@ -25,12 +31,27 @@ class YAMLParser:
 
         self.cls = cls
 
-    def parse(self, file_path):
+    def parse(self, file_path) -> object:
         """
         Parses a YAML file and creates an instance of the target class.
 
         Parameters
         - file_path: The path to the YAML file.
+
+        Returns
+        - An instance of the target class.
+
+        Raises
+        - FileNotFoundError: If the YAML file is not found.
+        - PermissionError: If the YAML file cannot be read.
+        - UnicodeDecodeError: If the YAML file has the wrong encoding.
+        - SyntaxError: If the YAML file has the wrong syntax.
+        - ValueError: If the YAML file is missing required parameters or has unexpected parameters.
+        - RuntimeError: If the YAML file has an unknown problem.
+
+        Notes:
+        - Since this method is used to create instances of a target class, it can also raise any
+          exceptions that the target class constructor raises.
         """
 
         # Load the YAML file
