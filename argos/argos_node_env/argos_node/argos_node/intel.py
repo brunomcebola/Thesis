@@ -5,13 +5,15 @@ Classes:
 --------
     - RealSenseCamera: Class to abstract the use of the realsense cameras
     - StreamType: Enum to represent the type of video stream
+    - StreamFormat: Enum to represent the format of the video stream
+    - StreamResolution: Enum to represent the resolution of the video stream
     - StreamConfig: Named tuple to represent the configuration of the video stream
+    - Frame: Named tuple to represent the data of a frame
 
 Exceptions:
 -----------
-    - StreamConfigError: Raised when there is an error in the configuration of the video stream.
-    - CameraUnavailableError: Raised when the camera is not available.
-    - PipelineRunningError: Raised when the pipeline is running.
+    - ConfigurationError: Raised when there is an error in the configurations of the camera.
+    - CameraUnavailableError: Raised when the camera is unavailable.
     - CameraAlreadyInstantiatedError: Raised when the camera is already instantiated.
 """
 
@@ -39,19 +41,13 @@ import pyrealsense2 as rs
 
 class ConfigurationError(Exception):
     """
-    Exception raised when there is an error in the configuration of the video stream.
+    Exception raised when there is an error in the configurations of the camera.
     """
 
 
 class CameraUnavailableError(Exception):
     """
-    Exception raised when the camera is not available.
-    """
-
-
-class PipelineRunningError(Exception):
-    """
-    Exception raised when the pipeline is running.
+    Exception raised when the camera is unavailable.
     """
 
 
@@ -273,14 +269,15 @@ class RealSenseCamera:
 
     Attributes:
         - serial_number: The serial number of the camera.
-        - frames_queue: The queue of frames.
-        - control_signal: The signal used to control the stream.
+        - control_mechanisms: The signals/conditions used to control the stream.
         - is_stopped: Whether the camera is stopped.
         - is_streaming: The status of the camera stream.
 
     Instance Methods:
         - start_streaming: Starts the camera stream.
         - pause_streaming: Pauses the camera stream.
+        - cleanup: Cleans up the camera resources.
+        - next_frame: Returns the next frame in the queue.
 
     Class Methods:
         - list_connected_cameras: Returns a list with the serial numbers of the connected cameras.
