@@ -4,10 +4,12 @@ This module contains the YAMLParser class.
 
 from __future__ import annotations
 
-from typing import Type
+from typing import Type, TypeVar
 
 import inspect
 import yaml
+
+T = TypeVar("T")
 
 
 class YAMLParser:
@@ -31,7 +33,7 @@ class YAMLParser:
 
         self.cls = cls
 
-    def parse(self, file_path) -> object:
+    def parse(self, file_path) -> T:  # type: ignore
         """
         Parses a YAML file and creates an instance of the target class.
 
