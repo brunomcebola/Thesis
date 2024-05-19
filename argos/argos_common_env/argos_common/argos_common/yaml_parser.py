@@ -81,12 +81,12 @@ class YAMLParser:
         mandatory_params = [
             param.name
             for param in signature.parameters.values()
-            if param.default == inspect.Parameter.empty
+            if param.default == inspect.Parameter.empty and param.name != "self"
         ]
         optional_params = [
             param.name
             for param in signature.parameters.values()
-            if param.default != inspect.Parameter.empty
+            if param.default != inspect.Parameter.empty and param.name != "self"
         ]
 
         # Check if all required parameters are in the YAML data
