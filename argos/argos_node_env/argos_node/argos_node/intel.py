@@ -37,7 +37,7 @@ import pyrealsense2 as rs
 """
 
 
-class StreamConfigError(Exception):
+class ConfigurationError(Exception):
     """
     Exception raised when there is an error in the configuration of the video stream.
     """
@@ -299,8 +299,9 @@ class RealSenseCamera:
     _frames_splitter: Callable
     _frames_queue: queue.Queue[Frame]
 
-    _control_signal: threading.Event
+    _stream_signal: threading.Event
     _kill_signal: threading.Event
+    _control_condition: threading.Condition
     _stream_thread: threading.Thread
 
     # Instance constructor and destructor
@@ -310,7 +311,8 @@ class RealSenseCamera:
         serial_number: str,
         stream_configs: list[StreamConfig],
         alignment: StreamType | None = None,
-        control_signal: threading.Event | None = None,
+        stream_signal: threading.Event | None = None,
+        control_condition: threading.Condition | None = None,
     ) -> None:
         """
         RealSenseCamera constructor.
@@ -324,7 +326,7 @@ class RealSenseCamera:
         Raises:
             - CameraUnavailableError: If the camera is not available.
             - CameraAlreadyInstantiatedError: If the camera is already instantiated.
-            - StreamConfigError: If there is an error in the configuration of the video stream.
+            - ConfigurationError: If there is an error in the configuration of the video stream.
 
         Notes:
             - The alignment stream must be one of the streams enabled in the stream_configs.
@@ -343,7 +345,7 @@ class RealSenseCamera:
 
         # checks if camera is available
         if not self._device:
-            raise CameraUnavailableError(f"Camera {serial_number} is not available.")
+            raise CameraUnavailableError(f"Camera {serial_number} is unavailable.")
 
         # checks if camera is already instanciated
         if serial_number in RealSenseCamera._cameras:
@@ -352,15 +354,30 @@ class RealSenseCamera:
             )
 
         # initializes the control signal
-        if control_signal is None:
-            self._control_signal = threading.Event()
-            self._control_signal.clear()
+        if not stream_signal:
+            self._stream_signal = threading.Event()
         else:
-            self._control_signal = control_signal
+            self._stream_signal = stream_signal
+        self._stream_signal.clear()
+
+        # initializes the control condition
+        if not control_condition:
+            self._control_condition = threading.Condition()
+        else:
+            self._control_condition = control_condition
 
         # initializes the kill signal
         self._kill_signal = threading.Event()
         self._kill_signal.clear()
+
+        # Check if stream_configs is not empty
+        if not stream_configs:
+            raise ConfigurationError("At least one stream configuration must be specified.")
+
+        # Check if there are repeated stream config types
+        stream_types = [stream_config.type for stream_config in stream_configs]
+        if len(stream_types) != len(set(stream_types)):
+            raise ConfigurationError("There are repeated stream types.")
 
         # applies stream configs
         self._config = rs.config()  # type: ignore
@@ -377,8 +394,8 @@ class RealSenseCamera:
 
             # checks if added config is valid
             if not self._config.can_resolve(rs.pipeline()):  # type: ignore
-                raise StreamConfigError(
-                    f"Stream config for stream type {stream_config.type.name} is not valid."
+                raise ConfigurationError(
+                    f"Configuration for {stream_config.type.name} stream is not valid."
                 )
 
         # initializes the frames queue
@@ -390,8 +407,8 @@ class RealSenseCamera:
         else:
             # check if desired alignment is an enabled stream
             if alignment not in [stream_config.type for stream_config in stream_configs]:
-                raise StreamConfigError(
-                    f"Alignment to stream type {alignment.name} is not possible as {alignment.name} stream is not enabled."  # pylint: disable=line-too-long
+                raise ConfigurationError(
+                    f"Alignment to {alignment.name} stream is not possible as it is not enabled."
                 )
 
             self._alignment_method = lambda x: rs.align(alignment.value).process(x)  # type: ignore
@@ -422,6 +439,8 @@ class RealSenseCamera:
         # adds camera sn to the list of cameras
         RealSenseCamera._cameras.append(serial_number)
 
+    # Instance properties
+
     @property
     def serial_number(self) -> str:
         """
@@ -431,12 +450,12 @@ class RealSenseCamera:
         return self._device.get_info(rs.camera_info.serial_number)  # type: ignore
 
     @property
-    def control_signal(self) -> threading.Event:
+    def control_mechanisms(self) -> tuple[threading.Event, threading.Condition]:
         """
         Returns the signals used to control the stream.
         """
 
-        return self._control_signal
+        return (self._stream_signal, self._control_condition)
 
     @property
     def is_stopped(self) -> bool:
@@ -444,7 +463,7 @@ class RealSenseCamera:
         Returns whether the camera is stopped.
         """
 
-        return self._stream_thread.is_alive()
+        return not self._stream_thread.is_alive()
 
     @property
     def is_streaming(self) -> bool:
@@ -452,7 +471,7 @@ class RealSenseCamera:
         Returns the status of the camera stream.
         """
 
-        return self._control_signal.is_set() and self._stream_thread.is_alive()
+        return self._stream_signal.is_set() and self._stream_thread.is_alive()
 
     # Instance private methods
 
@@ -460,17 +479,23 @@ class RealSenseCamera:
         """
         Target function of the acquisition threads.
         """
+        with self._control_condition:
+            while True:
+                self._control_condition.wait_for(
+                    lambda: self._stream_signal.is_set() or self._kill_signal.is_set()
+                )
 
-        while not self._kill_signal.is_set():
-            self._control_signal.wait()  # type: ignore
+                if self._kill_signal.is_set():
+                    break
 
-            frames = self._pipeline.wait_for_frames()
+                frames = self._pipeline.wait_for_frames()
 
-            frames = self._alignment_method(frames)
+                frames = self._alignment_method(frames)
 
-            self._frames_queue.put(self._frames_splitter(frames))
+                self._frames_queue.put(self._frames_splitter(frames))
 
     # Instance public methods
+
     def start_streaming(self) -> None:
         """
         Starts the camera stream.
@@ -480,7 +505,10 @@ class RealSenseCamera:
             all streams using that signal will be started.
         """
 
-        self._control_signal.set()
+        if not self.is_streaming:
+            self._stream_signal.set()
+            with self._control_condition:
+                self._control_condition.notify_all()
 
     def pause_streaming(self) -> None:
         """
@@ -491,7 +519,10 @@ class RealSenseCamera:
             all streams using that signal will be paused.
         """
 
-        self._control_signal.clear()
+        if self.is_streaming:
+            self._stream_signal.clear()
+            with self._control_condition:
+                self._control_condition.notify_all()
 
     def cleanup(self):
         """
@@ -501,9 +532,10 @@ class RealSenseCamera:
             This method should be called before the camera object is deleted.
         """
 
-        if self._stream_thread.is_alive():
-            self.control_signal.set()
+        if not self.is_stopped:
             self._kill_signal.set()
+            with self._control_condition:
+                self._control_condition.notify_all()
             self._stream_thread.join()
 
         self._pipeline.stop()
