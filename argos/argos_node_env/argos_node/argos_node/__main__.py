@@ -13,69 +13,136 @@ from dotenv import find_dotenv, load_dotenv
 
 import argos_common as ac
 
+from . import controllers
 from .namespace import NodeNamespace
-from .controllers import cameras
 
 
-import threading
-import cv2
-
-
-class DisplayThread(threading.Thread):
-    """Display thread"""
-
-    def __init__(self, namespace):
-        super().__init__()
-        self.namespace: NodeNamespace = namespace
-        self.running = True
-
-    def run(self):
-        while self.running:
-            frame = self.namespace.camera_interaction(
-                self.namespace.cameras_sn[0], self.namespace.CameraInteraction.GET_NEXT_FRAME
-            )
-
-            if frame is None or frame.color is None:
-                continue
-
-            # Process frame here
-            cv2.imshow("Color", frame.color)
-
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                self.stop()
-
-    def stop(self):
-        """Stop"""
-        self.running = False
-        cv2.destroyAllWindows()
-
-
-# Cleanup function with parameters
-def cleanup_before_exit(namespace: NodeNamespace, display_thread: DisplayThread):
+def load_argos_env():
     """
-    Cleanup function to be called before exiting the program
+    Load the environment variables from the nearest .env.argos file
     """
-    print("Cleanup!")
-    # Perform any necessary cleanup
+    # Find the .env file
+    ac.Printer.print_info("Setting up environment variables...")
+    try:
+        env_path = find_dotenv(filename=".env.argos", raise_error_if_not_found=True)
+    except IOError:
+        ac.Printer.print_error(
+            "Unable to setup environment variables. No '.env.argos' file found!",
+            ac.Printer.Space.AFTER,
+        )
+        exit(1)
 
-    if display_thread.is_alive():
-        display_thread.stop()
-        display_thread.join()
+    # Load the environment variables from the corresponding file
+    load_dotenv(dotenv_path=env_path)
 
-    for sn in namespace.cameras_sn:
-        namespace.remove_camera(sn)
+    # Ensures the CONFIG_YAML environment variable is set
+    if not os.getenv("CONFIG_YAML"):
+        ac.Printer.print_error(
+            "No ARGOS_YAML found in environment variables!",
+            ac.Printer.Space.AFTER,
+        )
+        exit(1)
 
-    sys.exit(0)
+    # Ensures the FLASK_SERVER environment variable is set
+    if not os.getenv("FLASK_SERVER"):
+        ac.Printer.print_error(
+            "No FLASK_SERVER found in environment variables!",
+            ac.Printer.Space.AFTER,
+        )
+        exit(1)
+    if len(os.getenv("FLASK_SERVER").split(":")) != 2:  # type: ignore
+        ac.Printer.print_error(
+            "FLASK_SERVER must be in the format 'host:port'!",
+            ac.Printer.Space.AFTER,
+        )
+        exit(1)
+
+    # Ensures the RABBITMQ_* environment variables are set
+    if not os.getenv("RABBITMQ_SERVER"):
+        ac.Printer.print_error(
+            "No RABBITMQ_SERVER found in environment variables!",
+            ac.Printer.Space.AFTER,
+        )
+        exit(1)
+    elif not os.getenv("RABBITMQ_USER"):
+        ac.Printer.print_error(
+            "No RABBITMQ_USER found in environment variables!",
+            ac.Printer.Space.AFTER,
+        )
+        exit(1)
+    elif not os.getenv("RABBITMQ_PWD"):
+        ac.Printer.print_error(
+            "No RABBITMQ_PWD found in environment variables!",
+            ac.Printer.Space.AFTER,
+        )
+        exit(1)
+
+    if len(os.getenv("RABBITMQ_SERVER").split(":")) != 2:  # type: ignore
+        ac.Printer.print_error(
+            "FLASK_SERVER must be in the format 'host:port'!",
+            ac.Printer.Space.AFTER,
+        )
+        exit(1)
+
+    ac.Printer.print_success("Environment variables setup complete!", ac.Printer.Space.AFTER)
 
 
-# Wrapper function to pass parameters
-def signal_handler_wrapper(namespace: NodeNamespace, display_thread: DisplayThread):
+def generate_namespace() -> NodeNamespace:
     """
-    Wrapper function to pass parameters to the cleanup function
+    Generate the namespace from the YAML file
+    """
+    # Get YAML path from environment variables. If not found, print error and exit
+    yaml_path = os.getenv("CONFIG_YAML")
+
+    ac.Printer.print_info("Setting up namespace...")
+    try:
+        namespace = ac.YAMLParser(NodeNamespace).parse(yaml_path)
+    except Exception as e:  # pylint: disable=broad-except
+        ac.Printer.print_error(str(e), ac.Printer.Space.AFTER)
+        exit(1)
+    ac.Printer.print_success("Namespace setup complete!", ac.Printer.Space.AFTER)
+
+    return namespace
+
+
+def launch_server(namespace: NodeNamespace):
+    """
+    Launch the server
     """
 
-    def handler(signum, frame):
-        cleanup_before_exit(namespace, display_thread)
+    flask_server = os.getenv("FLASK_SERVER")
+
+    flask_host = flask_server.split(":")[0] if flask_server else None
+    flask_port = int(flask_server.split(":")[1]) if flask_server else None
+
+    app = Flask(__name__)
+
+    app.config["namespace"] = namespace
+
+    app.register_blueprint(controllers.cameras.handler)
+
+    ac.Printer.print_info("")
+
+    app.run(host=flask_host, port=flask_port, load_dotenv=False)
+
+
+def cleanup(namespace: NodeNamespace):
+    """
+    Cleanup function to be called when the program is interrupted
+    """
+
+    def _callback():
+        # Perform any necessary cleanup
+        for sn in namespace.cameras_sn:
+            namespace.remove_camera(sn)
+
+        print("\r  ", end="", flush=True)
+        ac.Printer.print_goodbye(ac.Printer.Space.BOTH)
+
+        sys.exit(0)
+
+    def handler(signum, frame):  # pylint: disable=unused-argument
+        _callback()
 
     return handler
 
@@ -87,57 +154,13 @@ def main():
 
     ac.Printer.print_header(ac.Printer.Space.BOTH)
 
-    # Find the .env file
-    ac.Printer.print_info("Setting environment variables!")
-    try:
-        env_path = find_dotenv(filename=".env.argos", raise_error_if_not_found=True)
-    except IOError:
-        ac.Printer.print_error(
-            "Unable to setup environment varibales. No '.env.argos' file found!",
-            ac.Printer.Space.AFTER,
-        )
-        exit(1)
+    load_argos_env()
 
-    # Load the environment variables from the corresponding file
-    load_dotenv(dotenv_path=env_path)
-    ac.Printer.print_success("Environment variables set!", ac.Printer.Space.AFTER)
+    namespace = generate_namespace()
 
-    # Get YAML path from environment variables. If not found, print error and exit
-    yaml_path = os.getenv("ARGOS_YAML")
-    if yaml_path is None:
-        ac.Printer.print_error(
-            "No ARGOS_YAML found in environment variables! Exiting...",
-            ac.Printer.Space.AFTER,
-        )
-        exit(1)
+    signal.signal(signal.SIGINT, cleanup(namespace))
 
-    try:
-        node_namespace: NodeNamespace = ac.YAMLParser(NodeNamespace).parse(yaml_path)
-    except Exception as e:  # pylint: disable=broad-except
-        ac.Printer.print_error(str(e), ac.Printer.Space.AFTER)
-        exit(1)
-
-    node_namespace.camera_interaction(
-        node_namespace.cameras_sn[0], node_namespace.CameraInteraction.START_STREAMING
-    )
-
-    display_thread = DisplayThread(node_namespace)
-    display_thread.daemon = True
-    display_thread.start()
-
-    signal.signal(signal.SIGINT, signal_handler_wrapper(node_namespace, display_thread))
-
-    app = Flask(__name__)
-
-    app.config["namespace"] = node_namespace
-
-    app.register_blueprint(cameras.handler)
-
-    port = int(os.getenv("ARGOS_PORT", "5000"))
-
-    ac.Printer.print_info(f"Launched server on port {port}!")
-
-    app.run(port=port, load_dotenv=False)
+    launch_server(namespace)
 
 
 if __name__ == "__main__":

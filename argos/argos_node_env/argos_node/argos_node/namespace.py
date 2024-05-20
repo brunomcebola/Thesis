@@ -4,14 +4,15 @@
 
 from __future__ import annotations
 
+import os
 from enum import Enum
 from typing import Any
-
 import threading
 import jsonschema
 
-from . import intel
 
+from . import intel
+from .rabbit import RabbitMQ
 
 _CAMERA_SCHEMA = {
     "type": "object",
@@ -66,17 +67,27 @@ class NodeNamespace:
         Enumerates the possible interactions with the cameras.
         """
 
-        GET_NEXT_FRAME = 0
-        PAUSE_STREAMING = 1
-        START_STREAMING = 2
+        PAUSE_STREAMING = 0
+        START_STREAMING = 1
 
     # Instance attributes
 
     _cameras: dict[str, intel.RealSenseCamera]
+    _rabbitmq: RabbitMQ
 
     # Instance methods
 
     def __init__(self, cameras: list[dict] | None) -> None:
+        # RabbitMQ
+        rabbitmq_server = os.getenv("RABBITMQ_SERVER")
+        rabbitmq_user = os.getenv("RABBITMQ_USER")
+        rabbitmq_pwd = os.getenv("RABBITMQ_PWD")
+
+        try:
+            self._rabbitmq = RabbitMQ(rabbitmq_server, rabbitmq_user, rabbitmq_pwd)  # type: ignore
+        except Exception as e:  # pylint: disable=broad-except
+            raise RuntimeError("RabbitMQ connection failed!") from e
+
         # cameras
         self._cameras = {}
         if cameras:
@@ -119,7 +130,7 @@ class NodeNamespace:
             jsonschema.validate(instance=camera, schema=_CAMERA_SCHEMA)
         except jsonschema.ValidationError as e:
             error_detail = str(e).split("\n", maxsplit=1)[0]
-            raise ValueError(f"YAML file - {error_detail[0].lower() + error_detail[1:]}.") from e
+            raise ValueError(f"YAML file - {error_detail[0].lower() + error_detail[1:]}!") from e
 
         # Transforms the YAML data into the needed arguments
         serial_number = camera["serial_number"]
@@ -134,10 +145,13 @@ class NodeNamespace:
         ]
         alignment = intel.StreamType[camera["alignment"].upper()] if "alignment" in camera else None
 
+        # Generates RabbitMQ publisher
+        publisher = self._rabbitmq.generate_publisher(serial_number)
+
         # Creates the camera instance
         try:
             self._cameras[serial_number] = intel.RealSenseCamera(
-                serial_number, stream_configs, alignment, signal, condition
+                serial_number, stream_configs, alignment, signal, condition, publisher
             )
         except intel.ConfigurationError as e:
             raise intel.ConfigurationError(f"[Camera {serial_number}] {e}") from e
@@ -151,7 +165,7 @@ class NodeNamespace:
         """
 
         if serial_number not in self._cameras:
-            raise ValueError(f"Camera {serial_number} not found")
+            raise ValueError(f"Camera {serial_number} not found!")
 
         self._cameras[serial_number].cleanup()
         del self._cameras[serial_number]
@@ -166,15 +180,12 @@ class NodeNamespace:
         """
 
         if serial_number not in self._cameras:
-            raise ValueError(f"Camera {serial_number} not found")
+            raise ValueError(f"Camera {serial_number} not found!")
 
-        if selector == self.CameraInteraction.GET_NEXT_FRAME:
-            return self._cameras[serial_number].next_frame()
-
-        elif selector == self.CameraInteraction.PAUSE_STREAMING:
+        if selector == self.CameraInteraction.PAUSE_STREAMING:
             self._cameras[serial_number].pause_streaming()
             return None
 
-        elif selector == self.CameraInteraction.START_STREAMING:
+        if selector == self.CameraInteraction.START_STREAMING:
             self._cameras[serial_number].start_streaming()
             return None
