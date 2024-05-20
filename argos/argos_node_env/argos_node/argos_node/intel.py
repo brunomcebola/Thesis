@@ -392,7 +392,7 @@ class RealSenseCamera:
             # checks if added config is valid
             if not self._config.can_resolve(rs.pipeline()):  # type: ignore
                 raise ConfigurationError(
-                    f"Configuration for {stream_config.type.name} stream is not valid."
+                    f"Configuration for {stream_config.type} stream is not valid."
                 )
 
         # initializes the frames queue
@@ -405,7 +405,7 @@ class RealSenseCamera:
             # check if desired alignment is an enabled stream
             if alignment not in [stream_config.type for stream_config in stream_configs]:
                 raise ConfigurationError(
-                    f"Alignment to {alignment.name} stream is not possible as it is not enabled."
+                    f"Alignment to {alignment} stream is not possible as it is not enabled."
                 )
 
             self._alignment_method = lambda x: rs.align(alignment.value).process(x)  # type: ignore
@@ -521,7 +521,7 @@ class RealSenseCamera:
             with self._control_condition:
                 self._control_condition.notify_all()
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """
         Cleans up the camera resources.
 
