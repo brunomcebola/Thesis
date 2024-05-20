@@ -20,5 +20,6 @@ pose/
 *.whl*
 *.env
 *.env.*
+*.yaml*
 
 *test*
