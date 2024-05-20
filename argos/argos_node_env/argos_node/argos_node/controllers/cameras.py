@@ -7,58 +7,55 @@ from __future__ import annotations
 from http import HTTPStatus
 from flask import Blueprint, current_app, jsonify
 
-from .. import intel
+from ..namespace import NodeNamespace
 
 handler = Blueprint("cameras_handlers", __name__, url_prefix="/cameras")
 
 
-@handler.route("/<camera_index>/stream/start", methods=["GET"])
-def stream(camera_index: int):
+@handler.route("/", methods=["GET"])
+def get_cameras():
     """
-    # TODO
-    """
-
-    # check if index is valid
-    if camera_index < 0 or camera_index >= len(current_app.config["cameras"]):
-        return jsonify("Invalid camera."), HTTPStatus.BAD_REQUEST
-
-    camera: intel.RealSenseCamera = current_app.config["cameras"][camera_index]
-
-    # check if camera is stopped
-    if camera.is_stopped:
-        return jsonify("Camera is not working."), HTTPStatus.BAD_REQUEST
-
-    # check if camera is already streaming
-    if camera.is_streaming:
-        return jsonify("Camera is already streaming."), HTTPStatus.BAD_REQUEST
-
-    # start streaming
-    camera.start_streaming()
-
-    return jsonify("Camera streaming started."), HTTPStatus.OK
-
-
-@handler.route("/<camera_index>/stream/pause", methods=["GET"])
-def stop_stream(camera_index: int):
-    """
-    # TODO
+    Get the list of cameras.
     """
 
-    # check if index is valid
-    if camera_index < 0 or camera_index >= len(current_app.config["cameras"]):
-        return jsonify("Invalid camera."), HTTPStatus.BAD_REQUEST
+    node_namespace: NodeNamespace = current_app.config["namespace"]
 
-    camera: intel.RealSenseCamera = current_app.config["cameras"][camera_index]
+    return jsonify(node_namespace.cameras_sn), HTTPStatus.OK
 
-    # check if camera is stopped
-    if camera.is_stopped:
-        return jsonify("Camera is not working."), HTTPStatus.BAD_REQUEST
 
-    # check if camera is already streaming
-    if not camera.is_streaming:
-        return jsonify("Camera is already paused."), HTTPStatus.BAD_REQUEST
+@handler.route("/<serial_number>/stream/start", methods=["GET"])
+def start_stream(serial_number: str):
+    """
+    Start the streaming of a camera.
+    """
 
-    # stop streaming
-    camera.pause_streaming()
+    node_namespace: NodeNamespace = current_app.config["namespace"]
 
-    return jsonify("Camera streaming paused."), HTTPStatus.OK
+    # check if camera exists
+    if serial_number not in node_namespace.cameras_sn:
+        return jsonify("Camera not found."), HTTPStatus.NOT_FOUND
+
+    node_namespace.camera_interaction(
+        serial_number, node_namespace.CameraInteraction.START_STREAMING
+    )
+
+    return jsonify(""), HTTPStatus.OK
+
+
+@handler.route("/<serial_number>/stream/pause", methods=["GET"])
+def stop_stream(serial_number: str):
+    """
+    Pause the streaming of a camera.
+    """
+
+    node_namespace: NodeNamespace = current_app.config["namespace"]
+
+    # check if camera exists
+    if serial_number not in node_namespace.cameras_sn:
+        return jsonify("Camera not found."), HTTPStatus.NOT_FOUND
+
+    node_namespace.camera_interaction(
+        serial_number, node_namespace.CameraInteraction.PAUSE_STREAMING
+    )
+
+    return jsonify(""), HTTPStatus.OK
