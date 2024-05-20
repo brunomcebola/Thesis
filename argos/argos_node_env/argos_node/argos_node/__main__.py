@@ -4,7 +4,10 @@ This module is the entry point of Argos, a real-time image analysis tool for fra
 
 from __future__ import annotations
 
+
 import os
+import sys
+import signal
 from flask import Flask
 from dotenv import find_dotenv, load_dotenv
 
@@ -12,6 +15,69 @@ import argos_common as ac
 
 from .namespace import NodeNamespace
 from .controllers import cameras
+
+
+import threading
+import cv2
+
+
+class DisplayThread(threading.Thread):
+    """Display thread"""
+
+    def __init__(self, namespace):
+        super().__init__()
+        self.namespace: NodeNamespace = namespace
+        self.running = True
+
+    def run(self):
+        while self.running:
+            frame = self.namespace.camera_interaction(
+                self.namespace.cameras_sn[0], self.namespace.CameraInteraction.GET_NEXT_FRAME
+            )
+
+            if frame is None or frame.color is None:
+                continue
+
+            # Process frame here
+            cv2.imshow("Color", frame.color)
+
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                self.stop()
+
+    def stop(self):
+        """Stop"""
+        self.running = False
+        cv2.destroyAllWindows()
+
+
+# Cleanup function with parameters
+def cleanup_before_exit(namespace: NodeNamespace, display_thread: DisplayThread):
+    """
+    Cleanup function to be called before exiting the program
+    """
+    print("Cleanup!")
+    # Perform any necessary cleanup
+
+    if display_thread.is_alive():
+        display_thread.stop()
+        display_thread.join()
+
+    for sn in namespace.cameras_sn:
+        namespace.remove_camera(sn)
+
+    sys.exit(0)
+
+
+# Wrapper function to pass parameters
+def signal_handler_wrapper(namespace: NodeNamespace, display_thread: DisplayThread):
+    """
+    Wrapper function to pass parameters to the cleanup function
+    """
+
+    def handler(signum, frame):
+        cleanup_before_exit(namespace, display_thread)
+
+    return handler
 
 
 def main():
@@ -51,6 +117,16 @@ def main():
         ac.Printer.print_error(str(e), ac.Printer.Space.AFTER)
         exit(1)
 
+    node_namespace.camera_interaction(
+        node_namespace.cameras_sn[0], node_namespace.CameraInteraction.START_STREAMING
+    )
+
+    display_thread = DisplayThread(node_namespace)
+    display_thread.daemon = True
+    display_thread.start()
+
+    signal.signal(signal.SIGINT, signal_handler_wrapper(node_namespace, display_thread))
+
     app = Flask(__name__)
 
     app.config["namespace"] = node_namespace
@@ -60,7 +136,8 @@ def main():
     port = int(os.getenv("ARGOS_PORT", "5000"))
 
     ac.Printer.print_info(f"Launched server on port {port}!")
-    app.run(port=port)
+
+    app.run(port=port, load_dotenv=False)
 
 
 if __name__ == "__main__":
