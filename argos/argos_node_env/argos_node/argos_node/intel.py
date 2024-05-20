@@ -240,18 +240,6 @@ class StreamConfig(NamedTuple):
         return f"type = {self.type}, format = {self.format}, resolution = {self.resolution}, fps = {self.fps}"  # pylint: disable=line-too-long
 
 
-class Frame(NamedTuple):
-    """
-    Named tuple containing the data of a frame.
-    """
-
-    color: Union[np.ndarray, None]
-    depth: Union[np.ndarray, None]
-    fisheye: Union[np.ndarray, None]
-    infrared: Union[np.ndarray, None]
-    pose: Union[np.ndarray, None]
-
-
 # Main Classes
 """
 ███╗   ███╗ █████╗ ██╗███╗   ██╗     ██████╗██╗      █████╗ ███████╗███████╗███████╗███████╗
@@ -294,12 +282,13 @@ class RealSenseCamera:
 
     _alignment_method: Callable
     _frames_splitter: Callable
-    _frames_queue: queue.Queue[Frame]
+    _frames_queue: queue.Queue[tuple]
 
     _stream_signal: threading.Event
     _kill_signal: threading.Event
     _control_condition: threading.Condition
     _stream_thread: threading.Thread
+    _stream_callback: Callable
 
     # Instance constructor and destructor
 
@@ -310,6 +299,7 @@ class RealSenseCamera:
         alignment: StreamType | None = None,
         stream_signal: threading.Event | None = None,
         control_condition: threading.Condition | None = None,
+        stream_callback: Callable[[tuple], None] | None = None,
     ) -> None:
         """
         RealSenseCamera constructor.
@@ -395,9 +385,6 @@ class RealSenseCamera:
                     f"Configuration for {stream_config.type} stream is not valid."
                 )
 
-        # initializes the frames queue
-        self._frames_queue = queue.Queue()
-
         # defines the alignment method
         if alignment is None:
             self._alignment_method = lambda x: x
@@ -411,16 +398,23 @@ class RealSenseCamera:
             self._alignment_method = lambda x: rs.align(alignment.value).process(x)  # type: ignore
 
         # defines the frames_splitter method
-        self._frames_splitter = lambda x: Frame(
-            *[
-                (
-                    np.array(getattr(x, f"get_{str(s_type).lower()}_frame")().get_data())
-                    if any(stream_config.type == s_type for stream_config in stream_configs)
-                    else None
-                )
-                for s_type in StreamType
-            ]
+        self._frames_splitter = lambda x: tuple(
+            (
+                np.array(getattr(x, f"get_{str(s_type).lower()}_frame")().get_data())
+                if any(stream_config.type == s_type for stream_config in stream_configs)
+                else None
+            )
+            for s_type in StreamType
         )
+
+        # initializes the frames queue
+        self._frames_queue = queue.Queue()
+
+        # defines the callback method
+        if not stream_callback:
+            self._stream_callback = self._frames_queue.put
+        else:
+            self._stream_callback = stream_callback
 
         # starts the pipeline and allows for some auto exposure to happen
         self._pipeline = rs.pipeline()  # type: ignore
@@ -476,6 +470,7 @@ class RealSenseCamera:
         """
         Target function of the acquisition threads.
         """
+
         with self._control_condition:
             while True:
                 self._control_condition.wait_for(
@@ -489,7 +484,7 @@ class RealSenseCamera:
 
                 frames = self._alignment_method(frames)
 
-                self._frames_queue.put(self._frames_splitter(frames))
+                self._stream_callback(self._frames_splitter(frames))
 
     # Instance public methods
 
@@ -538,7 +533,7 @@ class RealSenseCamera:
         self._pipeline.stop()
         RealSenseCamera._cameras.remove(self._device.get_info(rs.camera_info.serial_number))  # type: ignore # pylint: disable=line-too-long
 
-    def next_frame(self) -> Frame | None:
+    def next_frame(self) -> tuple | None:
         """
         Returns the next frame in the queue.
 
