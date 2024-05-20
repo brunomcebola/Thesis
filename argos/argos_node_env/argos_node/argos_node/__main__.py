@@ -11,6 +11,7 @@ from dotenv import find_dotenv, load_dotenv
 import argos_common as ac
 
 from .namespace import NodeNamespace
+from .controllers import cameras
 
 
 def main():
@@ -53,6 +54,8 @@ def main():
     app = Flask(__name__)
 
     app.config["namespace"] = node_namespace
+
+    app.register_blueprint(cameras.handler)
 
     port = int(os.getenv("ARGOS_PORT", "5000"))
 
