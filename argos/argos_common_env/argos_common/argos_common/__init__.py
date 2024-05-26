@@ -6,3 +6,4 @@ from .logger import Logger
 from .parser import Parser
 from .printer import Printer
 from .yaml_parser import YAMLParser
+from .rabbit import RabbitMQ
