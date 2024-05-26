@@ -330,8 +330,8 @@ class RealSenseCamera:
             if device.get_info(rs.camera_info.serial_number) == serial_number:  # type: ignore
                 self._device = device
 
-        # checks if camera is available
-        if not self._device:
+        # checks if device is set
+        if not hasattr(self, "_device"):
             raise CameraUnavailableError(f"Camera {serial_number} is unavailable.")
 
         # checks if camera is already instanciated
