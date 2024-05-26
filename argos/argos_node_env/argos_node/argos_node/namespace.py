@@ -11,8 +11,9 @@ import threading
 import jsonschema
 
 
+from argos_common import RabbitMQ
+
 from . import intel
-from .rabbit import RabbitMQ
 
 _CAMERA_SCHEMA = {
     "type": "object",
