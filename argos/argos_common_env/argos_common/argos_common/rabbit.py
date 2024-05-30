@@ -1,7 +1,7 @@
 """ Test module """
 
 import pickle
-from typing import Callable
+from typing import Callable, Any
 import pika
 import pika.exceptions
 import pika.adapters.blocking_connection
@@ -61,7 +61,7 @@ class RabbitMQ:
             properties=pika.BasicProperties(delivery_mode=2),
         )
 
-    def register_consumer(self, queue: str, callback: Callable[[tuple], None]) -> None:
+    def register_consumer(self, queue: str, callback: Callable[[Any, Any, Any, Any], None]) -> None:
         """
         Generates a consumer function.
 
@@ -77,3 +77,35 @@ class RabbitMQ:
         channel.basic_consume(queue=queue, on_message_callback=callback, auto_ack=True)
 
         channel.start_consuming()
+
+    def generate_consumer(self, queue: str) -> Callable[[], Any]:
+        """
+        Generates a consumer function.
+
+        Parameters
+        - source: The source queue.
+
+        Returns
+        - A function that starts consuming messages from the source queue.
+        """
+
+        channel = self._connection.channel()
+
+        channel.queue_declare(queue=queue, durable=True)
+
+        def consumer() -> Any:
+            """
+            Consumes a message from the source queue.
+
+            Returns
+            - The message or None.
+            """
+
+            _, _, body = channel.basic_get(queue=queue, auto_ack=True)
+
+            if body is None:
+                return None
+
+            return pickle.loads(body)
+
+        return consumer
