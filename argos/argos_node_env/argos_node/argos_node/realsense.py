@@ -1,14 +1,17 @@
 """
-This module allows the abstract use of the realsense cameras.
+This module facilitates the use of Intel RealSense Cameras.
+
+Methods:
+--------
+    - connected_cameras: Returns a list with the serial numbers of the connected cameras.
 
 Classes:
 --------
-    - RealSenseCamera: Class to abstract the use of the realsense cameras
+    - Camera: Class to abstract the use of the realsense cameras
     - StreamType: Enum to represent the type of video stream
     - StreamFormat: Enum to represent the format of the video stream
     - StreamResolution: Enum to represent the resolution of the video stream
     - StreamConfig: Named tuple to represent the configuration of the video stream
-    - Frame: Named tuple to represent the data of a frame
 
 Exceptions:
 -----------
@@ -24,7 +27,7 @@ from __future__ import annotations
 import queue
 import threading
 from enum import Enum
-from typing import NamedTuple, Callable, Union
+from typing import NamedTuple, Callable, Any
 import numpy as np
 import pyrealsense2 as rs
 
@@ -251,7 +254,7 @@ class StreamConfig(NamedTuple):
 """
 
 
-class RealSenseCamera:
+class Camera:
     """
     A class to abstract the interaction with Intel Realsense cameras.
 
@@ -266,10 +269,6 @@ class RealSenseCamera:
         - pause_streaming: Pauses the camera stream.
         - cleanup: Cleans up the camera resources.
         - next_frame: Returns the next frame in the queue.
-
-    Class Methods:
-        - list_connected_cameras: Returns a list with the serial numbers of the connected cameras.
-
     """
 
     # Class attributes
@@ -281,14 +280,14 @@ class RealSenseCamera:
     _pipeline: rs.pipeline  # type: ignore
 
     _alignment_method: Callable
-    _frames_splitter: Callable
+    _frames_splitter: Callable[[Any], tuple]
     _frames_queue: queue.Queue[tuple]
 
     _stream_signal: threading.Event
     _kill_signal: threading.Event
     _control_condition: threading.Condition
     _stream_thread: threading.Thread
-    _stream_callback: Callable
+    _stream_callback: Callable[[tuple], None]
 
     # Instance constructor and destructor
 
@@ -302,7 +301,7 @@ class RealSenseCamera:
         stream_callback: Callable[[tuple], None] | None = None,
     ) -> None:
         """
-        RealSenseCamera constructor.
+        Camera constructor.
 
         Args:
             - serial_number: The serial number of the camera.
@@ -335,7 +334,7 @@ class RealSenseCamera:
             raise CameraUnavailableError(f"Camera {serial_number} is unavailable.")
 
         # checks if camera is already instanciated
-        if serial_number in RealSenseCamera._cameras:
+        if serial_number in Camera._cameras:
             raise CameraAlreadyInstantiatedError(
                 f"Trying to instantiate camera {serial_number} twice."
             )
@@ -428,7 +427,7 @@ class RealSenseCamera:
         self._stream_thread.start()
 
         # adds camera sn to the list of cameras
-        RealSenseCamera._cameras.append(serial_number)
+        Camera._cameras.append(serial_number)
 
     # Instance properties
 
@@ -531,7 +530,7 @@ class RealSenseCamera:
             self._stream_thread.join()
 
         self._pipeline.stop()
-        RealSenseCamera._cameras.remove(self._device.get_info(rs.camera_info.serial_number))  # type: ignore # pylint: disable=line-too-long
+        Camera._cameras.remove(self._device.get_info(rs.camera_info.serial_number))  # type: ignore # pylint: disable=line-too-long
 
     def next_frame(self) -> tuple | None:
         """
@@ -546,19 +545,27 @@ class RealSenseCamera:
         except queue.Empty:
             return None
 
-    # Class public methods
-
-    @classmethod
-    def list_connected_cameras(cls) -> list[str]:
+    def set_stream_callback(self, callback: Callable[[tuple], None]) -> None:
         """
-        Returns a list with the serial numbers of the connected cameras.
+        Sets the callback method to be called when a new frame is available.
+
+        Args:
+            - callback: The callback method.
         """
-        cameras_sn = []
 
-        context = rs.context()  # type: ignore
-        devices = context.query_devices()
+        self._stream_callback = callback
 
-        for device in devices:
-            cameras_sn.append(device.get_info(rs.camera_info.serial_number))  # type: ignore
 
-        return cameras_sn
+def connected_cameras() -> list[str]:
+    """
+    Returns a list with the serial numbers of the connected cameras.
+    """
+    cameras_sn = []
+
+    context = rs.context()  # type: ignore
+    devices = context.query_devices()
+
+    for device in devices:
+        cameras_sn.append(device.get_info(rs.camera_info.serial_number))  # type: ignore
+
+    return cameras_sn
