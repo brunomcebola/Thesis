@@ -1,0 +1,52 @@
+{% extends "base.jinja" %}
+{% block title %}
+  Datasets
+{% endblock title %}
+{% block body %}
+  <div class="container py-4">
+    {# TODO: add description #}
+    <div class="row justify-content-center pb-3">
+      <div class="col my-auto ps-3">
+        <h2 class="m-0">{{ dataset.name }}</h2>
+      </div>
+      <div class="col my-auto"></div>
+      <div class="col my-auto align-right pe-3"></div>
+    </div>
+    {% if dataset.images|length > 0 %}
+      <div class="container">
+        <div class="row justify-content-center">
+          {% for image in dataset.images %}
+            <div class="col-12 col-md-6 col-xl-3 p-3">
+              <div class="image-card">
+                <img src="data:image/jpeg;base64,{{ image | safe }}" class="card-img-top" />
+                <input class="form-check-input m-0"
+                       type="checkbox"
+                       value=""
+                       id="flexCheckDefault"
+                       v-model="image.selected" />
+                <i class="mdi mdi-arrow-expand text-secondary"></i>
+              </div>
+              <p class="text-start text-secondary">{{ image.name }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="container">
+        <div class="row">
+          <div class="col-12 text-center mt-5">
+            <h4>There are no images in this dataset!</h4>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12 text-center mt-4" style="height: 25vh;">
+            <img src="{{ url_for('gui.static', filename='img/empty.svg') }}"
+                 alt="404"
+                 class="img-fluid"
+                 style="height: 25vh" />
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock body %}

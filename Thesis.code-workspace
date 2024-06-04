@@ -1,0 +1,24 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "argos/argos_common_env"
+    }
+    {
+      "path": "argos/argos_master_env"
+    },
+    {
+      "path": "argos/argos_node_env"
+    }
+  ],
+  "settings": {
+    "workbench.colorCustomizations": {
+      "activityBar.background": "#491942",
+      "titleBar.activeBackground": "#66235C",
+      "titleBar.activeForeground": "#FDF8FC"
+    },
+    "python.defaultInterpreterPath": ".venv_base/python-3.9.2/bin/python"
+  }
+}

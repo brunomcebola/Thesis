@@ -1,0 +1,24 @@
+{% extends "base.jinja" %}
+{% block title %}
+  Page Not Found
+{% endblock title %}
+{% block body %}
+  <div class="container">
+    <div class="row">
+      <div class="col-12 text-center mt-5">
+        <img src="{{ url_for('gui.static', filename='img/404.svg') }}"
+             alt="404"
+             class="img-fluid" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12 text-center mt-5">
+        <a href="javascript:history.go(-1)">
+          <p>
+            <i class="fas fa-arrow-left"></i> Go back
+          </p>
+        </a>
+      </div>
+    </div>
+  </div>
+{% endblock body %}

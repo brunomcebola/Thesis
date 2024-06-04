@@ -27,7 +27,7 @@ def set_environment_variables() -> None:
     """
 
     # Find the .env file
-    env_path = find_dotenv(filename=".env.argos")
+    env_path = find_dotenv(filename=".env.argos_node")
 
     # Load the .env file
     if env_path:
@@ -35,7 +35,7 @@ def set_environment_variables() -> None:
 
     # BASE_DIR validation
     if not os.getenv("BASE_DIR"):
-        os.environ["BASE_DIR"] = os.path.join(os.path.dirname(__file__), "..", "configs")
+        os.environ["BASE_DIR"] = os.path.join(os.path.dirname(__file__), "..", "data")
 
     # Create BASE_DIR if it does not exist
     os.makedirs(os.environ["BASE_DIR"], exist_ok=True)
@@ -46,7 +46,7 @@ def set_environment_variables() -> None:
 
     # PORT validation
     if not os.getenv("PORT"):
-        os.environ["PORT"] = "9876"
+        os.environ["PORT"] = "19876"
 
 
 def get_logger() -> logging.Logger:
@@ -263,9 +263,9 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
     return cameras
 
 
-def launch_interface(logger: logging.Logger, cameras: dict[str, realsense.Camera]) -> None:
+def launch_node(logger: logging.Logger, cameras: dict[str, realsense.Camera]) -> None:
     """
-    Generate the interface
+    Launch the API
     """
 
     def _cleanup_callback(signum, frame):  # pylint: disable=unused-argument
@@ -317,7 +317,7 @@ def main():
 
     cameras = launch_cameras(logger)
 
-    launch_interface(logger, cameras)
+    launch_node(logger, cameras)
 
 
 if __name__ == "__main__":

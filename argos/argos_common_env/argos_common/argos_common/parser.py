@@ -251,6 +251,8 @@ class Parser:
         """
         Adds arguments to a parser in the Parser.
 
+        Initially, only the "root" parser exists.
+
         Args:
             name (str): The name of the parser to add the arguments to.
             parser_args (list[tuple[list, dict]]): The arguments to add to the parser.

@@ -1,7 +1,7 @@
 .direnv/
 .venv*
 .vscode/
-__pycache__/
+*cache*/
 node_modules/
 
 configs/
@@ -15,7 +15,6 @@ pose/
 *.log*
 *.so*
 *.db*
-*.code-workspace*
 *.tar*
 *.whl*
 *.env
