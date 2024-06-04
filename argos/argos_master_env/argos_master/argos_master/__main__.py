@@ -1,41 +1,109 @@
 """
-This module is the entry point of Argos master.
+This module is the entry point of ARGOS - master.
 """
 
 from __future__ import annotations
 
-from dotenv import load_dotenv
+import os
+import sys
+import signal
+import logging
+from flask import Flask
+from flask_socketio import SocketIO
+from dotenv import find_dotenv, load_dotenv
 
-from ..printer import ArgosPrinter
-from ..parser import ArgosParser
+from . import gui
+from . import api
 
 
-# from .web import run_interface
-
-
-def _generate_parser() -> ArgosParser:
+def set_environment_variables() -> None:
     """
-    Generates the ArgosParser object.
-
-    Returns:
-    --------
-        - ArgosParser: The generated ArgosParser object.
+    Load the environment variables from the nearest .env.argos file
     """
 
-    parser = ArgosParser("(master)")
+    # Find the .env file
+    env_path = find_dotenv(filename=".env.argos_master")
 
-    parser.add_parser(
-        "root",
-        "command",
-        "interface",
-        True,
-        {
-            "description": "Interface launcher",
-            "help": "Mode to start the Argos Interface.",
-        },
+    # Load the .env file
+    if env_path:
+        load_dotenv(dotenv_path=env_path)
+
+    # BASE_DIR validation
+    if not os.getenv("BASE_DIR"):
+        os.environ["BASE_DIR"] = os.path.join(os.path.dirname(__file__), "..", "data")
+
+    # Create BASE_DIR if it does not exist
+    os.makedirs(os.environ["BASE_DIR"], exist_ok=True)
+
+    # HOST validation
+    if not os.getenv("HOST"):
+        os.environ["HOST"] = "0.0.0.0"
+
+    # PORT validation
+    if not os.getenv("PORT"):
+        os.environ["PORT"] = "9876"
+
+
+def get_logger() -> logging.Logger:
+    """
+    Get the logger
+    """
+
+    logger = logging.getLogger("argos_master")
+    logger.setLevel(logging.INFO)
+
+    log_file_path = os.path.join(os.environ["BASE_DIR"], "argos_master.log")
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+    file_handler = logging.FileHandler(log_file_path)
+
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+
+    logger.info("ARGOS master started!")
+
+    return logger
+
+
+def launch_master(logger: logging.Logger) -> None:
+    """
+    Launch the GUI
+    """
+
+    def _cleanup_callback(signum, frame):  # pylint: disable=unused-argument
+        """
+        Cleanup function to be called when the program is interrupted
+        """
+        logger.info("ARGOS master stopped!")
+
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, _cleanup_callback)
+
+    # Create the Flask app
+    app = Flask(__name__)
+
+    # Register the GUI
+    gui.register(app)
+
+    # Register the API
+    api.register(app)
+
+    # Add app configs
+    app.config["logger"] = logger
+
+    # Create the SocketIO app
+    socketio = SocketIO(app)
+
+    socketio.run(
+        app,
+        host=os.environ["HOST"],
+        port=int(os.environ["PORT"]),
+        debug=False,
+        use_reloader=True,
+        log_output=False,
     )
-
-    return parser
 
 
 def main():
@@ -43,77 +111,11 @@ def main():
     Main function of the program
     """
 
-    load_dotenv()
+    set_environment_variables()
 
-    try:
-        parser = _generate_parser()
+    logger = get_logger()
 
-        cmd_line_args = parser.get_args()
-
-        ArgosPrinter.print_header(ArgosPrinter.Space.BOTH)
-
-        # if cmd_line_args.resource == "interface":
-        #     run_interface()
-
-        # elif cmd_line_args.resource == "service":
-        #     service = cmd_line_args.service
-        #     command = cmd_line_args.command
-
-        #     cmd_line_args = cmd_line_args.__dict__
-
-        #     del cmd_line_args["resource"]
-        #     del cmd_line_args["service"]
-        #     del cmd_line_args["command"]
-
-        #     if command == "run":
-        #         if "yaml" in cmd_line_args and cmd_line_args["yaml"] is not None:
-        #             args = MAP_TO_SERVICE_NAMESPACE_CLASS[service].from_yaml(cmd_line_args["yaml"])
-        #         else:
-        #             args = MAP_TO_SERVICE_NAMESPACE_CLASS[service](**cmd_line_args)
-
-        #         # Run the service
-
-        #         ArgosPrinter.print_info(f"{MAP_TO_SERVICE_CLASS[service].__name__} settings")
-        #         print(args)
-        #         print()
-
-        #         while True:
-        #             response = input("Do you wish to start the data acquisition? (y/n): ")
-
-        #             if response in ["y", "Y", "yes", "Yes", "YES"]:
-        #                 MAP_TO_SERVICE_CLASS[service](args).run()
-
-        #             elif response in ["n", "N", "no", "No", "NO"]:
-        #                 return False
-
-        #             else:
-        #                 Printer.print_warning("Invalid response. Please enter y or n.")
-        #                 print()
-
-        #     elif command == "logs":
-        #         MAP_TO_SERVICE_CLASS[service].logs(cmd_line_args["logs_dest"])
-
-        #     else:
-        #         Printer.print_error("Invalid command!\n")
-
-    except Exception as e:  # pylint: disable=broad-except
-        ArgosPrinter.print_error(str(e) + "\n")
-
-        ArgosPrinter.print_warning("Terminating program!\n")
-
-        exit(1)
-
-    except KeyboardInterrupt as e:  # pylint: disable=unused-variable
-        print()
-        print()
-
-        ArgosPrinter.print_warning("Terminating program!\n")
-
-        exit(1)
-
-    ArgosPrinter.print_warning("Terminating program!\n")
-
-    exit(0)
+    launch_master(logger)
 
 
 if __name__ == "__main__":
