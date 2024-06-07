@@ -30,14 +30,16 @@
     <link rel="icon"
           href="{{ url_for('gui.static', filename='img/favicon.ico') }}"
           type="image/vnd.microsoft.icon" />
-    {% assets "main_style" %}
-      <link rel="stylesheet"
-            type="text/css"
-            href="{{ url_for('gui.static', filename='css/main.css') }}" />
+    {% assets "main" %}
     {% endassets %}
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ url_for('gui.static', filename='css/main.css') }}" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Central interface for the Argos system" />
     <meta name="keywords" content="Argos, Computer Vision, Analytics" />
+    {% block assets %}
+    {% endblock assets %}
   </head>
   <body>
     <svg xmlns="http://www.w3.org/2000/svg" class="d-none">

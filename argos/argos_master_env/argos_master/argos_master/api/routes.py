@@ -3,10 +3,7 @@ This module contains the routes for the API.
 """
 
 import os
-import io
-from PIL import Image
 from http import HTTPStatus
-from base64 import encodebytes
 from flask import Blueprint, jsonify, send_file
 
 
@@ -89,26 +86,54 @@ def dataset(dataset_name: str):
     images_dir = os.path.join(dataset_path, "images")
     os.makedirs(images_dir, exist_ok=True)
 
-    images = []
-    for image in os.listdir(images_dir):
+    images_names = []
+    for image_name in os.listdir(images_dir):
         # Get only files
-        if not os.path.isfile(os.path.join(images_dir, image)):
+        if not os.path.isfile(os.path.join(images_dir, image_name)):
             continue
-
-        pil_img = Image.open(os.path.join(images_dir, image), mode="r")  # reads the PIL image
-        byte_arr = io.BytesIO()
-        pil_img.save(byte_arr, format="PNG")  # convert the PIL image to byte array
-        encoded_img = encodebytes(byte_arr.getvalue()).decode("ascii")  # encode as base64
-
-        images.append(encoded_img)
+        
+        images_names.append(f"/api/datasets/{ dataset_name }/images/{ image_name }")
 
     return (
         jsonify(
             {
                 "name": dataset_name,
                 "description": description,
-                "images": images,
+                "images": images_names,
             }
         ),
         HTTPStatus.OK,
     )
+
+
+@blueprint.route("/datasets/<dataset_name>/images/<image_name>")
+def image(dataset_name: str, image_name: str):
+    """
+    Returns the image
+    """
+
+    # Get the datasets directory
+    datasets_dir = os.path.join(os.environ["BASE_DIR"], "datasets")
+    os.makedirs(datasets_dir, exist_ok=True)
+
+    # Check if the dataset exists
+    if not os.path.isdir(os.path.join(datasets_dir, dataset_name)):
+        return (
+            jsonify({"error": "Dataset not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    dataset_path = os.path.join(datasets_dir, dataset_name)
+
+    # Get the images
+    images_dir = os.path.join(dataset_path, "images")
+    os.makedirs(images_dir, exist_ok=True)
+
+    # Check if the image exists
+    if not os.path.isfile(os.path.join(images_dir, image_name)):
+        return (
+            jsonify({"error": "Image not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    return send_file(os.path.join(images_dir, image_name), mimetype="image/png")

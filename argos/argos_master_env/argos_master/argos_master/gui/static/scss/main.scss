@@ -51,6 +51,10 @@ $navbar-active-item-underline: $main-color;
 
 /* General styling */
 
+body {
+  background-color: $main-color-light;
+}
+
 .align-right {
   text-align: right;
 }
@@ -64,6 +68,10 @@ $navbar-active-item-underline: $main-color;
   --bs-btn-active-border-color: #660005;
   --bs-btn-disabled-bg: #b1000e;
   --bs-btn-disabled-border-color: #b1000e;
+}
+
+.text-secondary {
+  color: pink;
 }
 
 /* Specific styling */
