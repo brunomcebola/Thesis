@@ -1,1 +1,0 @@
-# ARGOS, Automated Real-time Guardian Observation System

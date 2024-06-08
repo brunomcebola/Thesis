@@ -1,0 +1,105 @@
+{% extends "views/base.jinja" %}
+{% from "components/modal.jinja" import modal with context %}
+{% block title %}
+  Nodes
+{% endblock title %}
+{% block body %}
+  <div class="container py-4">
+    <div class="row justify-content-center pb-3">
+      <div class="col my-auto ps-3">
+        <h2 class="m-0">Nodes</h2>
+      </div>
+      <div class="col my-auto">
+        <div class="input-group">
+          <input class="form-control rounded-pill"
+                 type="search"
+                 placeholder="Search for a node" />
+        </div>
+      </div>
+      <div class="col my-auto align-right pe-3">
+        <button type="button"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#modal">Add node</button>
+      </div>
+    </div>
+    {% call modal("Add node") %}
+      <form class="row g-3 mx-n4 needs-validation" novalidate>
+        <div class="col-12">
+          <label for="name" class="form-label">Name</label>
+          <input type="text"
+                 id="name"
+                 name="name"
+                 pattern="^[a-zA-Z0-9]{1,15}$"
+                 placeholder="ex: Algarve 1365"
+                 class="form-control"
+                 required>
+          <div class="invalid-feedback">Please provide a valid name. Only letter and numbers are allowed</div>
+        </div>
+        <div class="col-12">
+          <label for="address" class="form-label">Address</label>
+          <div class="input-group" id="address" name="address">
+            <input type="text"
+                   id="host"
+                   name="host"
+                   pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$"
+                   class="form-control"
+                   placeholder="ex: 127.0.0.1"
+                   required>
+            <span class="input-group-text">:</span>
+            <input type="text"
+                   id="port"
+                   name="port"
+                   pattern="^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)$"
+                   placeholder="ex: 5000"
+                   class="form-control"
+                   required>
+            <div class="invalid-feedback">
+              Please provide a valid address. Host must be in the range 0.0.0.0 to 255.255.255.255 and port in the range 0 to 65535
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <label for="picture" class="form-label">Picture</label>
+          <input type="file" id="picture" name="picture" class="form-control">
+        </div>
+        <div class="col-12 align-right" id="submit">
+          <button class="btn btn-primary" type="submit">Submit</button>
+        </div>
+      </form>
+    {% endcall %}
+    {# TODO: add nodes grid correctly #}
+    {% if content is defined %}
+      {% with content=content %}
+        {% include "components/grid.html" %}
+      {% endwith %}
+    {% else %}
+      {% with message="There are no nodes defined!" %}
+        {% include "components/empty.jinja" %}
+      {% endwith %}
+    {% endif %}
+  </div>
+  <script>
+    // Example starter JavaScript for disabling form submissions if there are invalid fields
+    (function () {
+      'use strict'
+
+      // Fetch all the forms we want to apply custom Bootstrap validation styles to
+      var forms = document.querySelectorAll('.needs-validation')
+
+      // Loop over them and prevent submission
+      Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+          form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+              event.preventDefault()
+              event.stopPropagation()
+            } else {
+              alert('Form submitted')
+            }
+            form.classList.add('was-validated')
+          }, false)
+        })
+    })()
+  </script>
+{% endblock body %}

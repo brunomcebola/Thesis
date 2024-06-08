@@ -4,13 +4,10 @@
       "path": "."
     },
     {
-      "path": "argos/argos_common_env"
-    }
-    {
-      "path": "argos/argos_master_env"
+      "path": "argos/argos_master"
     },
     {
-      "path": "argos/argos_node_env"
+      "path": "argos/argos_node"
     }
   ],
   "settings": {

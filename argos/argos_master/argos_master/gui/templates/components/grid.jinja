@@ -1,0 +1,120 @@
+<div class="container">
+  <div class="row" id="grid"></div>
+</div>
+<script>
+<<<<<<< Updated upstream
+  var data = {{ data }};
+=======
+  const data = {{ data }};
+>>>>>>> Stashed changes
+  var data_index = 0
+
+  async function addCardToHTML(data_index) {
+      const delay = ms => new Promise(res => setTimeout(res, ms));
+
+      // Create a new div element for the card container
+      const cardContainer = document.createElement('div');
+      cardContainer.classList.add('col-12', 'col-md-6', 'col-xl-3', 'p-3');
+
+      // Create a div for the image card
+      const card = document.createElement('div');
+      card.classList.add('card');
+      cardContainer.appendChild(card);
+
+      // Create card image
+      const cardImage = document.createElement('img');
+      cardImage.classList.add('card-img-top');
+      if (data[data_index].src == null) {
+          cardImage.src = "{{ url_for('gui.static', filename='images/no_media.png') }}";
+          cardImage.alt = "No media";
+      } else {
+          cardImage.src = data[data_index].src;
+          cardImage.alt = data[data_index].name;
+      }
+      card.appendChild(cardImage);
+
+      // Create an i element for the arrow icon
+      const arrowIcon = document.createElement('i');
+      arrowIcon.classList.add('mdi', 'mdi-arrow-expand', 'expand-image');
+      card.appendChild(arrowIcon);
+
+      // Create card body
+      if (data[data_index].title != null || data[data_index].description != null) {
+          const cardBody = document.createElement('div');
+        cardBody.classList.add('card-body');
+        card.appendChild(cardBody);
+
+        // Create card title
+        if (data[data_index].title != null) {
+          const cardTitle = document.createElement('h5');
+          cardTitle.classList.add('card-title');
+          cardTitle.textContent = data[data_index].title;
+          cardBody.appendChild(cardTitle);
+        }
+
+        // Create card text
+        const cardText = document.createElement('p');
+        cardText.classList.add('card-text');
+        cardText.textContent = data[data_index].description;
+        cardBody.appendChild(cardText);
+      }
+
+      // Append the card container to the desired parent element in the DOM
+      document.getElementById('grid').appendChild(cardContainer);
+
+      await delay(10);
+  }
+
+  async function addInitialCards() {
+      while (window.innerHeight * 1.5 > document.body.offsetHeight && data_index < data.length) {
+          await addCardToHTML(data_index);
+          data_index++
+      }
+
+      // Remove the last image if the page is not full
+      if (window.innerHeight * 1.5 <= document.body.offsetHeight)
+          document.getElementById("grid").removeChild(document.getElementById("grid").lastChild);
+          data_index--;
+  }
+
+  async function addCardsOnScroll() {
+      // Add more data if user is at 25% of the bottom of the page
+      if (window.innerHeight + window.scrollY == document.body.offsetHeight) {
+          let initialHeight = document.body.offsetHeight;
+          let heightIncrements = 0;
+
+          while(heightIncrements < 2 && data_index < data.length) {
+              await addCardToHTML(data_index);
+              data_index++;
+
+              if (document.body.offsetHeight > initialHeight) {
+                  heightIncrements++;
+                  initialHeight = document.body.offsetHeight;
+              }
+          }
+
+          if(heightIncrements >= 2) {
+              document.getElementById("grid").removeChild(document.getElementById("grid").lastChild);
+              data_index--;
+          }
+
+      }
+  }
+
+  addInitialCards();
+
+  window.onscroll = function(e) {
+      addCardsOnScroll();
+  }
+</script>
+<style>
+  .expand-image {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 24px;
+    padding-left: 4px;
+    cursor: pointer;
+    color: var(--main-color-light)
+  }
+</style>
