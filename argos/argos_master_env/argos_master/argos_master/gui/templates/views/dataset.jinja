@@ -1,139 +1,45 @@
-{% extends "base.jinja" %}
+{% extends "views/base.jinja" %}
 {% block assets %}
-    {% assets "dataset" %}
-    {% endassets %}
-    <link rel="stylesheet"
-          type="text/css"
-          href="{{ url_for('gui.static', filename='css/dataset.css') }}">
+  {% assets "dataset" %}
+  {% endassets %}
+  <link rel="stylesheet"
+        type="text/css"
+        href="{{ url_for('gui.static', filename='css/dataset.css') }}">
 {% endblock assets %}
 {% block title %}
-    Datasets
+  Datasets
 {% endblock title %}
 {% block body %}
-    <div class="container py-4">
-        {# TODO: add description #}
-        <div class="row justify-content-center pb-3">
-            <div class="col my-auto ps-3">
-                <h2 class="m-0">{{ dataset.name }}</h2>
-            </div>
-            <div class="col my-auto"></div>
-            <div class="col my-auto align-right pe-3"></div>
-        </div>
-        {% if dataset.images|length > 0 %}
-            <div class="container">
-                <div class="row justify-content-center" id="images"></div>
-            </div>
-        {% else %}
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 text-center mt-5">
-                        <h4>There are no images in this dataset!</h4>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12 text-center mt-4" id="placeholder">
-                        <img src="{{ url_for('gui.static', filename='img/empty.svg') }}"
-                             alt="404"
-                             class="img-fluid"
-                             height=""
-                             width="" />
-                    </div>
-                </div>
-            </div>
-        {% endif %}
+  <div class="container py-4">
+    {# TODO: add description #}
+    <div class="row justify-content-center pb-3">
+      <div class="col my-auto ps-3">
+        <h2 class="m-0">{{ dataset.name }}</h2>
+      </div>
+      <div class="col my-auto"></div>
+      <div class="col my-auto align-right pe-3"></div>
     </div>
-    <script>
-		var images = {{ dataset.images }}
-		var image_index = 0
-
-		async function addImageToHTML(image_index) {
-			const delay = ms => new Promise(res => setTimeout(res, ms));
-
-			// Create a new div element for the card container
-			const cardContainer = document.createElement('div');
-			cardContainer.classList.add('col-12', 'col-md-6', 'col-xl-3', 'p-3');
-
-			// Create a div for the image card
-			const imageCard = document.createElement('div');
-			imageCard.classList.add('image-card');
-
-			// Create an image element
-			const imgElement = document.createElement('img');
-			imgElement.src = images[image_index];
-			imgElement.classList.add('card-img-top');
-			imgElement.alt = images[image_index];
-
-			// Create an input element for checkbox
-			const checkboxInput = document.createElement('input');
-			checkboxInput.classList.add('form-check', 'm-0');
-			checkboxInput.type = 'checkbox';
-			checkboxInput.value = '';
-			checkboxInput.id = 'flexCheckDefault';
-
-			// Create an i element for the arrow icon
-			const arrowIcon = document.createElement('i');
-			arrowIcon.classList.add('mdi', 'mdi-arrow-expand', 'text-secondary');
-
-			// Append image, checkbox, and arrow icon to the image card div
-			imageCard.appendChild(imgElement);
-			imageCard.appendChild(checkboxInput);
-			imageCard.appendChild(arrowIcon);
-
-			// Create a paragraph element for displaying the image name
-			const imageText = document.createElement('p');
-			imageText.classList.add('text-start', 'text-secondary');
-			imageText.textContent = (image_index + 1) + "/" + images.length + " - " + images[image_index].split("/")[images[image_index].split("/").length - 1];
-
-			// Append the image card div and paragraph element to the card container div
-			cardContainer.appendChild(imageCard);
-			cardContainer.appendChild(imageText);
-
-			// Append the card container to the desired parent element in the DOM
-			document.getElementById('images').appendChild(cardContainer);
-
-			await delay(10);
-		}
-
-		async function addInitialImages() {
-			while (window.innerHeight * 1.5 > document.body.offsetHeight && image_index < images.length) {
-				await addImageToHTML(image_index);
-				image_index++
-			}
-
-			// Remove the last image if the page is not full
-			if (window.innerHeight * 1.5 <= document.body.offsetHeight)
-				document.getElementById("images").removeChild(document.getElementById("images").lastChild);
-				image_index--;
-		}
-
-		async function addImagesOnScroll() {
-			// Add more images if user is at 25% of the bottom of the page
-			if (window.innerHeight + window.scrollY == document.body.offsetHeight) {
-				let initialHeight = document.body.offsetHeight;
-				let heightIncrements = 0;
-
-				while(heightIncrements < 2 && image_index < images.length) {
-					await addImageToHTML(image_index);
-					image_index++;
-
-					if (document.body.offsetHeight > initialHeight) {
-						heightIncrements++;
-						initialHeight = document.body.offsetHeight;
-					}
-				}
-
-				if(heightIncrements >= 2) {
-					document.getElementById("images").removeChild(document.getElementById("images").lastChild);
-					image_index--;
-				}
-
-			}
-		}
-
-		addInitialImages();
-
-		window.onscroll = function(e) {
-			addImagesOnScroll();
-		}
-    </script>
+    {% if dataset.images|length > 0 %}
+      {% with data=dataset.images %}
+        {% include "components/grid.jinja" %}
+      {% endwith %}
+    {% else %}
+      <div class="container">
+        <div class="row">
+          <div class="col-12 text-center mt-5">
+            <h4>There are no images in this dataset!</h4>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12 text-center mt-4" id="placeholder">
+            <img src="{{ url_for('gui.static', filename='images/empty.svg') }}"
+                 alt="404"
+                 class="img-fluid"
+                 height=""
+                 width="" />
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
 {% endblock body %}

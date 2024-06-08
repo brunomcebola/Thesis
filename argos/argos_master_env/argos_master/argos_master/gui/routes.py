@@ -65,7 +65,17 @@ def dataset(dataset_name: str):
     """
 
     response = current_app.test_client().get(f"/api/datasets/{dataset_name}")
+    json = response.get_json()
 
-    dataset_data = response.get_json()
+    dataset_data = {
+        "name": json["name"],
+        "images": [
+            {
+                "src": image,
+                "description": f"{i + 1}/{len(json['images'])} - {image.split('/')[-1]}",
+            }
+            for i, image in enumerate(json["images"])
+        ],
+    }
 
     return render_template("views/dataset.jinja", dataset=dataset_data)

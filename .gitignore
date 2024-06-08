@@ -10,6 +10,7 @@ test_env/
 random/
 models/
 pose/
+data/
 
 *.npy*
 *.log*

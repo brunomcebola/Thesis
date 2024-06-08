@@ -1,4 +1,4 @@
-{% extends "base.jinja" %}
+{% extends "views/base.jinja" %}
 {% block title %}
   Datasets
 {% endblock title %}
@@ -83,7 +83,7 @@
         </div>
         <div class="row">
           <div class="col-12 text-center mt-4" style="height: 25vh;">
-            <img src="{{ url_for('gui.static', filename='img/empty.svg') }}"
+            <img src="{{ url_for('gui.static', filename='images/empty.svg') }}"
                  alt="404"
                  class="img-fluid"
                  style="height: 25vh" />
