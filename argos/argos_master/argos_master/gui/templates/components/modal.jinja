@@ -1,0 +1,23 @@
+{% macro modal(title) %}
+  <div class="modal fade mt-5 mt-sm-0"
+       id="modal"
+       data-bs-backdrop="static"
+       data-bs-keyboard="true"
+       tabindex="-1"
+       aria-labelledby="staticBackdropLabel"
+       aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">{{ title }}</h1>
+          <button type="button"
+                  class="btn-close"
+                  id="close-modal"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+        </div>
+        <div class="modal-body">{{ caller() }}</div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}

@@ -1,6 +1,5 @@
 .direnv/
 .venv*
-.vscode/
 *cache*/
 node_modules/
 
