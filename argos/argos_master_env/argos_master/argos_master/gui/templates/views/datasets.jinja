@@ -75,21 +75,9 @@
         </div>
       </div>
     {% else %}
-      <div class="container">
-        <div class="row">
-          <div class="col-12 text-center mt-5">
-            <h4>There are no datasets defined!</h4>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-12 text-center mt-4" style="height: 25vh;">
-            <img src="{{ url_for('gui.static', filename='images/empty.svg') }}"
-                 alt="404"
-                 class="img-fluid"
-                 style="height: 25vh" />
-          </div>
-        </div>
-      </div>
+      {% with message="There are no datasets defined!" %}
+        {% include "components/empty.jinja" %}
+      {% endwith %}
     {% endif %}
   </div>
   <script>
