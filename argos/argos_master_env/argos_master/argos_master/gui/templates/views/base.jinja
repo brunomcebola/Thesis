@@ -28,7 +28,7 @@
             referrerpolicy="no-referrer"></script>
     {# Internal assets #}
     <link rel="icon"
-          href="{{ url_for('gui.static', filename='img/favicon.ico') }}"
+          href="{{ url_for('gui.static', filename='images/favicon.ico') }}"
           type="image/vnd.microsoft.icon" />
     {% assets "main" %}
     {% endassets %}
@@ -66,9 +66,7 @@
       <div class="message" id="alert-text">frefre</div>
       <button type="button" class="btn-close" id="close-alert" aria-label="Close"></button>
     </div>
-    {% with menu=menu, active=active %}
-      {% include "components/navbar.html" %}
-    {% endwith %}
+    {% include "components/navbar.jinja" %}
     {% block body %}
     {% endblock body %}
     <script src="{{ url_for('gui.static', filename='js/main.js') }}"></script>
