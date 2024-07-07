@@ -22,3 +22,7 @@ data/
 *.yaml*
 
 *test*
+
+# External repos
+skeleton-based-action-recognition/
+kinetics-i3d/
