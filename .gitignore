@@ -25,4 +25,4 @@ data/
 
 # External repos
 skeleton-based-action-recognition/
-kinetics-i3d/
+#kinetics-i3d/
