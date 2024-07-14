@@ -8,6 +8,9 @@
     },
     {
       "path": "argos/argos_node"
+    },
+    {
+      "path": "kinetics/kinetics-i3d"
     }
   ],
   "settings": {
