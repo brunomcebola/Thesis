@@ -1,0 +1,162 @@
+[h264 @ 0x55bb45708d40] Reinit context to 1280x720, pix_fmt: yuv420p
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from '/home/bcebola/Desktop/Thesis/kinetics/preprocess/input/javelin.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf57.41.100
+  Duration: 00:00:10.01, start: 0.000000, bitrate: 2374 kb/s
+  Stream #0:0(und): Video: h264 (High), 1 reference frame (avc1 / 0x31637661), yuv420p(left), 1280x720, 2239 kb/s, 29.97 fps, 29.97 tbr, 30k tbn, 59.94 tbc (default)
+    Metadata:
+      handler_name    : VideoHandler
+      vendor_id       : [0][0][0][0]
+  Stream #0:1(und): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 125 kb/s (default)
+    Metadata:
+      handler_name    : SoundHandler
+      vendor_id       : [0][0][0][0]
+Stream mapping:
+  Stream #0:0 -> #0:0 (h264 (native) -> h264 (libx264))
+  Stream #0:1 -> #0:1 (aac (native) -> aac (native))
+Press [q] to stop, [?] for help
+[h264 @ 0x55bb4573e980] Reinit context to 1280x720, pix_fmt: yuv420p
+[graph_1_in_0_1 @ 0x55bb45b74d40] tb:1/44100 samplefmt:fltp samplerate:44100 chlayout:0x3
+[Parsed_fps_0 @ 0x55bb460fc940] fps=25/1
+[Parsed_scale_1 @ 0x55bb460fde40] w:256 h:256 flags:'bicubic' interl:0
+[graph 0 input from stream 0:0 @ 0x55bb45759f00] w:1280 h:720 pixfmt:yuv420p tb:1/30000 fr:30000/1001 sar:0/1
+[Parsed_scale_1 @ 0x55bb460fde40] w:1280 h:720 fmt:yuv420p sar:0/1 -> w:256 h:144 fmt:yuv420p sar:0/1 flags:0x4
+[Parsed_fps_0 @ 0x55bb460fc940] Set first pts to 0
+[libx264 @ 0x55bb45719500] using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX
+[libx264 @ 0x55bb45719500] profile High, level 1.2, 4:2:0, 8-bit
+[libx264 @ 0x55bb45719500] 264 - core 163 r3060 5db6aa6 - H.264/MPEG-4 AVC codec - Copyleft 2003-2021 - http://www.videolan.org/x264.html - options: cabac=1 ref=3 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=7 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=4 lookahead_threads=1 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=2 keyint=250 keyint_min=25 scenecut=40 intra_refresh=0 rc_lookahead=40 rc=crf mbtree=1 crf=23.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
+Output #0, mp4, to '/home/bcebola/Desktop/Thesis/kinetics/preprocess/output/javelin.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf58.76.100
+  Stream #0:0(und): Video: h264, 1 reference frame (avc1 / 0x31637661), yuv420p(tv, progressive, left), 256x144 (0x0), q=2-31, 25 fps, 12800 tbn (default)
+    Metadata:
+      handler_name    : VideoHandler
+      vendor_id       : [0][0][0][0]
+      encoder         : Lavc58.134.100 libx264
+    Side data:
+      cpb: bitrate max/min/avg: 0/0/0 buffer size: 0 vbv_delay: N/A
+  Stream #0:1(und): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, delay 1024, 128 kb/s (default)
+    Metadata:
+      handler_name    : SoundHandler
+      vendor_id       : [0][0][0][0]
+      encoder         : Lavc58.134.100 aac
+No more output streams to write to, finishing.
+frame=  250 fps=143 q=-1.0 Lsize=     385kB time=00:00:09.98 bitrate= 316.1kbits/s speed= 5.7x    
+[AVIOContext @ 0x55bb45706d00] Statistics: 0 seeks, 4 writeouts
+video:219kB audio:157kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 2.502858%
+Input file #0 (/home/bcebola/Desktop/Thesis/kinetics/preprocess/input/javelin.mp4):
+  Input stream #0:0 (video): 300 packets read (2802672 bytes); 300 frames decoded; 
+  Input stream #0:1 (audio): 431 packets read (157039 bytes); 431 frames decoded (441344 samples); 
+  Total: 731 packets (2959711 bytes) demuxed
+Output file #0 (/home/bcebola/Desktop/Thesis/kinetics/preprocess/output/javelin.mp4):
+  Output stream #0:0 (video): 250 frames encoded; 250 packets muxed (224185 bytes); 
+  Output stream #0:1 (audio): 431 frames encoded (441344 samples); 432 packets muxed (160655 bytes); 
+  Total: 682 packets (384840 bytes) muxed
+[Parsed_fps_0 @ 0x55bb460fc940] 300 frames in, 250 frames out; 50 frames dropped, 0 frames duplicated.
+[AVIOContext @ 0x55bb4573a1c0] Statistics: 2 seeks, 5 writeouts
+[libx264 @ 0x55bb45719500] frame I:1     Avg QP:27.01  size:  7896
+[libx264 @ 0x55bb45719500] frame P:99    Avg QP:24.72  size:  1797
+[libx264 @ 0x55bb45719500] frame B:150   Avg QP:27.37  size:   251
+[libx264 @ 0x55bb45719500] consecutive B-frames: 10.8% 22.4% 15.6% 51.2%
+[libx264 @ 0x55bb45719500] mb I  I16..4:  0.0% 44.4% 55.6%
+[libx264 @ 0x55bb45719500] mb P  I16..4:  0.8%  3.3%  2.3%  P16..4: 30.1% 22.7% 26.0%  0.0%  0.0%    skip:14.7%
+[libx264 @ 0x55bb45719500] mb B  I16..4:  0.0%  0.0%  0.0%  B16..8: 46.9% 10.7%  2.4%  direct: 1.4%  skip:38.5%  L0:35.9% L1:46.3% BI:17.8%
+[libx264 @ 0x55bb45719500] 8x8 transform intra:49.7% inter:51.0%
+[libx264 @ 0x55bb45719500] coded y,uvDC,uvAC intra: 79.2% 87.7% 67.7% inter: 19.8% 14.2% 3.6%
+[libx264 @ 0x55bb45719500] i16 v,h,dc,p:  8% 62% 19% 11%
+[libx264 @ 0x55bb45719500] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu:  7% 32% 25%  4%  5%  3%  7%  4% 13%
+[libx264 @ 0x55bb45719500] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 13% 32% 15%  5%  6%  5%  8%  5% 10%
+[libx264 @ 0x55bb45719500] i8c dc,h,v,p: 53% 32%  9%  5%
+[libx264 @ 0x55bb45719500] Weighted P-Frames: Y:14.1% UV:5.1%
+[libx264 @ 0x55bb45719500] ref P L0: 62.9% 26.8%  6.1%  3.8%  0.3%
+[libx264 @ 0x55bb45719500] ref B L0: 94.9%  4.4%  0.7%
+[libx264 @ 0x55bb45719500] ref B L1: 97.8%  2.2%
+[libx264 @ 0x55bb45719500] kb/s:178.80
+[aac @ 0x55bb45719f40] Qavg: 160.202
+[AVIOContext @ 0x55bb4570fec0] Statistics: 3015969 bytes read, 2 seeks
+[h264 @ 0x55764d365d40] Reinit context to 1280x720, pix_fmt: yuv420p
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from '/home/bcebola/Desktop/Thesis/kinetics/preprocess/input/javelin.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf57.41.100
+  Duration: 00:00:10.01, start: 0.000000, bitrate: 2374 kb/s
+  Stream #0:0(und): Video: h264 (High), 1 reference frame (avc1 / 0x31637661), yuv420p(left), 1280x720, 2239 kb/s, 29.97 fps, 29.97 tbr, 30k tbn, 59.94 tbc (default)
+    Metadata:
+      handler_name    : VideoHandler
+      vendor_id       : [0][0][0][0]
+  Stream #0:1(und): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 125 kb/s (default)
+    Metadata:
+      handler_name    : SoundHandler
+      vendor_id       : [0][0][0][0]
+Stream mapping:
+  Stream #0:0 -> #0:0 (h264 (native) -> h264 (libx264))
+  Stream #0:1 -> #0:1 (aac (native) -> aac (native))
+Press [q] to stop, [?] for help
+[h264 @ 0x55764d3c53c0] Reinit context to 1280x720, pix_fmt: yuv420p
+[graph_1_in_0_1 @ 0x55764d7d2400] tb:1/44100 samplefmt:fltp samplerate:44100 chlayout:0x3
+[Parsed_fps_0 @ 0x55764dd59e40] fps=25/1
+[graph 0 input from stream 0:0 @ 0x55764dd5aac0] w:1280 h:720 pixfmt:yuv420p tb:1/30000 fr:30000/1001 sar:0/1
+[Parsed_fps_0 @ 0x55764dd59e40] Set first pts to 0
+[libx264 @ 0x55764d376500] using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX
+[libx264 @ 0x55764d376500] profile High, level 3.1, 4:2:0, 8-bit
+[libx264 @ 0x55764d376500] 264 - core 163 r3060 5db6aa6 - H.264/MPEG-4 AVC codec - Copyleft 2003-2021 - http://www.videolan.org/x264.html - options: cabac=1 ref=3 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=7 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=22 lookahead_threads=3 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=2 keyint=250 keyint_min=25 scenecut=40 intra_refresh=0 rc_lookahead=40 rc=crf mbtree=1 crf=23.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
+Output #0, mp4, to '/home/bcebola/Desktop/Thesis/kinetics/preprocess/output/javelin.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf58.76.100
+  Stream #0:0(und): Video: h264, 1 reference frame (avc1 / 0x31637661), yuv420p(progressive, left), 1280x720 (0x0), q=2-31, 25 fps, 12800 tbn (default)
+    Metadata:
+      handler_name    : VideoHandler
+      vendor_id       : [0][0][0][0]
+      encoder         : Lavc58.134.100 libx264
+    Side data:
+      cpb: bitrate max/min/avg: 0/0/0 buffer size: 0 vbv_delay: N/A
+  Stream #0:1(und): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, delay 1024, 128 kb/s (default)
+    Metadata:
+      handler_name    : SoundHandler
+      vendor_id       : [0][0][0][0]
+      encoder         : Lavc58.134.100 aac
+No more output streams to write to, finishing.
+frame=  250 fps= 44 q=-1.0 Lsize=    2856kB time=00:00:09.98 bitrate=2343.1kbits/s speed=1.75x    
+[AVIOContext @ 0x55764d363d00] Statistics: 0 seeks, 11 writeouts
+video:2690kB audio:157kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 0.317274%
+Input file #0 (/home/bcebola/Desktop/Thesis/kinetics/preprocess/input/javelin.mp4):
+  Input stream #0:0 (video): 300 packets read (2802672 bytes); 300 frames decoded; 
+  Input stream #0:1 (audio): 431 packets read (157039 bytes); 431 frames decoded (441344 samples); 
+  Total: 731 packets (2959711 bytes) demuxed
+Output file #0 (/home/bcebola/Desktop/Thesis/kinetics/preprocess/output/javelin.mp4):
+  Output stream #0:0 (video): 250 frames encoded; 250 packets muxed (2754487 bytes); 
+  Output stream #0:1 (audio): 431 frames encoded (441344 samples); 432 packets muxed (160655 bytes); 
+  Total: 682 packets (2915142 bytes) muxed
+[Parsed_fps_0 @ 0x55764dd59e40] 300 frames in, 250 frames out; 50 frames dropped, 0 frames duplicated.
+[AVIOContext @ 0x55764d3971c0] Statistics: 2 seeks, 15 writeouts
+[libx264 @ 0x55764d376500] frame I:1     Avg QP:25.17  size: 64359
+[libx264 @ 0x55764d376500] frame P:129   Avg QP:23.85  size: 17917
+[libx264 @ 0x55764d376500] frame B:120   Avg QP:25.41  size:  3152
+[libx264 @ 0x55764d376500] consecutive B-frames: 26.8% 20.8% 20.4% 32.0%
+[libx264 @ 0x55764d376500] mb I  I16..4:  7.9% 66.8% 25.2%
+[libx264 @ 0x55764d376500] mb P  I16..4:  3.8%  9.4%  2.4%  P16..4: 43.1% 17.4%  7.7%  0.0%  0.0%    skip:16.1%
+[libx264 @ 0x55764d376500] mb B  I16..4:  0.5%  0.4%  0.0%  B16..8: 44.4%  2.9%  0.2%  direct: 1.8%  skip:49.8%  L0:39.7% L1:55.8% BI: 4.5%
+[libx264 @ 0x55764d376500] 8x8 transform intra:59.6% inter:68.5%
+[libx264 @ 0x55764d376500] coded y,uvDC,uvAC intra: 47.5% 65.3% 15.1% inter: 14.8% 18.8% 0.2%
+[libx264 @ 0x55764d376500] i16 v,h,dc,p: 20% 56% 11% 12%
+[libx264 @ 0x55764d376500] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 16% 36% 25%  3%  3%  3%  5%  3%  6%
+[libx264 @ 0x55764d376500] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 15% 35% 13%  5%  6%  5%  9%  5%  7%
+[libx264 @ 0x55764d376500] i8c dc,h,v,p: 48% 34% 14%  4%
+[libx264 @ 0x55764d376500] Weighted P-Frames: Y:8.5% UV:4.7%
+[libx264 @ 0x55764d376500] ref P L0: 66.8% 23.4%  8.3%  1.4%  0.0%
+[libx264 @ 0x55764d376500] ref B L0: 93.3%  6.2%  0.5%
+[libx264 @ 0x55764d376500] ref B L1: 98.3%  1.7%
+[libx264 @ 0x55764d376500] kb/s:2203.04
+[aac @ 0x55764d376f40] Qavg: 160.202
+[AVIOContext @ 0x55764d36cec0] Statistics: 3015969 bytes read, 2 seeks
