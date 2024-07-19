@@ -33,22 +33,22 @@ _SAMPLE_VIDEO_FRAMES = 79
 
 
 
-# cricket = np.load('data/cricket_flow.npy')
-# print(cricket.shape)
+cricket = np.load('data/cricket_flow.npy')
+print(cricket.shape)
 
-# test = np.load('data/test_flow.npy')
-# print(test.shape)
+test = np.load('data/basket_flow.npy')
+print(test.shape)
 
-# exit()
+exit()
 
 # _SAMPLE_PATHS = {
-#     'rgb': 'data/cricket_rgb.npy',
-#     'flow': 'data/cricket_flow.npy',
+#      'rgb': 'data/cricket_rgb.npy',
+#      'flow': 'data/cricket_flow.npy',
 # }
 
 _SAMPLE_PATHS = {
-    'rgb': 'data/basket_rgb.npy',
-    'flow': 'data/basket_flow.npy',
+  'rgb': 'data/basket_rgb.npy',
+  'flow': 'data/basket_flow.npy',
 }
 
 _CHECKPOINT_PATHS = {

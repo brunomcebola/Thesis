@@ -11,6 +11,9 @@
     },
     {
       "path": "kinetics/kinetics-i3d"
+    },
+    {
+      "path": "kinetics/preprocess"
     }
   ],
   "settings": {
