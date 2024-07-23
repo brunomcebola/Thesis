@@ -32,7 +32,7 @@ def sample_frames(input_path: str, output_path):
 
     def frames_to_numpy_array(clip):
         frames = []
-        for frame in clip.iter_frames(fps=clip.fps, dtype='uint8'):
+        for frame in clip.iter_frames(fps=clip.fps, dtype="uint8"):
             frames.append(frame)
         return np.array(frames)
 
@@ -43,51 +43,53 @@ def sample_frames(input_path: str, output_path):
     # Load the video file
     video = VideoFileClip(input_path)
 
-    # Get original characteristics
-    original_width, original_height = video.size
-    orignal_fps = video.fps
-
     # Resize the video
-    if original_width < original_height:
-        scale_factor = 256 / original_width
+    if video.size[0] < video.size[1]:
+        scale_factor = 256 / video.size[0]
     else:
-        scale_factor = 256 / original_height
+        scale_factor = 256 / video.size[1]
+    new_size = (int(video.size[0] * scale_factor), int(video.size[1] * scale_factor))
 
-    video = video.fl_image(
-        lambda f: resize(
-            f, (int(original_width * scale_factor), int(original_height * scale_factor))
-        )
-    )
-    result_width, result_height = video.size
+    video = video.fl_image(lambda f: resize(f, new_size))
 
     # Change frame rate
-
     video = video.set_fps(25)
-    result_fps = video.fps
 
     # Crop video to central 224x224 region
     video = video.crop(
-        x_center=result_width // 2, y_center=result_height // 2, width=224, height=224
-    )
-    result_width, result_height = video.size
-
-    # Write the resized video to the output file
-    # video.write_videofile(output_path)
-
-    print(
-        f"\033[1;32mConverted from {original_width}x{original_height}@{orignal_fps} to {result_width}x{result_height}@{result_fps}\033[0m"
+        x_center=video.size[0] // 2, y_center=video.size[1] // 2, width=224, height=224
     )
 
     # Convert video to numpy array
-    video_npy = frames_to_numpy_array(video)
-    print(f"Shape of video numpy array: {video_npy.shape}")
+    video = frames_to_numpy_array(video)
+    video = video[:-1]
 
-    # Save video_npy as gif
+    # Rescale pixel values between -1 and 1
+    video = video / 256
+    video = video * 2 - 1
+
+    # Save video as npy with an extra layer for the batch
+    video = np.expand_dims(video, axis=0)
+    output_npy_path = os.path.splitext(output_path)[0] + ".npy"
+    np.save(output_npy_path, video)
+    print(f"Saved video as npy: {output_npy_path}")
+    print(f"Shape of video numpy array: {video.shape}")
+
+    # Save video as gif
+    video = (video[0] + 1) / 2
+    video = video * 256
+    video = video.astype(np.uint8)
     output_gif_path = os.path.splitext(output_path)[0] + ".gif"
-    frames = [Image.fromarray(frame) for frame in video_npy]
-    frames[0].save(output_gif_path, format='GIF', append_images=frames[1:], save_all=True, duration=40)
+    frames = [Image.fromarray(frame) for frame in video]
+    frames[0].save(
+        output_gif_path,
+        format="GIF",
+        append_images=frames[1:],
+        save_all=True,
+        duration=40,
+        loop=0,
+    )
     print(f"Saved video as gif: {output_gif_path}")
-
 
 
 def main():
