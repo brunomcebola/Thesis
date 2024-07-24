@@ -25,30 +25,12 @@ import i3d
 
 _IMAGE_SIZE_ROWS = 224
 _IMAGE_SIZE_COLS = 224
-_SAMPLE_VIDEO_FRAMES = 79
+_SAMPLE_VIDEO_FRAMES = 76
 
-# _IMAGE_SIZE_ROWS = 360
-# _IMAGE_SIZE_COLS = 480
-# _SAMPLE_VIDEO_FRAMES = 300
-
-
-
-cricket = np.load('data/cricket_flow.npy')
-print(cricket.shape)
-
-test = np.load('data/basket_flow.npy')
-print(test.shape)
-
-exit()
-
-# _SAMPLE_PATHS = {
-#      'rgb': 'data/cricket_rgb.npy',
-#      'flow': 'data/cricket_flow.npy',
-# }
 
 _SAMPLE_PATHS = {
-  'rgb': 'data/basket_rgb.npy',
-  'flow': 'data/basket_flow.npy',
+     'rgb': 'data/javelin_short_rgb.npy',
+     'flow': 'data/javelin_short_flow.npy',
 }
 
 _CHECKPOINT_PATHS = {
