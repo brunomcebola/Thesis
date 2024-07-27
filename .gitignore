@@ -20,9 +20,7 @@ data/
 *.env
 *.env.*
 *.yaml*
+*.zip*
 
 *test*
 
-# External repos
-skeleton-based-action-recognition/
-#kinetics-i3d/
