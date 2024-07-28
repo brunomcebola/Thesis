@@ -70,8 +70,8 @@
     {% endcall %}
     {# TODO: add nodes grid correctly #}
     {% if content is defined %}
-      {% with content=content %}
-        {% include "components/grid.html" %}
+      {% with data=content %}
+        {% include "components/grid.jinja" %}
       {% endwith %}
     {% else %}
       {% with message="There are no nodes defined!" %}

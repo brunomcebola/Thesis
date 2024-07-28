@@ -18,7 +18,7 @@ DATASET_TEST_IMAGES_DIR_NAME = "images/test"
 
 def _ensure_filesystem():
     """
-    Create the filesystem
+    Ensure the integrity of the filesystem
     """
 
     # Create base folder
@@ -30,7 +30,7 @@ def _ensure_filesystem():
         dataset_path = os.path.join(datasets_dir, dataset_dir)
 
         desc_file = os.path.join(dataset_path, DATASET_DESCRIPTION_FILE_NAME)
-        with open(desc_file, "a", encoding="utf-8") as f:
+        with open(desc_file, "a", encoding="utf-8"):
             pass
 
         train_images_dir = os.path.join(dataset_path, DATASET_TRAIN_IMAGES_DIR_NAME)
@@ -43,38 +43,6 @@ def _ensure_filesystem():
         os.makedirs(test_images_dir, exist_ok=True)
 
 
-def _get_dataset_description(dataset_path: str) -> str:
-    """
-    Get the dataset description
-    """
-
-    desc_file = os.path.join(dataset_path, DATASET_DESCRIPTION_FILE_NAME)
-
-    with open(desc_file, "a", encoding="utf-8") as f:
-        pass
-
-    with open(desc_file, "r", encoding="utf-8") as f:
-        description = f.read().strip()
-
-    return description
-
-
-def _get_dataset_images(dataset_path: str) -> tuple[list[str], list[str], list[str]]:
-    """
-    Get the dataset images
-    """
-
-    train_images_dir = os.path.join(dataset_path, DATASET_TRAIN_IMAGES_DIR_NAME)
-    val_images_dir = os.path.join(dataset_path, DATASET_VAL_IMAGES_DIR_NAME)
-    test_images_dir = os.path.join(dataset_path, DATASET_TEST_IMAGES_DIR_NAME)
-
-    train_images = os.listdir(train_images_dir)
-    val_images = os.listdir(val_images_dir)
-    test_images = os.listdir(test_images_dir)
-
-    return train_images, val_images, test_images
-
-
 @blueprint.before_request
 def before_request():
     """
@@ -84,92 +52,9 @@ def before_request():
     _ensure_filesystem()
 
 
-# @blueprint.errorhandler(500)
-# def handle_500_error(_):
-#     return (
-#         jsonify({"error": "Internal error."}),
-#         HTTPStatus.INTERNAL_SERVER_ERROR,
-#     )
-
-
-# @blueprint.route("/")
-# def get_datasets():
-#     """
-#     Returns the datasets
-#     """
-
-#     # Get the datasets directory
-#     datasets_dir = os.path.join(os.environ["BASE_DIR"], DATASETS_DIR_NAME)
-
-#     # Get the datasets
-#     datasets_list = []
-#     for dataset in os.listdir(datasets_dir):
-#         dataset_path = os.path.join(datasets_dir, dataset)
-
-#         datasets_list.append(
-#             {
-#                 "name": dataset,
-#                 "description": _get_dataset_description(dataset_path),
-#             }
-#         )
-
-#     return (
-#         jsonify(datasets_list),
-#         HTTPStatus.OK,
-#     )
-
-
-# @blueprint.route("/<dataset_name>/")
-# def get_dataset(dataset_name: str):
-#     """
-#     Returns dataset information (including images)
-#     """
-
-#     dataset_path = os.path.join(os.environ["BASE_DIR"], DATASETS_DIR_NAME, dataset_name)
-
-#     return (
-#         jsonify(
-#             {
-#                 "name": dataset_name,
-#                 "description": _get_dataset_description(dataset_path),
-#                 "images": _get_dataset_images(dataset_path),
-#             }
-#         ),
-#         HTTPStatus.OK,
-#     )
-
-
-# @blueprint.route("/<dataset_name>/images/<image_name>")
-# def get_dataset_image(dataset_name: str, image_name: str):
-#     """
-#     Returns the image
-#     """
-
-#     # Check if the dataset exists
-#     if not os.path.isdir(os.path.join(datasets_dir, dataset_name)):
-#         return (
-#             jsonify({"error": "Dataset not found."}),
-#             HTTPStatus.NOT_FOUND,
-#         )
-
-#     dataset_path = os.path.join(datasets_dir, dataset_name)
-
-#     # Get the images
-#     images_dir = os.path.join(dataset_path, "images")
-#     os.makedirs(images_dir, exist_ok=True)
-
-#     # Check if the image exists
-#     if not os.path.isfile(os.path.join(images_dir, image_name)):
-#         return (
-#             jsonify({"error": "Image not found."}),
-#             HTTPStatus.NOT_FOUND,
-#         )
-
-#     return send_file(os.path.join(images_dir, image_name), mimetype="image/png")
-
 @blueprint.route("/")
 @blueprint.route("/<path:subpath>/")
-def navigate(subpath = ""):
+def navigate(subpath=""):
     """
     # TODO
     """

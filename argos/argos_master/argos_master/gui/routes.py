@@ -35,7 +35,25 @@ def nodes():
     """
     The nodes view
     """
-    return render_template("views/nodes.jinja")
+
+    response = current_app.test_client().get("/api/nodes/")
+
+    if response.status_code == HTTPStatus.OK:
+        content = []
+        for entry in response.get_json():
+            content.append(
+                {
+                    "title": entry["name"],
+                    "description": entry["address"],
+                    "src": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else None,
+                }
+            )
+    else:
+        content = []
+
+    print(content)
+
+    return render_template("views/nodes.jinja", content=content)
 
 
 @blueprint.route("/areas")
@@ -55,35 +73,20 @@ def datasets(subpath):
 
     response = current_app.test_client().get(f"/api/datasets/{subpath + '/' if subpath else ''}")
 
-    print(f"api/datasets/{subpath}")
-    print(response.status_code)
-
     if response.status_code == HTTPStatus.OK:
         content = response.get_json()
     else:
         content = []
 
+    # dataset_data = {
+    #     "name": json["name"],
+    #     "images": [
+    #         {
+    #             "src": image,
+    #             "description": f"{i + 1}/{len(json['images'])} - {image.split('/')[-1]}",
+    #         }
+    #         for i, image in enumerate(json["images"])
+    #     ],
+    # }
+
     return render_template("views/datasets.jinja", content=content)
-
-
-@blueprint.route("/dataset/<dataset_name>")
-def dataset(dataset_name: str):
-    """
-    The dataset view
-    """
-
-    response = current_app.test_client().get(f"/api/datasets/{dataset_name}")
-    json = response.get_json()
-
-    dataset_data = {
-        "name": json["name"],
-        "images": [
-            {
-                "src": image,
-                "description": f"{i + 1}/{len(json['images'])} - {image.split('/')[-1]}",
-            }
-            for i, image in enumerate(json["images"])
-        ],
-    }
-
-    return render_template("views/dataset.jinja", dataset=dataset_data)

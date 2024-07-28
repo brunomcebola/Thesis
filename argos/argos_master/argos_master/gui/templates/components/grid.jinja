@@ -1,12 +1,31 @@
+{#
+
+Expected parameters:
+
+- data: List of dictionaries containing the following keys:
+    - title: Title of the image
+    - description: Description of the image
+    - src: URL of the image to display or null
+
+    Ex: [
+          {
+              "src": "https://example.com/image1.jpg",
+              "title": "Image 1",
+              "description": "This is the first image"
+          },
+          {
+              "src": "https://example.com/image2.jpg",
+              "title": "Image 2",
+              "description": "This is the second image"
+          }
+      ]
+
+#}
 <div class="container">
   <div class="row" id="grid"></div>
 </div>
 <script>
-<<<<<<< Updated upstream
-  var data = {{ data }};
-=======
-  const data = {{ data }};
->>>>>>> Stashed changes
+  const data = {{ data|tojson }};
   var data_index = 0
 
   async function addCardToHTML(data_index) {
