@@ -15,10 +15,37 @@ NODES_DIR = "nodes"
 NODES_FILE = "nodes.yaml"
 IMAGES_DIR = "images"
 
+NODES_CONFIG_SCHEMA = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "integer",
+                "minimum": 0,
+            },
+            "name": {
+                "type": "string",
+                "pattern": "^[A-Za-zÀ-ÖØ-öø-ÿ0-9-_ ]+$",
+            },
+            "address": {
+                "type": "string",
+                "pattern": "^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]):(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)$",  # pylint: disable=line-too-long
+            },
+            "has_image": {
+                "type": "boolean",
+            },
+        },
+        "required": ["id", "name", "address", "has_image"],
+        "additionalProperties": False,
+    },
+    "uniqueItems": True,
+}
 
-def create_filesystem():
+
+def _ensure_filesystem():
     """
-    Create the filesystem
+    Ensures the integrity of the filesystem
     """
 
     #  Create base folder
@@ -31,8 +58,42 @@ def create_filesystem():
 
     # Create nodes file
     nodes_file = os.path.join(nodes_dir, NODES_FILE)
-    with open(nodes_file, "a", encoding="utf-8") as f:
+    with open(nodes_file, "a", encoding="utf-8"):
         pass
+
+
+def _validate_nodes_list(nodes_list: list[dict]):
+    """
+    Validates the nodes list
+    """
+
+    if nodes_list:
+        # Ensure the schema
+        jsonschema.validate(instance=nodes_list, schema=NODES_CONFIG_SCHEMA)
+
+        # Ensure unique ids
+        ids = [node["id"] for node in nodes_list]
+        if len(ids) != len(set(ids)):
+            raise ValueError("Duplicated ids.")
+
+        # Ensure unique names
+        names = [node["name"] for node in nodes_list]
+        if len(names) != len(set(names)):
+            raise ValueError("Duplicated names.")
+
+        # Ensure unique addresses
+        addresses = [node["address"] for node in nodes_list]
+        if len(addresses) != len(set(addresses)):
+            raise ValueError("Duplicated addresses.")
+
+
+@blueprint.before_request
+def before_request():
+    """
+    Ensure the filesystem
+    """
+
+    _ensure_filesystem()
 
 
 @blueprint.route("/")
@@ -41,90 +102,49 @@ def nodes():
     Returns the nodes in BASE_DIR/nodes
     """
 
-    nodes_config_schema = {
-        "type": "object",
-        "patternProperties": {
-            "^[a-zA-Z0-9]{1,15}$": {
-                "type": "string",
-                "pattern": "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.\\b){4}:(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)$",  # pylint: disable=line-too-long
-            }
-        },
-        "additionalProperties": False,
-    }
-
     try:
-
         # Get the nodes directory
         nodes_dir = os.path.join(os.environ["BASE_DIR"], NODES_DIR)
 
-        nodes_list = []
-
         with open(os.path.join(nodes_dir, NODES_FILE), "r", encoding="utf-8") as f:
-            nodes_dict: dict = yaml.safe_load(f)
+            nodes_list: list[dict] = yaml.safe_load(f) or []
 
-            if nodes_dict:
-                jsonschema.validate(instance=nodes_dict, schema=nodes_config_schema)
-
-                nodes_images_dir = os.path.join(nodes_dir, "images")
-                images = [os.path.splitext(image)[0] for image in os.listdir(nodes_images_dir)]
-
-                for node_name, node_address in nodes_dict.items():
-                    nodes_list.append(
-                        {
-                            "name": node_name,
-                            "address": node_address,
-                            "has_image": node_name in images,
-                        }
-                    )
+            _validate_nodes_list(nodes_list)
 
         return (
             jsonify(nodes_list),
             HTTPStatus.OK,
         )
 
-    except Exception:
+    except Exception as e:  # pylint: disable=broad-except
+        print(e)
         return (
             jsonify({"error": "Internal error."}),
             HTTPStatus.INTERNAL_SERVER_ERROR,
         )
 
 
-@blueprint.route("/nodes/<node_name>/image")
-def image(node_name: str):
+@blueprint.route("/<node_id>/image")
+def image(node_id: int):
     """
     Returns the image of the node
     """
 
-    try:
+    print("OLA")
 
-        # Get the nodes directory
-        nodes_dir = os.path.join(os.environ["BASE_DIR"], "nodes")
+    # Get the nodes directory
+    nodes_dir = os.path.join(os.environ["BASE_DIR"], NODES_DIR)
 
-        # Check if the node exists
-        with open(os.path.join(nodes_dir, "nodes.yaml"), "r", encoding="utf-8") as f:
-            nodes_dict: dict = yaml.safe_load(f)
+    # Get the images dir
+    images_dir = os.path.join(nodes_dir, IMAGES_DIR)
 
-            if not nodes_dict or node_name not in nodes_dict:
-                return (
-                    jsonify({"error": "Node not found."}),
-                    HTTPStatus.NOT_FOUND,
-                )
+    # Get the node image
+    for file in os.listdir(images_dir):
+        print(file)
+        if file.startswith(f"{node_id}."):
+            return send_file(os.path.join(images_dir, file))
 
-        nodes_images_dir = os.path.join(nodes_dir, "images")
-        os.makedirs(nodes_images_dir, exist_ok=True)
-
-        image_path = os.path.join(nodes_images_dir, f"{node_name}.png")
-
-        if not os.path.exists(image_path):
-            return (
-                jsonify({"error": "Image not found."}),
-                HTTPStatus.NOT_FOUND,
-            )
-
-        return send_file(image_path, mimetype="image/png")
-
-    except Exception:
-        return (
-            jsonify(),
-            HTTPStatus.INTERNAL_SERVER_ERROR,
-        )
+    return (
+        jsonify({"error": "Image not found."}),
+        HTTPStatus.NOT_FOUND,
+    )
