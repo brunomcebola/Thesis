@@ -46,6 +46,8 @@ def nodes():
                     "title": entry["name"],
                     "description": entry["address"],
                     "src": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else None,
+                    "zoom": False,
+                    "redirect": f"/nodes/{entry['id']}",
                 }
             )
     else:

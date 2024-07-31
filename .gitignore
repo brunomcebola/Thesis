@@ -1,16 +1,20 @@
-.direnv/
-.venv*
-*cache*/
-node_modules/
+# Folders
 
+node_modules/
 configs/
-datasets/
-test_env/
 random/
 models/
 pose/
-data/
+build/
+wheel_contents/
+*data*/
+*cache*/
+*test*/
 
+# Extensions
+
+*.venv*
+*.direnv*
 *.npy*
 *.log*
 *.so*
@@ -21,6 +25,5 @@ data/
 *.env.*
 *.yaml*
 *.zip*
-
-*test*
+*.egg-info*
 

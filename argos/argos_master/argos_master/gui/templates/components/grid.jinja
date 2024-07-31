@@ -40,6 +40,20 @@ Expected parameters:
       card.classList.add('card');
       cardContainer.appendChild(card);
 
+      // Add onclick event if redirect is set
+      if (data[data_index].redirect) {
+          card.style.cursor = "pointer";
+          card.addEventListener('mouseenter', function() {
+            card.classList.add('shadow-sm');
+          });
+          card.addEventListener('mouseleave', function() {
+            card.classList.remove('shadow-sm');
+          });
+          card.addEventListener('click', function() {
+          window.location.href = data[data_index].redirect;
+          });
+      }
+
       // Create card image
       const cardImage = document.createElement('img');
       cardImage.classList.add('card-img-top');
@@ -53,9 +67,11 @@ Expected parameters:
       card.appendChild(cardImage);
 
       // Create an i element for the arrow icon
-      const arrowIcon = document.createElement('i');
-      arrowIcon.classList.add('mdi', 'mdi-arrow-expand', 'expand-image');
-      card.appendChild(arrowIcon);
+      if (data[data_index].zoom){
+        const arrowIcon = document.createElement('i');
+        arrowIcon.classList.add('mdi', 'mdi-arrow-expand', 'expand-image');
+        card.appendChild(arrowIcon);
+      }
 
       // Create card body
       if (data[data_index].title != null || data[data_index].description != null) {

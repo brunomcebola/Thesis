@@ -471,26 +471,6 @@ $navbar-active-item-underline: $main-color;
   }
 }
 
-/* List images */
-
-.image-card {
-  position: relative;
-
-  input {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    cursor: pointer;
-  }
-
-  i {
-    position: absolute;
-    bottom: 6px;
-    right: 10px;
-    cursor: pointer;
-  }
-}
-
 /* breadcrumbs */
 
 .breadcrumb {
