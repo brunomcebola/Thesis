@@ -12,9 +12,6 @@ from flask import Flask
 from flask_socketio import SocketIO
 from dotenv import find_dotenv, load_dotenv
 
-from . import gui
-from . import api
-
 
 def set_environment_variables() -> None:
     """
@@ -70,6 +67,9 @@ def launch_master(logger: logging.Logger) -> None:
     """
     Launch the GUI
     """
+
+    from . import gui # pylint: disable=import-outside-toplevel
+    from . import api # pylint: disable=import-outside-toplevel
 
     def _cleanup_callback(signum, frame):  # pylint: disable=unused-argument
         """
