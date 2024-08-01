@@ -1,32 +1,25 @@
 {% extends "views/base.jinja" %}
-{% from "components/modal.jinja" import modal with context %}
 {% block title %}
-  Areas
+  Cameras
 {% endblock title %}
 {% block body %}
   <div class="container py-4">
     <div class="row justify-content-center pb-3">
       <div class="col my-auto ps-3">
-        <h2 class="m-0">Areas</h2>
+        <h2 class="m-0">Cameras</h2>
       </div>
       <div class="col my-auto">
         <div class="input-group">
           <input class="form-control rounded-pill"
                  type="search"
-                 placeholder="Search for an area" />
+                 placeholder="Search for a camera" />
         </div>
       </div>
       <div class="col my-auto align-right pe-3">
-        <button type="button"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#modal">Add area</button>
       </div>
     </div>
-    {% call modal("Add area") %}
-    {% endcall %}
     {% if content is defined %}
-      {% with content=content %}
+      {% with data=content %}
         {% include "components/grid.jinja" %}
       {% endwith %}
     {% else %}

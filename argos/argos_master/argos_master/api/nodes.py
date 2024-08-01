@@ -7,13 +7,14 @@ from http import HTTPStatus
 import yaml
 import jsonschema
 from flask import Blueprint, jsonify, send_file
+import requests
 
 
 blueprint = Blueprint("nodes", __name__, url_prefix="/nodes")
 
-NODES_DIR = "nodes"
-NODES_FILE = "nodes.yaml"
-IMAGES_DIR = "images"
+NODES_DIR = os.path.join(os.environ["BASE_DIR"], "nodes")
+NODES_FILE = os.path.join(NODES_DIR, "nodes.yaml")
+IMAGES_DIR = os.path.join(NODES_DIR, "images")
 
 NODES_CONFIG_SCHEMA = {
     "type": "array",
@@ -49,16 +50,13 @@ def _ensure_filesystem():
     """
 
     #  Create base folder
-    nodes_dir = os.path.join(os.environ["BASE_DIR"], NODES_DIR)
-    os.makedirs(nodes_dir, exist_ok=True)
+    os.makedirs(NODES_DIR, exist_ok=True)
 
     # Create images folder
-    images_dir = os.path.join(nodes_dir, IMAGES_DIR)
-    os.makedirs(images_dir, exist_ok=True)
+    os.makedirs(IMAGES_DIR, exist_ok=True)
 
     # Create nodes file
-    nodes_file = os.path.join(nodes_dir, NODES_FILE)
-    with open(nodes_file, "a", encoding="utf-8"):
+    with open(NODES_FILE, "a", encoding="utf-8"):
         pass
 
 
@@ -103,10 +101,7 @@ def nodes():
     """
 
     try:
-        # Get the nodes directory
-        nodes_dir = os.path.join(os.environ["BASE_DIR"], NODES_DIR)
-
-        with open(os.path.join(nodes_dir, NODES_FILE), "r", encoding="utf-8") as f:
+        with open(NODES_FILE, "r", encoding="utf-8") as f:
             nodes_list: list[dict] = yaml.safe_load(f) or []
 
             _validate_nodes_list(nodes_list)
@@ -116,8 +111,7 @@ def nodes():
             HTTPStatus.OK,
         )
 
-    except Exception as e:  # pylint: disable=broad-except
-        print(e)
+    except Exception:  # pylint: disable=broad-except
         return (
             jsonify({"error": "Internal error."}),
             HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -130,21 +124,51 @@ def image(node_id: int):
     Returns the image of the node
     """
 
-    print("OLA")
-
-    # Get the nodes directory
-    nodes_dir = os.path.join(os.environ["BASE_DIR"], NODES_DIR)
-
-    # Get the images dir
-    images_dir = os.path.join(nodes_dir, IMAGES_DIR)
-
     # Get the node image
-    for file in os.listdir(images_dir):
-        print(file)
+    for file in os.listdir(IMAGES_DIR):
         if file.startswith(f"{node_id}."):
-            return send_file(os.path.join(images_dir, file))
+            return send_file(os.path.join(IMAGES_DIR, file))
 
     return (
         jsonify({"error": "Image not found."}),
         HTTPStatus.NOT_FOUND,
     )
+
+
+@blueprint.route("/<int:node_id>/cameras")
+def cameras(node_id: int):
+    """
+    Returns a list with the cameras of the node
+    """
+
+    # BUG: node_id=0 breaks access to rout
+
+    try:
+        with open(NODES_FILE, "r", encoding="utf-8") as f:
+            nodes_list: list[dict] = yaml.safe_load(f) or []
+
+            _validate_nodes_list(nodes_list)
+
+        # Get the node
+        node = next((node for node in nodes_list if node["id"] == node_id), None)
+
+        if node is None:
+            return (
+                jsonify({"error": "Node not found."}),
+                HTTPStatus.NOT_FOUND,
+            )
+
+        # Make a GET request to retrieve the list of cameras
+        response = requests.get(f"http://{node['address']}/cameras")
+
+        return (
+            jsonify(response.json() if response.status_code == HTTPStatus.OK else []),
+            HTTPStatus.OK,
+        )
+
+    except Exception as e:  # pylint: disable=broad-except
+        print(e)
+        return (
+            jsonify({"error": "Internal error."}),
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+        )

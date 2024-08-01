@@ -39,23 +39,42 @@ def nodes():
     response = current_app.test_client().get("/api/nodes/")
 
     if response.status_code == HTTPStatus.OK:
-        content = []
-        for entry in response.get_json():
-            content.append(
-                {
-                    "title": entry["name"],
-                    "description": entry["address"],
-                    "src": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else None,
-                    "zoom": False,
-                    "redirect": f"/nodes/{entry['id']}",
-                }
-            )
+        content = [
+            {
+                "title": entry["name"],
+                "description": entry["address"],
+                "src": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else None,
+                "zoom": False,
+                "redirect": f"/nodes/{entry['id']}",
+            }
+            for entry in response.get_json()
+        ]
     else:
         content = []
 
-    print(content)
-
     return render_template("views/nodes.jinja", content=content)
+
+
+@blueprint.route("/nodes/<int:node_id>")
+def node(node_id):
+    """
+    The node view
+    """
+
+    response = current_app.test_client().get(f"/api/nodes/{node_id}/cameras")
+
+    if response.status_code == HTTPStatus.OK:
+        content = [
+            {
+            "title": entry,
+            "src": "/gui/static/images/realsense.png",
+            "redirect": f"/nodes/{node_id}/cameras/{entry}",
+            }
+            for entry in response.get_json()
+        ]
+        return render_template("views/cameras.jinja", content=content)
+    else:
+        return render_template("views/404.jinja"), 404
 
 
 @blueprint.route("/areas")
