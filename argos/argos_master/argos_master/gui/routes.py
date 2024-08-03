@@ -56,7 +56,7 @@ def nodes():
 
 
 @blueprint.route("/nodes/<int:node_id>")
-def node(node_id):
+def node(node_id: int):
     """
     The node view
     """
@@ -73,9 +73,23 @@ def node(node_id):
             for entry in response.get_json()
         ]
         return render_template("views/cameras.jinja", content=content)
+    elif response.status_code == HTTPStatus.NOT_FOUND:
+        return render_template("views/404.jinja"), 404
+    else:
+        return render_template("views/500.jinja"), 500
+
+@blueprint.route("/nodes/<int:node_id>/cameras/<camera_id>")
+def camera(node_id, camera_id):
+    """
+    The camera view
+    """
+
+    response = current_app.test_client().get(f"/api/nodes/{node_id}/cameras")
+
+    if response.status_code == HTTPStatus.OK and camera_id in response.get_json():
+        return render_template("views/camera.jinja")
     else:
         return render_template("views/404.jinja"), 404
-
 
 @blueprint.route("/areas")
 def areas():
