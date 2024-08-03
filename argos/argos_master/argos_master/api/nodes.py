@@ -23,7 +23,7 @@ NODES_CONFIG_SCHEMA = {
         "properties": {
             "id": {
                 "type": "integer",
-                "minimum": 0,
+                "minimum": 1,
             },
             "name": {
                 "type": "string",
@@ -44,54 +44,74 @@ NODES_CONFIG_SCHEMA = {
 }
 
 
-def _ensure_filesystem():
+class NodeConfigurationException(Exception):
     """
-    Ensures the integrity of the filesystem
+    Custom exception class for nodes
     """
 
-    #  Create base folder
+
+nodes_list: list[dict] = []
+
+
+def init():
+    """
+    Initializes the nodes module
+    """
+    global nodes_list  # pylint: disable=global-statement
+
+    #  Create base folder if it doesn't exist
     os.makedirs(NODES_DIR, exist_ok=True)
 
-    # Create images folder
+    # Create images folde if it doesn't exist
     os.makedirs(IMAGES_DIR, exist_ok=True)
 
-    # Create nodes file
+    # Create nodes file if it doesn't exist
     with open(NODES_FILE, "a", encoding="utf-8"):
         pass
 
-
-def _validate_nodes_list(nodes_list: list[dict]):
-    """
-    Validates the nodes list
-    """
+    # Get nodes from file
+    with open(NODES_FILE, "r", encoding="utf-8") as f:
+        nodes_list = yaml.safe_load(f) or []
 
     if nodes_list:
-        # Ensure the schema
-        jsonschema.validate(instance=nodes_list, schema=NODES_CONFIG_SCHEMA)
+        try:
+            jsonschema.validate(instance=nodes_list, schema=NODES_CONFIG_SCHEMA)
+        except jsonschema.ValidationError as e:
+            raise NodeConfigurationException(
+                f"Invalid nodes configuration ({e.message} on instance {e.path[0]}: {e.instance})."
+            ) from e
 
         # Ensure unique ids
         ids = [node["id"] for node in nodes_list]
         if len(ids) != len(set(ids)):
-            raise ValueError("Duplicated ids.")
+            duplicate_id = next(id_ for id_ in ids if ids.count(id_) > 1)
+            raise NodeConfigurationException(f"Duplicated ids ({duplicate_id}).")
 
         # Ensure unique names
         names = [node["name"] for node in nodes_list]
         if len(names) != len(set(names)):
-            raise ValueError("Duplicated names.")
+            duplicate_name = next(name for name in names if names.count(name) > 1)
+            raise NodeConfigurationException(f"Duplicated names ({duplicate_name}).")
 
         # Ensure unique addresses
         addresses = [node["address"] for node in nodes_list]
         if len(addresses) != len(set(addresses)):
-            raise ValueError("Duplicated addresses.")
+            duplicate_address = next(
+                address for address in addresses if addresses.count(address) > 1
+            )
+            raise NodeConfigurationException(f"Duplicated addresses ({duplicate_address}).")
 
 
-@blueprint.before_request
-def before_request():
+@blueprint.errorhandler(Exception)
+def handle_exception(_):
     """
-    Ensure the filesystem
+    Handles exceptions
     """
 
-    _ensure_filesystem()
+    return (
+        jsonify({"error": "Internal error."}),
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+    )
 
 
 @blueprint.route("/")
@@ -100,22 +120,10 @@ def nodes():
     Returns the nodes in BASE_DIR/nodes
     """
 
-    try:
-        with open(NODES_FILE, "r", encoding="utf-8") as f:
-            nodes_list: list[dict] = yaml.safe_load(f) or []
-
-            _validate_nodes_list(nodes_list)
-
-        return (
-            jsonify(nodes_list),
-            HTTPStatus.OK,
-        )
-
-    except Exception:  # pylint: disable=broad-except
-        return (
-            jsonify({"error": "Internal error."}),
-            HTTPStatus.INTERNAL_SERVER_ERROR,
-        )
+    return (
+        jsonify(nodes_list),
+        HTTPStatus.OK,
+    )
 
 
 @blueprint.route("/<node_id>/image")
@@ -141,34 +149,21 @@ def cameras(node_id: int):
     Returns a list with the cameras of the node
     """
 
-    # BUG: node_id=0 breaks access to rout
+    # Get the node
+    node = next((node for node in nodes_list if node["id"] == node_id), None)
 
-    try:
-        with open(NODES_FILE, "r", encoding="utf-8") as f:
-            nodes_list: list[dict] = yaml.safe_load(f) or []
-
-            _validate_nodes_list(nodes_list)
-
-        # Get the node
-        node = next((node for node in nodes_list if node["id"] == node_id), None)
-
-        if node is None:
-            return (
-                jsonify({"error": "Node not found."}),
-                HTTPStatus.NOT_FOUND,
-            )
-
-        # Make a GET request to retrieve the list of cameras
-        response = requests.get(f"http://{node['address']}/cameras")
-
+    if node is None:
         return (
-            jsonify(response.json() if response.status_code == HTTPStatus.OK else []),
-            HTTPStatus.OK,
+            jsonify({"error": "Node not found."}),
+            HTTPStatus.NOT_FOUND,
         )
 
-    except Exception as e:  # pylint: disable=broad-except
-        print(e)
-        return (
-            jsonify({"error": "Internal error."}),
-            HTTPStatus.INTERNAL_SERVER_ERROR,
-        )
+    print(node)
+
+    # Make a GET request to retrieve the list of cameras
+    response = requests.get(f"http://{node['address']}/cameras", timeout=5)
+
+    return (
+        jsonify(response.json() if response.status_code == HTTPStatus.OK else []),
+        HTTPStatus.OK,
+    )

@@ -31,7 +31,8 @@ def _exit_callback(logger: logging.Logger):
     Cleanup function to be called when the program is interrupted
     """
 
-    logger.info("ARGOS master stopped!")
+    if os.getenv("WERKZEUG_RUN_MAIN") == "true" or signal.SIGINT:
+        logger.info("ARGOS master stopped!")
 
 
 def _set_environment_variables() -> None:
@@ -87,6 +88,9 @@ def _launch_master(logger: logging.Logger) -> None:
     Launch the GUI
     """
 
+    if os.getenv("WERKZEUG_RUN_MAIN") == "true":
+        logger.info("ARGOS master started!")
+
     from . import gui  # pylint: disable=import-outside-toplevel
     from . import api  # pylint: disable=import-outside-toplevel
 
@@ -105,9 +109,6 @@ def _launch_master(logger: logging.Logger) -> None:
 
     # Register the GUI
     gui.register(app)
-
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        logger.info("ARGOS master started!")
 
     socketio.run(
         app,
