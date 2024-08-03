@@ -4,10 +4,15 @@ This module contains the routes to interact with the nodes.
 
 import os
 from http import HTTPStatus
+import threading
+import copy
 import yaml
 import jsonschema
 from flask import Blueprint, jsonify, send_file
+import socketio
 import requests
+import pickle
+import numpy as np
 
 
 blueprint = Blueprint("nodes", __name__, url_prefix="/nodes")
@@ -51,6 +56,23 @@ class NodeConfigurationException(Exception):
 
 
 nodes_list: list[dict] = []
+
+
+def _node_handler_target(node: dict):
+    """
+    Target function for the node handler thread
+    """
+    def _callback(data):
+        frame = pickle.loads(data)
+        print([f_type.shape if f_type is not None else None for f_type in frame])
+
+    # Creat socketio connection for node
+    sio = socketio.Client()
+
+    for camera in node["cameras"]:
+        sio.on(camera, _callback)
+
+    sio.connect(f"http://{node['address']}")
 
 
 def init():
@@ -101,6 +123,23 @@ def init():
             )
             raise NodeConfigurationException(f"Duplicated addresses ({duplicate_address}).")
 
+        # Get the cameras of each node
+        for node in nodes_list:
+            try:
+                response = requests.get(f"http://{node['address']}/cameras", timeout=5)
+                node["cameras"] = response.json() if response.status_code == HTTPStatus.OK else []
+            except Exception:  # pylint: disable=broad-except
+                node["cameras"] = []
+
+        # Launch thread for each node
+        for node in nodes_list:
+            node["thread"] = threading.Thread(
+                target=_node_handler_target,
+                args=(node,),
+                daemon=True,
+            )
+            node["thread"].start()
+
 
 @blueprint.errorhandler(Exception)
 def handle_exception(_):
@@ -120,8 +159,12 @@ def nodes():
     Returns the nodes in BASE_DIR/nodes
     """
 
+    sanitized_nodes = copy.deepcopy(nodes_list)
+    for node in sanitized_nodes:
+        del node["thread"]
+
     return (
-        jsonify(nodes_list),
+        jsonify(sanitized_nodes),
         HTTPStatus.OK,
     )
 
@@ -131,6 +174,12 @@ def image(node_id: int):
     """
     Returns the image of the node
     """
+
+    if not any(node["id"] == node_id for node in nodes_list):
+        return (
+            jsonify({"error": "Node not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
 
     # Get the node image
     for file in os.listdir(IMAGES_DIR):
@@ -157,8 +206,6 @@ def cameras(node_id: int):
             jsonify({"error": "Node not found."}),
             HTTPStatus.NOT_FOUND,
         )
-
-    print(node)
 
     # Make a GET request to retrieve the list of cameras
     response = requests.get(f"http://{node['address']}/cameras", timeout=5)

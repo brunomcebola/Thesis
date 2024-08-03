@@ -105,7 +105,7 @@ def _launch_master(logger: logging.Logger) -> None:
     app.config["WEBASSETS_CACHE"] = False
 
     # Register the API
-    api.register(app, socketio)
+    api.register(app)
 
     # Register the GUI
     gui.register(app)
