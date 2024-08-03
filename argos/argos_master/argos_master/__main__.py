@@ -7,13 +7,34 @@ from __future__ import annotations
 import os
 import sys
 import signal
+import atexit
 import logging
 from flask import Flask
+from appdirs import AppDirs
 from flask_socketio import SocketIO
 from dotenv import find_dotenv, load_dotenv
 
 
-def set_environment_variables() -> None:
+def _global_exception_hook(logger: logging.Logger):
+    """
+    Global exception handler
+    """
+
+    def _callback(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-argument
+        logger.error(f"{exc_type.__name__}: {exc_value}")
+
+    return _callback
+
+
+def _exit_callback(logger: logging.Logger):
+    """
+    Cleanup function to be called when the program is interrupted
+    """
+
+    logger.info("ARGOS master stopped!")
+
+
+def _set_environment_variables() -> None:
     """
     Load the environment variables from the nearest .env.argos file
     """
@@ -27,7 +48,7 @@ def set_environment_variables() -> None:
 
     # BASE_DIR validation
     if not os.getenv("BASE_DIR"):
-        os.environ["BASE_DIR"] = os.path.join(os.path.dirname(__file__), "..", "data")
+        os.environ["BASE_DIR"] = AppDirs(__package__).user_data_dir
 
     # Create BASE_DIR if it does not exist
     os.makedirs(os.environ["BASE_DIR"], exist_ok=True)
@@ -41,15 +62,15 @@ def set_environment_variables() -> None:
         os.environ["PORT"] = "9876"
 
 
-def get_logger() -> logging.Logger:
+def _get_logger() -> logging.Logger:
     """
     Get the logger
     """
 
-    logger = logging.getLogger("argos_master")
+    logger = logging.getLogger(__package__)
     logger.setLevel(logging.INFO)
 
-    log_file_path = os.path.join(os.environ["BASE_DIR"], "argos_master.log")
+    log_file_path = os.path.join(os.environ["BASE_DIR"], f"{__package__}.log")
     os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
     file_handler = logging.FileHandler(log_file_path)
 
@@ -58,44 +79,35 @@ def get_logger() -> logging.Logger:
 
     logger.addHandler(file_handler)
 
-    logger.info("ARGOS master started!")
-
     return logger
 
 
-def launch_master(logger: logging.Logger) -> None:
+def _launch_master(logger: logging.Logger) -> None:
     """
     Launch the GUI
     """
 
-    from . import gui # pylint: disable=import-outside-toplevel
-    from . import api # pylint: disable=import-outside-toplevel
-
-    def _cleanup_callback(signum, frame):  # pylint: disable=unused-argument
-        """
-        Cleanup function to be called when the program is interrupted
-        """
-        logger.info("ARGOS master stopped!")
-
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, _cleanup_callback)
+    from . import gui  # pylint: disable=import-outside-toplevel
+    from . import api  # pylint: disable=import-outside-toplevel
 
     # Create the Flask app
     app = Flask(__name__)
+
+    # Create the SocketIO app
+    socketio = SocketIO(app)
 
     # Add app configs
     app.config["logger"] = logger
     app.config["WEBASSETS_CACHE"] = False
 
     # Register the API
-    api.register(app)
+    api.register(app, socketio)
 
     # Register the GUI
     gui.register(app)
 
-    # Create the SocketIO app
-    socketio = SocketIO(app)
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        logger.info("ARGOS master started!")
 
     socketio.run(
         app,
@@ -112,11 +124,23 @@ def main():
     Main function of the program
     """
 
-    set_environment_variables()
+    # Set the environment variables
+    _set_environment_variables()
 
-    logger = get_logger()
+    # Get the logger
+    logger = _get_logger()
 
-    launch_master(logger)
+    # Register the exit callback
+    atexit.register(_exit_callback, logger)
+
+    # Register the global exception handler
+    sys.excepthook = _global_exception_hook(logger)
+
+    # Register the signal handler
+    signal.signal(signal.SIGINT, lambda signum, frame: exit(0))
+
+    # Launch the master
+    _launch_master(logger)
 
 
 if __name__ == "__main__":
