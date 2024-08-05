@@ -4,6 +4,7 @@ This module contains the views for the GUI.
 
 from http import HTTPStatus
 from flask import Blueprint, render_template, current_app
+from flask import redirect, url_for
 
 blueprint = Blueprint(
     "gui",
@@ -27,7 +28,12 @@ def index():
     """
     The index view
     """
-    return render_template("views/index.jinja")
+    return redirect(url_for("gui.nodes"))
+
+
+#
+# Nodes
+#
 
 
 @blueprint.route("/nodes")
@@ -66,9 +72,9 @@ def node(node_id: int):
     if response.status_code == HTTPStatus.OK:
         content = [
             {
-            "title": entry,
-            "src": "/gui/static/images/realsense.png",
-            "redirect": f"/nodes/{node_id}/cameras/{entry}",
+                "title": entry,
+                "src": "/gui/static/images/realsense.png",
+                "redirect": f"/nodes/{node_id}/cameras/{entry}",
             }
             for entry in response.get_json()
         ]
@@ -77,6 +83,7 @@ def node(node_id: int):
         return render_template("views/404.jinja"), 404
     else:
         return render_template("views/500.jinja"), 500
+
 
 @blueprint.route("/nodes/<int:node_id>/cameras/<camera_id>")
 def camera(node_id, camera_id):
@@ -91,12 +98,23 @@ def camera(node_id, camera_id):
     else:
         return render_template("views/404.jinja"), 404
 
+
+#
+# Areas
+#
+
+
 @blueprint.route("/areas")
 def areas():
     """
     The areas view
     """
     return render_template("views/areas.jinja")
+
+
+#
+# Datasets
+#
 
 
 @blueprint.route("/datasets/", defaults={"subpath": ""})
@@ -125,3 +143,16 @@ def datasets(subpath):
     # }
 
     return render_template("views/datasets.jinja", content=content)
+
+
+#
+# Logs
+#
+
+
+@blueprint.route("/logs")
+def logs():
+    """
+    The logs view
+    """
+    return render_template("views/logs.jinja")
