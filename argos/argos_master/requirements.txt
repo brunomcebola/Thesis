@@ -1,3 +1,4 @@
+pyScss==1.4.0
 Flask==3.0.3
 flask_assets==2.1.0
 flask_socketio==5.3.6
@@ -5,3 +6,7 @@ jsonschema==4.22.0
 python-dotenv==1.0.1
 PyYAML==6.0.1
 requests==2.32.3
+appdirs==1.4.4
+python-socketio[client]==5.11.3
+# Other for dev
+djlint
