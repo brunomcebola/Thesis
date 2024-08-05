@@ -178,7 +178,7 @@ def handle_exception(_):
 @blueprint.route("/")
 def nodes():
     """
-    Returns the nodes in BASE_DIR/nodes
+    Returns the nodes
     """
 
     keys_to_keep = ["id", "name", "address", "has_image"]

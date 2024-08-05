@@ -1,0 +1,62 @@
+{% extends "views/base.jinja" %}
+{% block title %}
+  Logs
+{% endblock title %}
+{% block body %}
+  <div id="logs-container" class="container py-4">
+    <div id="logs"></div>
+    <div id="controls" class="p-3">
+      <button class="btn btn-primary" id="reload-btn">Reload</button>
+      <span id="indicator">New logs available</span>
+    </div>
+  </div>
+{% endblock body %}
+{% block script %}
+  <script>
+    const logs = document.getElementById('logs');
+    const reloadBtn = document.getElementById('reload-btn');
+    const indicator = document.getElementById('indicator');
+
+    const logsLineHeight = parseInt(window.getComputedStyle(logs).lineHeight);
+    const logsDivHeight = logs.clientHeight - parseInt(window.getComputedStyle(logs).paddingTop) - parseInt(window.getComputedStyle(logs).paddingBottom);
+    const numLines = Math.floor(logsDivHeight / logsLineHeight);
+
+    var lineCount = 1;
+
+    function loadLogs() {
+      fetch('/api/logs?start_line=' + lineCount + '&nb_lines=' + Math.floor((numLines * 1.5)))
+        .then(response => response.json())
+        .then(lines => {
+          prevLineCount = lineCount
+          lines.forEach(line => {
+            let [timestamp, level, message] = line.split(' - ', 3);
+            let timestamp_color = "darkgreen"
+            let level_color = (level === "INFO" ? "lightgreen" : level === "ERROR" ? "red" : "indigo")
+            let message_color= "white"
+
+            let logItem = `<span style="color: ${timestamp_color}">${timestamp}</span>  -  `
+            logItem += `<span style="color: ${level_color}">${level}</span>  -  `
+            logItem += `<span style="color: ${message_color}">${message}</span>`;
+            logs.innerHTML = logItem + logs.innerHTML;
+            lineCount++;
+          });
+          logs.scrollTop = logsLineHeight * (lineCount - prevLineCount);
+        })
+
+    }
+
+    loadLogs()
+
+    logs.addEventListener('scroll', function() {
+      if (logs.scrollTop === 0) {
+        loadLogs()
+      }
+    });
+
+    reloadBtn.addEventListener('click', function() {
+      location.reload();
+    });
+
+
+  </script>
+{% endblock script %}
