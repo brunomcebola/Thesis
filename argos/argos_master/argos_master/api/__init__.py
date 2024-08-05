@@ -2,26 +2,16 @@
 Init file for the API module.
 """
 
-from http import HTTPStatus
-from flask import Flask, Blueprint
-from flask_socketio import SocketIO
+from flask import Blueprint
 
-from . import datasets
-from . import nodes
+from .. import app as _app
 
+from . import datasets as _datasets
+from . import nodes as _nodes
 
-def register(app: Flask):
-    """
-    Register the GUI views
-    """
+blueprint = Blueprint("api", __name__, url_prefix="/api")
 
-    # Register the routes
+blueprint.register_blueprint(_datasets.blueprint)
+blueprint.register_blueprint(_nodes.blueprint)
 
-    nodes.init()
-
-    blueprint = Blueprint("api", __name__, url_prefix="/api")
-
-    blueprint.register_blueprint(datasets.blueprint)
-    blueprint.register_blueprint(nodes.blueprint)
-
-    app.register_blueprint(blueprint)
+_app.register_blueprint(blueprint)

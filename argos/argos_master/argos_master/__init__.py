@@ -8,10 +8,15 @@ import sys
 import atexit
 import signal
 import logging
+
+from flask import Flask
 from appdirs import AppDirs
+from flask_socketio import SocketIO
 from dotenv import find_dotenv, load_dotenv
 
 logger: logging.Logger
+app: Flask
+socketio: SocketIO
 
 
 def _set_environment_variables() -> None:
@@ -105,6 +110,27 @@ def _set_global_exception_hook() -> None:
     sys.excepthook = _callback
 
 
+def _set_server() -> None:
+    """
+    Set up the Flask and SocketIO server
+    """
+
+    global app  # pylint: disable=global-statement
+    global socketio  # pylint: disable=global-statement
+
+    # Create the Flask app
+    app = Flask(__name__)
+
+    # Create the SocketIO app
+    socketio = SocketIO(app)
+
+    # Add app configs
+    app.config["WEBASSETS_CACHE"] = False
+
+    # Register the signal handler
+    signal.signal(signal.SIGINT, lambda signum, frame: exit(0))
+
+
 # Initialization code
 
 _set_environment_variables()
@@ -114,3 +140,5 @@ _set_logger()
 _set_atexit_handler()
 
 _set_global_exception_hook()
+
+_set_server()

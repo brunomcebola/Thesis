@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import os
 import sys
-import signal
-from flask import Flask
-from flask_socketio import SocketIO
+
+from . import app as _app
+from . import socketio as _socketio
 
 
 def main():
@@ -16,29 +16,11 @@ def main():
     Main function of the program
     """
 
-    from . import gui  # pylint: disable=import-outside-toplevel
-    from . import api  # pylint: disable=import-outside-toplevel
+    from . import gui  # pylint: disable=import-outside-toplevel, unused-import
+    from . import api  # pylint: disable=import-outside-toplevel, unused-import
 
-    # Create the Flask app
-    app = Flask(__name__)
-
-    # Create the SocketIO app
-    socketio = SocketIO(app)
-
-    # Add app configs
-    app.config["WEBASSETS_CACHE"] = False
-
-    # Register the API
-    api.register(app)
-
-    # Register the GUI
-    gui.register(app)
-
-    # Register the signal handler
-    signal.signal(signal.SIGINT, lambda signum, frame: exit(0))
-
-    socketio.run(
-        app,
+    _socketio.run(
+        _app,
         host=os.environ["HOST"],
         port=int(os.environ["PORT"]),
         debug=False,
