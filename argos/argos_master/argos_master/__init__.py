@@ -130,7 +130,7 @@ def _set_server() -> None:
     global socketio  # pylint: disable=global-statement
 
     # Create the Flask app
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="gui/static", template_folder="gui/templates")
 
     # Create the SocketIO app
     socketio = SocketIO(app)
