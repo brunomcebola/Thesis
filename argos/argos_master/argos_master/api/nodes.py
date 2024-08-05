@@ -5,15 +5,16 @@ This module contains the routes to interact with the nodes.
 import os
 from http import HTTPStatus
 import threading
-import copy
+import pickle
 import yaml
 import jsonschema
 from flask import Blueprint, jsonify, send_file
 import socketio
+import socketio.exceptions
 import requests
-import pickle
-import numpy as np
 
+from .. import logger as _logger
+from .. import socketio as _socketio
 
 blueprint = Blueprint("nodes", __name__, url_prefix="/nodes")
 
@@ -49,19 +50,20 @@ NODES_CONFIG_SCHEMA = {
 }
 
 
+nodes_list: list[dict] = []
+
+
 class NodeConfigurationException(Exception):
     """
     Custom exception class for nodes
     """
 
 
-nodes_list: list[dict] = []
-
-
 def _node_handler_target(node: dict):
     """
     Target function for the node handler thread
     """
+
     def _callback(data):
         frame = pickle.loads(data)
         print([f_type.shape if f_type is not None else None for f_type in frame])
@@ -72,10 +74,17 @@ def _node_handler_target(node: dict):
     for camera in node["cameras"]:
         sio.on(camera, _callback)
 
-    sio.connect(f"http://{node['address']}")
+    try:
+        sio.connect(f"http://{node['address']}")
+
+        if os.getenv("WERKZEUG_RUN_MAIN") == "true" or os.getenv("HOT_RELOAD") == "false":
+            _logger.info("Connected to node %s at %s.", node["id"], node["address"])
+
+    except socketio.exceptions.ConnectionError:
+        return
 
 
-def init():
+def _init():
     """
     Initializes the nodes module
     """
@@ -141,11 +150,24 @@ def init():
             node["thread"].start()
 
 
+#
+# Initialization
+#
+
+_init()
+
+#
+# Routes
+#
+
+
 @blueprint.errorhandler(Exception)
-def handle_exception(_):
+def handle_exception(e):
     """
     Handles exceptions
     """
+
+    print(e)
 
     return (
         jsonify({"error": "Internal error."}),
@@ -159,9 +181,10 @@ def nodes():
     Returns the nodes in BASE_DIR/nodes
     """
 
-    sanitized_nodes = copy.deepcopy(nodes_list)
-    for node in sanitized_nodes:
-        del node["thread"]
+    keys_to_keep = ["id", "name", "address", "has_image"]
+    sanitized_nodes = []
+    for node in nodes_list:
+        sanitized_nodes.append({key: value for key, value in node.items() if key in keys_to_keep})
 
     return (
         jsonify(sanitized_nodes),
