@@ -4,7 +4,6 @@ This module contains the routes to interact with the nodes.
 
 import os
 from http import HTTPStatus
-import threading
 import pickle
 import yaml
 import jsonschema
@@ -59,29 +58,45 @@ class NodeConfigurationException(Exception):
     """
 
 
-def _node_handler_target(node: dict):
+def _connect_node(node: dict) -> None:
     """
-    Target function for the node handler thread
+    Connects to a node and sets the callbacks of the cameras
     """
 
-    def _callback(data):
+    def _camera_callback(data):
         frame = pickle.loads(data)
         print([f_type.shape if f_type is not None else None for f_type in frame])
 
-    # Creat socketio connection for node
-    sio = socketio.Client()
+    def _disconnect_callback():
+        _logger.info("Disconnected from node %s at %s.", node["id"], node["address"])
+        node["sio"] = None
 
-    for camera in node["cameras"]:
-        sio.on(camera, _callback)
-
+    # Create socketio connection for node
     try:
-        sio.connect(f"http://{node['address']}")
+        node["sio"] = socketio.Client()
 
-        if os.getenv("WERKZEUG_RUN_MAIN") == "true" or os.getenv("HOT_RELOAD") == "false":
-            _logger.info("Connected to node %s at %s.", node["id"], node["address"])
+        node["sio"].connect(f"http://{node['address']}")
+
+        node["sio"].on("disconnect", _disconnect_callback)
+
+        _logger.info("Connected to node %s at %s.", node["id"], node["address"])
 
     except socketio.exceptions.ConnectionError:
-        return
+        _logger.info("Failed to connected to node %s at %s.", node["id"], node["address"])
+
+        node["sio"] = None
+
+    # Get cameras and set callbacks
+    if node["sio"] is not None:
+        try:
+            response = requests.get(f"http://{node['address']}/cameras", timeout=5)
+            node["cameras"] = response.json() if response.status_code == HTTPStatus.OK else []
+            for camera in node["cameras"]:
+                node["sio"].on(camera, _camera_callback)
+        except Exception:  # pylint: disable=broad-except
+            node["cameras"] = []
+    else:
+        node["cameras"] = []
 
 
 def _init():
@@ -132,22 +147,9 @@ def _init():
             )
             raise NodeConfigurationException(f"Duplicated addresses ({duplicate_address}).")
 
-        # Get the cameras of each node
+        # Connect to nodes
         for node in nodes_list:
-            try:
-                response = requests.get(f"http://{node['address']}/cameras", timeout=5)
-                node["cameras"] = response.json() if response.status_code == HTTPStatus.OK else []
-            except Exception:  # pylint: disable=broad-except
-                node["cameras"] = []
-
-        # Launch thread for each node
-        for node in nodes_list:
-            node["thread"] = threading.Thread(
-                target=_node_handler_target,
-                args=(node,),
-                daemon=True,
-            )
-            node["thread"].start()
+            _connect_node(node)
 
 
 #
@@ -162,12 +164,10 @@ _init()
 
 
 @blueprint.errorhandler(Exception)
-def handle_exception(e):
+def handle_exception(_):
     """
     Handles exceptions
     """
-
-    print(e)
 
     return (
         jsonify({"error": "Internal error."}),
@@ -229,6 +229,13 @@ def cameras(node_id: int):
             jsonify({"error": "Node not found."}),
             HTTPStatus.NOT_FOUND,
         )
+
+    # Try to connect node if it's not connected
+    if node["sio"] is None:
+        _connect_node(node)
+
+    if node["sio"] is None:
+        raise RuntimeError("Failed to connect to node.")
 
     # Make a GET request to retrieve the list of cameras
     response = requests.get(f"http://{node['address']}/cameras", timeout=5)
