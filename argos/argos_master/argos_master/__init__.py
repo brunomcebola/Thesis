@@ -61,6 +61,14 @@ def _set_logger() -> None:
     Set up the logging for the application
     """
 
+    class _LogFilter(logging.Filter):
+        def filter(self, record):
+            # Custom validation logic here
+            # Return True to allow the log message, False to block it
+            if os.getenv("WERKZEUG_RUN_MAIN") == "true" or os.getenv("HOT_RELOAD") == "false":
+                return True
+            return False
+
     global logger  # pylint: disable=global-statement
 
     # Create logger
@@ -72,6 +80,10 @@ def _set_logger() -> None:
     os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
     file_handler = logging.FileHandler(log_file_path)
 
+    # Create filter
+    log_filter = _LogFilter()
+    file_handler.addFilter(log_filter)
+
     # Create formatter
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     file_handler.setFormatter(formatter)
@@ -79,8 +91,7 @@ def _set_logger() -> None:
     # Add file handler to logger
     logger.addHandler(file_handler)
 
-    if os.getenv("WERKZEUG_RUN_MAIN") == "true" or os.getenv("HOT_RELOAD") == "false":
-        logger.info("ARGOS master started!")
+    logger.info("ARGOS master started!")
 
 
 def _set_atexit_handler() -> None:
