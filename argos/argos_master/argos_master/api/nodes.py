@@ -3,14 +3,17 @@ This module contains the routes to interact with the nodes.
 """
 
 import os
-from http import HTTPStatus
 import pickle
+import io
+from http import HTTPStatus
+import base64
 import yaml
+import requests
 import jsonschema
-from flask import Blueprint, jsonify, send_file
 import socketio
 import socketio.exceptions
-import requests
+from PIL import Image
+from flask import Blueprint, jsonify, send_file
 
 from .. import logger as _logger
 from .. import socketio as _socketio
@@ -63,9 +66,24 @@ def _connect_node(node: dict) -> None:
     Connects to a node and sets the callbacks of the cameras
     """
 
-    def _camera_callback(data):
+    def _camera_callback(data, node, camera):
         frame = pickle.loads(data)
-        print([f_type.shape if f_type is not None else None for f_type in frame])
+
+        # TODO: ensure sequential order of frames
+
+        if frame[0] is not None:
+            # Convert BGR to RGB
+            rgb_image = frame[0][:, :, ::-1]
+            # rgb_image = frame[0]
+
+            pil_image = Image.fromarray(rgb_image)
+
+            buffer = io.BytesIO()
+            pil_image.save(buffer, format="JPEG")
+
+            img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+            _socketio.emit(f"{node}_{camera}", img_base64)
 
     def _disconnect_callback():
         _logger.info("Disconnected from node %s at %s.", node["id"], node["address"])
@@ -92,7 +110,12 @@ def _connect_node(node: dict) -> None:
             response = requests.get(f"http://{node['address']}/cameras", timeout=5)
             node["cameras"] = response.json() if response.status_code == HTTPStatus.OK else []
             for camera in node["cameras"]:
-                node["sio"].on(camera, _camera_callback)
+                node["sio"].on(
+                    camera,
+                    lambda data: _camera_callback(
+                        data, node["id"], camera  # pylint: disable=cell-var-from-loop
+                    ),
+                )
         except Exception:  # pylint: disable=broad-except
             node["cameras"] = []
     else:
@@ -223,7 +246,6 @@ def cameras(node_id: int):
 
     # Get the node
     node = next((node for node in nodes_list if node["id"] == node_id), None)
-
     if node is None:
         return (
             jsonify({"error": "Node not found."}),
@@ -242,5 +264,61 @@ def cameras(node_id: int):
 
     return (
         jsonify(response.json() if response.status_code == HTTPStatus.OK else []),
+        HTTPStatus.OK,
+    )
+
+
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/<string:action>")
+def start_camera_stream(node_id: int, camera_id: str, action: str):
+    """
+    Starts the camera stream for a specific node and camera
+    """
+
+    # Check if valid action
+    if action not in ["play", "pause"]:
+        return (
+            jsonify({"error": "Invalid action."}),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # TODO: change this
+    if action == "play":
+        action = "start"
+
+    # Get the node
+    node = next((node for node in nodes_list if node["id"] == node_id), None)
+    if node is None:
+        return (
+            jsonify({"error": "Node not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    # Try to connect node if it's not connected
+    if node["sio"] is None:
+        _connect_node(node)
+
+    if node["sio"] is None:
+        raise RuntimeError("Failed to connect to node.")
+
+    # Check if camera exists
+    if camera_id not in node["cameras"]:
+        return (
+            jsonify({"error": "Camera not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    # Make a GET request to start the camera stream
+    response = requests.get(
+        f"http://{node['address']}/cameras/{camera_id}/stream/{action}", timeout=5
+    )
+
+    if response.status_code != HTTPStatus.OK:
+        return (
+            jsonify({"error": "Failed to start camera stream."}),
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+        )
+
+    return (
+        jsonify({"message": "Camera stream started."}),
         HTTPStatus.OK,
     )

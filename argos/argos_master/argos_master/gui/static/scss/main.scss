@@ -334,19 +334,19 @@ $navbar-active-item-underline: $main-color;
   }
 }
 
-/* logs.jinja style */
+/* logs.jinja */
 
 #logs-container {
   #logs {
-    flex: 1;
     overflow-y: auto;
     padding: 10px;
     background-color: #1c1c1c;
     border: 1px solid #333;
+    border-bottom: none;
     box-shadow: inset 0 0 10px #000;
     white-space: pre-wrap;
     color: #fff;
-    // navbar - conatiner - controls - extra
+    // remove: navbar + container + controls + extra
     height: calc(100vh - 52px - 48px - 70px - 2px);
   }
 
@@ -355,10 +355,49 @@ $navbar-active-item-underline: $main-color;
     justify-content: space-between;
     align-items: center;
     background-color: #2d2d2d;
+    border: 1px solid #333;
+    border-top: none;
 
     #indicator {
       color: #ff4500;
       display: none;
+    }
+  }
+}
+
+/* camera.jinja */
+
+#camera-container {
+  #video-container {
+    width: 100%;
+    // remove: navbar + containes + title
+    height: calc(100vh - 52px - 48px - 50px);
+    position: relative;
+    background: linear-gradient(#333, #000);
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #controls {
+      #start-pause {
+        position: absolute;
+        bottom: 6px;
+        left: 6px;
+        color: #fff;
+      }
+
+      #fullscreen {
+        position: absolute;
+        bottom: 6px;
+        right: 6px;
+        color: #fff;
+      }
     }
   }
 }

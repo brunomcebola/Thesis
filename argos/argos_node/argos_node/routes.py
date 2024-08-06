@@ -41,7 +41,7 @@ def get_camera(serial_number: str):
 
     return jsonify("Camera operational."), HTTPStatus.OK
 
-
+# TODO: change to play instead of start
 @handler.route("/cameras/<serial_number>/stream/start", methods=["GET"])
 def start_stream(serial_number: str):
     """
