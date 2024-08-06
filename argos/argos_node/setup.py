@@ -1,9 +1,21 @@
 """
-This is the setup.py file for the Argos package. It is used to install the package using pip.
+This is the setup.py file for the argos_node package.
 """
 
 import os
+import shutil
 from setuptools import setup, find_packages
+
+packages = [
+    "Flask==3.0.3",
+    "flask_socketio==5.3.6",
+    "jsonschema==4.23.0",
+    "numpy==2.0.1",
+    "python-dotenv==1.0.1",
+    "PyYAML==6.0.1",
+    "appdirs==1.4.4",
+    # "pyrealsense2==2.55.1.6486"
+]
 
 setup(
     name="argos_node",
@@ -16,24 +28,25 @@ setup(
     ).read(),
     long_description_content_type="text/markdown",
     url="https://github.com/brunomcebola/Thesis",
-    packages=find_packages(),
-    install_requires=[
-        "Flask==3.0.3",
-        "flask_socketio==5.3.6",
-        "jsonschema==4.23.0",
-        "numpy==2.0.1",
-        "python-dotenv==1.0.1",
-        "PyYAML==6.0.1",
-    ],
+    license="MIT",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.9.2",
+    packages=find_packages(),
+    include_package_data=True,
+    install_requires=packages,
     entry_points={
         "console_scripts": [
-            "argos master=argos_node.__main__:main",
+            "argos_node=argos_node.__main__:main",
         ],
     },
 )
+
+# Remove the build directory
+shutil.rmtree("build")
+
+# Remove the egg-info directory
+shutil.rmtree("argos_node.egg-info")

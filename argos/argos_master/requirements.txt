@@ -11,3 +11,5 @@ python-socketio[client]==5.11.3
 pillow==10.4.0
 # Other for dev
 djlint
+setuptools
+wheel
