@@ -16,7 +16,7 @@ from PIL import Image
 from flask import Blueprint, jsonify, send_file
 
 from .. import logger as _logger
-from .. import socketio as _socketio
+from .. import socketio as _socketio  # pylint: disable=reimported
 
 blueprint = Blueprint("nodes", __name__, url_prefix="/nodes")
 
@@ -275,15 +275,11 @@ def start_camera_stream(node_id: int, camera_id: str, action: str):
     """
 
     # Check if valid action
-    if action not in ["play", "pause"]:
+    if action not in ["start", "stop"]:
         return (
             jsonify({"error": "Invalid action."}),
             HTTPStatus.BAD_REQUEST,
         )
-
-    # TODO: change this
-    if action == "play":
-        action = "start"
 
     # Get the node
     node = next((node for node in nodes_list if node["id"] == node_id), None)
@@ -314,11 +310,11 @@ def start_camera_stream(node_id: int, camera_id: str, action: str):
 
     if response.status_code != HTTPStatus.OK:
         return (
-            jsonify({"error": "Failed to start camera stream."}),
+            jsonify({"error": f"Failed to {action} camera stream."}),
             HTTPStatus.INTERNAL_SERVER_ERROR,
         )
 
     return (
-        jsonify({"message": "Camera stream started."}),
+        jsonify({"message": f"Camera stream {'started' if action == 'start' else 'stopped'}."}),
         HTTPStatus.OK,
     )
