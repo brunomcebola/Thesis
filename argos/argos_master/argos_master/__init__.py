@@ -144,6 +144,7 @@ def _set_server() -> None:
 
 # Initialization code
 
+
 _set_environment_variables()
 
 _set_logger()
