@@ -14,6 +14,8 @@ from appdirs import AppDirs
 from flask_socketio import SocketIO
 from dotenv import find_dotenv, load_dotenv
 
+from . import realsense as _realsense
+
 logger: logging.Logger
 app: Flask
 socketio: SocketIO
@@ -50,7 +52,7 @@ def _set_environment_variables() -> None:
         or int(os.environ["PORT"]) > 65535
         or int(os.environ["PORT"]) < 1024
     ):
-        os.environ["PORT"] = "9876"
+        os.environ["PORT"] = "5000"
 
     # HOT_RELOAD validation
     if not os.getenv("HOT_RELOAD") or os.getenv("HOT_RELOAD") not in ["true", "false"]:
@@ -123,6 +125,20 @@ def _set_global_exception_hook() -> None:
 
 
 # Initialization code
+
+if "--realsense-types" in sys.argv:
+    print([s_type.name.lower() for s_type in _realsense.StreamType])
+    exit(0)
+elif "--realsense-formats" in sys.argv:
+    print([s_format.name.lower() for s_format in _realsense.StreamFormat])
+    exit(0)
+elif "--realsense-resolutions" in sys.argv:
+    print([s_res.name.lower() for s_res in _realsense.StreamResolution])
+    exit(0)
+elif "--realsense-fps" in sys.argv:
+    print([s_rate.name.lower() for s_rate in _realsense.StreamFPS])
+    exit(0)
+
 
 _set_environment_variables()
 
