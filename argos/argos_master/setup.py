@@ -18,6 +18,7 @@ packages = [
     "appdirs==1.4.4",
     "python-socketio[client]==5.11.3",
     "pillow==10.4.0",
+    "numpy==2.0.1"
 ]
 
 setup(
