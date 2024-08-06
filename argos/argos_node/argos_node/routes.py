@@ -18,9 +18,9 @@ def get_cameras():
     Get the list of connected cameras.
     """
 
-    cameras = realsense.connected_cameras()
+    cameras: dict[str, realsense.Camera] = current_app.config["cameras"]
 
-    return jsonify(cameras), HTTPStatus.OK
+    return jsonify(list(cameras.keys())), HTTPStatus.OK
 
 
 @handler.route("/cameras/<serial_number>/status", methods=["GET"])
