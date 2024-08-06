@@ -41,7 +41,7 @@
      - Linux: `/home/<username>/.local/share/argos_master`
      - MacOS: `/Users/<username>/Library/Application Support/argos_master`
    - `HOST`: The host IP address where the server will run. If not set, the default is `0.0.0.0`.
-   - `PORT`: The port number where the server will run. If not set, the default is `8080`.
+   - `PORT`: The port number where the server will run. If not set, the default is `3000`.
    - `HOT_RELOAD`: Controls if the server will automatically reload on code changes. If not set, the default is `false`.
 
 2. **Running the package**
