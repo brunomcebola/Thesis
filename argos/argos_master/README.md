@@ -1,6 +1,6 @@
 # Argos, Automated Real-time Guardian Observation System (`argos_master`)
 
-`argos_master` is a Python package developed as part of the ARGOS (Automated Real-time Guardian Observation System) project. This package is designed to run as standalone application, allowing to manage and control multiple `argos_node` instances.
+`argos_master` is a Python package developed as part of the ARGOS (Automated Real-time Guardian Observation System) project. This package is designed to run as standalone application, allowing to manage and control multiple `argos_node` instances. Furthermore, is this module that is responsible to analyze the incoming video streams to detect security risks.
 
 ## Installation
 
