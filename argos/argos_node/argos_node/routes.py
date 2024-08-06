@@ -7,7 +7,8 @@ from __future__ import annotations
 from http import HTTPStatus
 from flask import Blueprint, current_app, jsonify
 
-from . import realsense
+from . import realsense as _realsense
+from . import logger as _logger
 
 handler = Blueprint("cameras_handlers", __name__)
 
@@ -18,7 +19,7 @@ def get_cameras():
     Get the list of connected cameras.
     """
 
-    cameras: dict[str, realsense.Camera] = current_app.config["cameras"]
+    cameras: dict[str, _realsense.Camera] = current_app.config["cameras"]
 
     return jsonify(list(cameras.keys())), HTTPStatus.OK
 
@@ -29,7 +30,7 @@ def get_camera(serial_number: str):
     Get the details of a camera.
     """
 
-    cameras: dict[str, realsense.Camera] = current_app.config["cameras"]
+    cameras: dict[str, _realsense.Camera] = current_app.config["cameras"]
 
     # check if camera exists
     if serial_number not in cameras:
@@ -51,7 +52,7 @@ def start_stream(serial_number: str, action: str):
     if action not in ["start", "stop"]:
         return jsonify("Invalid action."), HTTPStatus.BAD_REQUEST
 
-    cameras: dict[str, realsense.Camera] = current_app.config["cameras"]
+    cameras: dict[str, _realsense.Camera] = current_app.config["cameras"]
 
     # check if camera exists
     if serial_number not in cameras:
@@ -69,9 +70,7 @@ def start_stream(serial_number: str, action: str):
 
     getattr(cameras[serial_number], f"{action}_stream")()
 
-    if action == "play":
-        current_app.config["logger"].info(f"Camera {serial_number} stream started.")
-        return jsonify("Camera stream started."), HTTPStatus.OK
-    else:
-        current_app.config["logger"].info(f"Camera {serial_number} stream stopped.")
-        return jsonify("Camera stream started."), HTTPStatus.OK
+    _logger.info(
+        "Camera %s stream %s.", serial_number, "started" if action == "start" else "stopped"
+    )
+    return jsonify("Camera stream started."), HTTPStatus.OK
