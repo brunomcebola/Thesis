@@ -41,12 +41,15 @@ def get_camera(serial_number: str):
 
     return jsonify("Camera operational."), HTTPStatus.OK
 
-# TODO: change to play instead of start
-@handler.route("/cameras/<serial_number>/stream/start", methods=["GET"])
-def start_stream(serial_number: str):
+
+@handler.route("/cameras/<string:serial_number>/stream/<string:action>", methods=["GET"])
+def start_stream(serial_number: str, action: str):
     """
     Start the streaming of a camera.
     """
+
+    if action not in ["start", "stop"]:
+        return jsonify("Invalid action."), HTTPStatus.BAD_REQUEST
 
     cameras: dict[str, realsense.Camera] = current_app.config["cameras"]
 
@@ -59,38 +62,18 @@ def start_stream(serial_number: str):
         return jsonify("Camera not operational."), HTTPStatus.SERVICE_UNAVAILABLE
 
     # check if camera is already streaming
-    if cameras[serial_number].is_streaming:
-        return jsonify("Camera already streaming."), HTTPStatus.OK
+    if action == "start" and cameras[serial_number].is_streaming:
+        return jsonify("Camera stream already started."), HTTPStatus.OK
+    elif action == "stop" and not cameras[serial_number].is_streaming:
+        return jsonify("Camera stream already stopped."), HTTPStatus.OK
 
-    cameras[serial_number].start_streaming()
+    getattr(cameras[serial_number], f"{action}_stream")()
 
-    current_app.config["logger"].info(f"Camera {serial_number} streaming started.")
+    if action == "play":
+        current_app.config["logger"].info(f"Camera {serial_number} stream started.")
+        return jsonify("Camera stream started."), HTTPStatus.OK
+    elif action == "pause":
+        current_app.config["logger"].info(f"Camera {serial_number} stream stopped.")
+        return jsonify("Camera stream started."), HTTPStatus.OK
 
-    return jsonify("Camera streaming started."), HTTPStatus.OK
 
-
-@handler.route("/cameras/<serial_number>/stream/pause", methods=["GET"])
-def pause_stream(serial_number: str):
-    """
-    Pause the streaming of a camera.
-    """
-
-    cameras: dict[str, realsense.Camera] = current_app.config["cameras"]
-
-    # check if camera exists
-    if serial_number not in cameras:
-        return jsonify("Camera not connected."), HTTPStatus.NOT_FOUND
-
-    # check if camera is operational
-    if cameras[serial_number].is_stopped:
-        return jsonify("Camera not operational."), HTTPStatus.SERVICE_UNAVAILABLE
-
-    # check if camera is already paused
-    if not cameras[serial_number].is_streaming:
-        return jsonify("Camera already paused."), HTTPStatus.OK
-
-    cameras[serial_number].pause_streaming()
-
-    current_app.config["logger"].info(f"Camera {serial_number} streaming paused.")
-
-    return jsonify("Camera streaming paused."), HTTPStatus.OK

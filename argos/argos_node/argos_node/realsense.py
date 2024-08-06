@@ -265,8 +265,8 @@ class Camera:
         - is_streaming: The status of the camera stream.
 
     Instance Methods:
-        - start_streaming: Starts the camera stream.
-        - pause_streaming: Pauses the camera stream.
+        - start_stream: Starts the camera stream.
+        - stop_stream: Pauses the camera stream.
         - cleanup: Cleans up the camera resources.
         - next_frame: Returns the next frame in the queue.
     """
@@ -487,7 +487,7 @@ class Camera:
 
     # Instance public methods
 
-    def start_streaming(self) -> None:
+    def start_stream(self) -> None:
         """
         Starts the camera stream.
 
@@ -501,9 +501,9 @@ class Camera:
             with self._control_condition:
                 self._control_condition.notify_all()
 
-    def pause_streaming(self) -> None:
+    def stop_stream(self) -> None:
         """
-        Pauses the camera stream.
+        Stops the camera stream.
 
         Note:
             If a control_signal was passed during initialization,
