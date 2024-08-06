@@ -8,70 +8,19 @@ from __future__ import annotations
 import os
 import sys
 import signal
-import logging
 import threading
 import pickle
 import yaml
 import jsonschema
 from flask import Flask
 from flask_socketio import SocketIO
-from dotenv import find_dotenv, load_dotenv
 
-from . import realsense
-from . import routes
-
-
-def set_environment_variables() -> None:
-    """
-    Load the environment variables from the nearest .env.argos file
-    """
-
-    # Find the .env file
-    env_path = find_dotenv(filename=".env.argos_node")
-
-    # Load the .env file
-    if env_path:
-        load_dotenv(dotenv_path=env_path)
-
-    # BASE_DIR validation
-    if not os.getenv("BASE_DIR"):
-        os.environ["BASE_DIR"] = os.path.join(os.path.dirname(__file__), "..", "data")
-
-    # Create BASE_DIR if it does not exist
-    os.makedirs(os.environ["BASE_DIR"], exist_ok=True)
-
-    # HOST validation
-    if not os.getenv("HOST"):
-        os.environ["HOST"] = "0.0.0.0"
-
-    # PORT validation
-    if not os.getenv("PORT"):
-        os.environ["PORT"] = "19876"
+from . import logger as _logger
+from . import realsense as _realsense
+from . import routes as _routes
 
 
-def get_logger() -> logging.Logger:
-    """
-    Get the logger
-    """
-
-    logger = logging.getLogger("argos_node")
-    logger.setLevel(logging.INFO)
-
-    log_file_path = os.path.join(os.environ["BASE_DIR"], "argos_node.log")
-    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
-    file_handler = logging.FileHandler(log_file_path)
-
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    file_handler.setFormatter(formatter)
-
-    logger.addHandler(file_handler)
-
-    logger.info("ARGOS node started!")
-
-    return logger
-
-
-def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
+def launch_cameras() -> dict[str, _realsense.Camera]:
     """
     Launch the cameras that have a .yaml file in the BASE_DIR/cameras directory
     """
@@ -96,17 +45,17 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
                 "items": {
                     "type": "object",
                     "properties": {
-                        "type": {"enum": [s_type.name.lower() for s_type in realsense.StreamType]},
+                        "type": {"enum": [s_type.name.lower() for s_type in _realsense.StreamType]},
                         "format": {
-                            "enum": [s_format.name.lower() for s_format in realsense.StreamFormat]
+                            "enum": [s_format.name.lower() for s_format in _realsense.StreamFormat]
                         },
                         "resolution": {
                             "enum": [
                                 s_resolution.name.lower()
-                                for s_resolution in realsense.StreamResolution
+                                for s_resolution in _realsense.StreamResolution
                             ]
                         },
-                        "fps": {"enum": [s_fps.name.lower() for s_fps in realsense.StreamFPS]},
+                        "fps": {"enum": [s_fps.name.lower() for s_fps in _realsense.StreamFPS]},
                     },
                     "required": ["type", "format", "resolution", "fps"],
                     "additionalProperties": False,
@@ -116,7 +65,7 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
                 "anyOf": [
                     {
                         "type": "string",
-                        "enum": [s_type.name.lower() for s_type in realsense.StreamType],
+                        "enum": [s_type.name.lower() for s_type in _realsense.StreamType],
                     },
                     {"type": "null"},
                 ]
@@ -126,7 +75,7 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
         "additionalProperties": False,
     }
 
-    logger.info("Launching cameras...")
+    _logger.info("Launching cameras...")
 
     # Get the cameras directory
     cameras_dir = os.path.join(os.environ["BASE_DIR"], "cameras")
@@ -143,7 +92,7 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
             groups: dict = yaml.safe_load(f)
 
             if not groups:
-                logger.warning("Camera groups not set - empty config file.")
+                _logger.warning("Camera groups not set - empty config file.")
 
             else:
                 # Validates the groups configuration
@@ -163,33 +112,33 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
                         f"{group}: {', '.join(cameras)}" for group, cameras in groups.items()
                     )
 
-                    logger.info(f"Camera groups set: {groups_str}")
+                    _logger.info("Camera groups set: %s.", groups_str)
 
                 except jsonschema.ValidationError as e:
                     error = str(e).split("\n", maxsplit=1)[0]
-                    logger.warning(f"Camera groups not set - config error: {error}.")
+                    _logger.warning("Camera groups not set - config error: %s.", error)
 
     except PermissionError:
-        logger.warning("Camera groups not set - unable to open config file.")
+        _logger.warning("Camera groups not set - unable to open config file.")
 
     except yaml.YAMLError as e:
         if hasattr(e, "problem_mark"):
             line = e.problem_mark.line + 1  # type: ignore
-            logger.warning(f"Camera groups not set - config file error on line {line}.")
+            _logger.warning("Camera groups not set - config file error on line %s.", line)
         else:
-            logger.warning("Camera groups not set - unknown error on config file.")
+            _logger.warning("Camera groups not set - unknown error on config file.")
 
     except Exception as e:  # pylint: disable=broad-except
-        logger.warning("Camera groups not set - unknown error.")
+        _logger.warning("Camera groups not set - unknown error.")
 
     # Launch each camera from its configuration .yaml file
     cameras = {}
 
-    if not realsense.connected_cameras():
-        logger.warning("No cameras connected.")
+    if not _realsense.connected_cameras():
+        _logger.warning("No cameras connected.")
         return cameras
 
-    for camera in realsense.connected_cameras():
+    for camera in _realsense.connected_cameras():
         try:
             with open(os.path.join(cameras_dir, f"{camera}.yaml"), "a", encoding="utf-8") as f:
                 pass
@@ -198,7 +147,7 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
                 configs: dict = yaml.safe_load(f)
 
                 if not configs:
-                    logger.warning(f"Camera {camera} not launched - empty config file.")
+                    _logger.warning("Camera %s not launched - empty config file.", camera)
 
                 else:
                     # Validates the camera configuration
@@ -207,17 +156,17 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
 
                         # Structures the camera arguments
                         stream_configs = [
-                            realsense.StreamConfig(
-                                realsense.StreamType[stream_config["type"].upper()],
-                                realsense.StreamFormat[stream_config["format"].upper()],
-                                realsense.StreamResolution[stream_config["resolution"].upper()],
-                                realsense.StreamFPS[stream_config["fps"].upper()],
+                            _realsense.StreamConfig(
+                                _realsense.StreamType[stream_config["type"].upper()],
+                                _realsense.StreamFormat[stream_config["format"].upper()],
+                                _realsense.StreamResolution[stream_config["resolution"].upper()],
+                                _realsense.StreamFPS[stream_config["fps"].upper()],
                             )
                             for stream_config in configs["stream_configs"]
                         ]
 
                         alignment = (
-                            realsense.StreamType[configs["alignment"].upper()]
+                            _realsense.StreamType[configs["alignment"].upper()]
                             if configs["alignment"]
                             else None
                         )
@@ -228,7 +177,7 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
 
                         # Creates the camera instance
                         try:
-                            cameras[camera] = realsense.Camera(
+                            cameras[camera] = _realsense.Camera(
                                 camera,
                                 stream_configs,
                                 alignment,
@@ -236,26 +185,30 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
                                 control_condition,
                             )
 
-                            logger.info(f"Camera {camera} launched.")
-                        except realsense.ConfigurationError as e:
-                            logger.warning(f"Camera {camera} not launched - invalid config: {e}")
+                            _logger.info("Camera %s launched.", camera)
+                        except _realsense.ConfigurationError as e:
+                            _logger.warning(
+                                "Camera %s not launched - invalid config: %s", camera, e
+                            )
 
                     except jsonschema.ValidationError as e:
                         error = str(e).split("\n", maxsplit=1)[0]
-                        logger.warning(f"Camera {camera} not launched - config error: {error}.")
+                        _logger.warning("Camera %s not launched - config error: %s.", camera, error)
 
         except PermissionError:
-            logger.warning(f"Camera {camera} not launched - unable to open config file.")
+            _logger.warning("Camera %s not launched - unable to open config file.", camera)
 
         except yaml.YAMLError as e:
             if hasattr(e, "problem_mark"):
                 line = e.problem_mark.line + 1  # type: ignore
-                logger.warning(f"Camera {camera} not launched - config file error on line {line}.")
+                _logger.warning(
+                    "Camera %s not launched - config file error on line %s.", camera, line
+                )
             else:
-                logger.warning(f"Camera {camera} not launched - unknown error on config file.")
+                _logger.warning("Camera %s not launched - unknown error on config file.", camera)
 
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"Camera {camera} not launched - unknown error.")
+            _logger.warning("Camera %s not launched - unknown error.", camera)
 
         finally:
             continue
@@ -263,7 +216,7 @@ def launch_cameras(logger: logging.Logger) -> dict[str, realsense.Camera]:
     return cameras
 
 
-def launch_node(logger: logging.Logger, cameras: dict[str, realsense.Camera]) -> None:
+def launch_node(cameras: dict[str, _realsense.Camera]) -> None:
     """
     Launch the API
     """
@@ -278,8 +231,6 @@ def launch_node(logger: logging.Logger, cameras: dict[str, realsense.Camera]) ->
             camera.cleanup()
             del camera
 
-        logger.info("ARGOS node stopped!")
-
         sys.exit(0)
 
     signal.signal(signal.SIGINT, _cleanup_callback)
@@ -289,19 +240,18 @@ def launch_node(logger: logging.Logger, cameras: dict[str, realsense.Camera]) ->
 
     for sn, camera in cameras.items():
         camera.set_stream_callback(lambda x, sn=sn: socketio.emit(sn, pickle.dumps(x)))
-        logger.info(f"Camera {sn} set stream callback for socket connection.")
+        _logger.info("Camera %s set stream callback for socket connection.", sn)
 
     app.config["cameras"] = cameras
-    app.config["logger"] = logger
 
-    app.register_blueprint(routes.handler)
+    app.register_blueprint(_routes.handler)
 
     socketio.run(
         app,
         host=os.environ["HOST"],
         port=int(os.environ["PORT"]),
         debug=False,
-        use_reloader=False,
+        use_reloader=os.getenv("HOT_RELOAD") == "true",
         log_output=False,
     )
 
@@ -311,14 +261,14 @@ def main():
     Main function of the program
     """
 
-    set_environment_variables()
+    cameras = launch_cameras()
 
-    logger = get_logger()
-
-    cameras = launch_cameras(logger)
-
-    launch_node(logger, cameras)
+    launch_node(cameras)
 
 
 if __name__ == "__main__":
+    if __package__ is None:
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        __package__ = str("argos_node")  # pylint: disable=redefined-builtin
+
     main()

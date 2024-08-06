@@ -1,5 +1,5 @@
 """
-Init file for the ARGOS master
+Init file for the argos_master
 """
 
 import os
@@ -21,7 +21,7 @@ socketio: SocketIO
 
 def _set_environment_variables() -> None:
     """
-    Load the environment variables from the nearest .env.argos file
+    Load the environment variables from the nearest .env.argos_master file
     """
 
     # Find the .env file
@@ -143,7 +143,6 @@ def _set_server() -> None:
 
 
 # Initialization code
-
 
 _set_environment_variables()
 

@@ -72,8 +72,6 @@ def start_stream(serial_number: str, action: str):
     if action == "play":
         current_app.config["logger"].info(f"Camera {serial_number} stream started.")
         return jsonify("Camera stream started."), HTTPStatus.OK
-    elif action == "pause":
+    else:
         current_app.config["logger"].info(f"Camera {serial_number} stream stopped.")
         return jsonify("Camera stream started."), HTTPStatus.OK
-
-
