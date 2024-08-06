@@ -20,7 +20,6 @@ wheel_contents/
 *.so*
 *.db*
 *.tar*
-*.whl*
 *.env
 *.env.*
 *.yaml*

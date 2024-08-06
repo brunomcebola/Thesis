@@ -49,7 +49,7 @@ def _set_environment_variables() -> None:
         or int(os.environ["PORT"]) > 65535
         or int(os.environ["PORT"]) < 1024
     ):
-        os.environ["PORT"] = "9876"
+        os.environ["PORT"] = "8080"
 
     # HOT_RELOAD validation
     if not os.getenv("HOT_RELOAD") or os.getenv("HOT_RELOAD") not in ["true", "false"]:
