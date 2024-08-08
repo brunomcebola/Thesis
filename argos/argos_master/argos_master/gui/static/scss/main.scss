@@ -60,7 +60,24 @@ $main-color-darker: #111;
 
 body {
   background-color: $main-color-light;
-  min-width: 500px;
+}
+
+.viewport-warning {
+  display: none; /* Hide the warning by default */
+  background: #ffcccc;
+  color: #cc0000;
+  padding: 20px;
+  text-align: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+}
+
+.content {
+  display: none;
 }
 
 .align-right {
