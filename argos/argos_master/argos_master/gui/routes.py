@@ -47,11 +47,12 @@ def nodes():
     if response.status_code == HTTPStatus.OK:
         content = [
             {
-                "title": entry["name"],
-                "description": entry["address"],
-                "src": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else None,
-                "zoom": False,
-                "redirect": f"/nodes/{entry['id']}",
+                "cardTitle": entry["name"],
+                "cardDescription": entry["address"],
+                "imgSrc": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else None,
+                "imgAlt": f"{entry['name']} node cover",
+                "redirectURL": f"/nodes/{entry['id']}",
+                "cardAction": "trash",
             }
             for entry in response.get_json()
         ]

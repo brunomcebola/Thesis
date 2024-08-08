@@ -251,25 +251,6 @@ $navbar-active-item-underline: $main-color;
   }
 }
 
-.card {
-  height: 100%;
-
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  .card-id {
-    font-size: 0.75rem;
-    margin-bottom: 4px;
-    color: #808080;
-  }
-
-  .card-title {
-    margin-bottom: 4px;
-  }
-}
-
 /* Item list */
 
 .data-list {
@@ -414,6 +395,28 @@ $navbar-active-item-underline: $main-color;
         bottom: 6px;
         right: 6px;
         color: #fff;
+      }
+    }
+  }
+}
+
+/* grid.jinja */
+
+#grid {
+  .card {
+    height: 100%;
+
+    &:not([data-redirect=""]) {
+      cursor: pointer;
+
+      &:hover {
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1125);
+      }
+    }
+
+    .card-body {
+      &[data-title=""][data-description=""][data-action=""] {
+        display: none;
       }
     }
   }
