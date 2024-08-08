@@ -13,7 +13,7 @@ import jsonschema
 import socketio
 import socketio.exceptions
 from PIL import Image
-from flask import Blueprint, jsonify, send_file
+from flask import Blueprint, jsonify, send_file, request
 
 from .. import logger as _logger
 from .. import socketio as _socketio  # pylint: disable=reimported
@@ -140,15 +140,21 @@ def _init():
 
     # Get nodes from file
     with open(NODES_FILE, "r", encoding="utf-8") as f:
-        nodes_list = yaml.safe_load(f) or []
+        try:
+            nodes_list = yaml.safe_load(f) or []
+        except Exception as e:  # pylint: disable=broad-except
+            raise NodeConfigurationException("Invalid nodes configuration file") from e
 
     if nodes_list:
         try:
             jsonschema.validate(instance=nodes_list, schema=NODES_CONFIG_SCHEMA)
         except jsonschema.ValidationError as e:
-            raise NodeConfigurationException(
-                f"Invalid nodes configuration ({e.message} on instance {e.path[0]}: {e.instance})."
-            ) from e
+            if not e.path:
+                raise NodeConfigurationException(f"Invalid configuration ({e.message}).") from e
+            else:
+                raise NodeConfigurationException(
+                    f"Invalid configuration ({e.message} for instance {e.path[0]}: {e.instance})."
+                ) from e
 
         # Ensure unique ids
         ids = [node["id"] for node in nodes_list]
@@ -187,10 +193,14 @@ _init()
 
 
 @blueprint.errorhandler(Exception)
-def handle_exception(_):
+def handle_exception(e):
     """
     Handles exceptions
     """
+
+    # TODO: remove this print
+
+    print(e)
 
     return (
         jsonify({"error": "Internal error."}),
@@ -212,6 +222,76 @@ def nodes():
     return (
         jsonify(sanitized_nodes),
         HTTPStatus.OK,
+    )
+
+
+@blueprint.route("/", methods=["POST"])
+def create_node():
+    """
+    Creates new node
+    """
+
+    # Get the textual data
+    node_data: dict = {"name": request.form.get("name"), "address": request.form.get("address")}
+
+    if not node_data:
+        return (
+            jsonify({"error": "No data provided"}),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Get the image
+    node_image = request.files["image"]
+    node_data["has_image"] = True if node_image.filename else False
+
+    # Attribute id to node
+    ids = [node["id"] for node in nodes_list]
+    node_data["id"] = max(ids) + 1
+
+    # Validate provided data structure
+    try:
+        jsonschema.validate(instance=[node_data], schema=NODES_CONFIG_SCHEMA)
+    except jsonschema.ValidationError:
+        return (
+            jsonify({"error": "Invalid data format"}),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Ensure name is not taken
+    names = [node["name"] for node in nodes_list]
+    if node_data["name"] in names:
+        return (
+            jsonify({"error": "Name already in use."}),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Ensure unique addresses
+    addresses = [node["address"] for node in nodes_list]
+    if node_data["address"] in addresses:
+        return (
+            jsonify({"error": "Address already in use."}),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Add to nodes.yaml
+    with open(NODES_FILE, "a", encoding="utf-8") as f:
+        yaml.safe_dump([node_data], f)
+
+    # Save image
+    if node_data["has_image"]:
+        extension = node_image.filename.split(".")[-1].lower()  # type: ignore
+        node_image.save(f"{IMAGES_DIR}/{node_data['id']}.{extension}")
+
+    # Add the new node to the nodes_list
+    nodes_list.append(node_data)
+
+    # Connect to node
+    _connect_node(node_data)
+
+    # Return a success message with the newly created node
+    return (
+        jsonify({"message": "Node created successfully"}),
+        HTTPStatus.CREATED,
     )
 
 

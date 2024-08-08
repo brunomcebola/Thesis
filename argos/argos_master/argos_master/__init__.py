@@ -65,7 +65,11 @@ def _set_logger() -> None:
         def filter(self, record):
             # Custom validation logic here
             # Return True to allow the log message, False to block it
-            if os.getenv("WERKZEUG_RUN_MAIN") == "true" or os.getenv("HOT_RELOAD") == "false":
+            if (
+                os.getenv("WERKZEUG_RUN_MAIN") == "true"
+                or os.getenv("HOT_RELOAD") == "false"
+                or signal.SIGINT
+            ):
                 return True
             return False
 
@@ -100,12 +104,7 @@ def _set_atexit_handler() -> None:
     """
 
     def _callback():
-        if (
-            os.getenv("WERKZEUG_RUN_MAIN") == "true"
-            or signal.SIGINT
-            or os.getenv("HOT_RELOAD") == "false"
-        ):
-            logger.info("ARGOS master stopped!")
+        logger.info("ARGOS master stopped!")
 
     atexit.register(_callback)
 
