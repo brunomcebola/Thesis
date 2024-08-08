@@ -295,13 +295,13 @@ def create_node():
     )
 
 
-@blueprint.route("/<node_id>/image")
+@blueprint.route("/<int:node_id>/image")
 def image(node_id: int):
     """
     Returns the image of the node
     """
 
-    if not any(node["id"] == node_id for node in nodes_list):
+    if node_id not in [node["id"] for node in nodes_list]:
         return (
             jsonify({"error": "Node not found."}),
             HTTPStatus.NOT_FOUND,

@@ -3,153 +3,110 @@
 Expected parameters:
 
 - data: List of dictionaries containing the following keys:
-    - title: Title of the image
-    - description: Description of the image
-    - src: URL of the image to display or null
+    - redirectURL: URL to redirect to when the card is clicked
+    - imgSrc: URL of the image to display in the card
+    - imgAlt: Alt text for the image
+    - cardTitle: Title of the card
+    - cardDescription: Description of the card
+    - cardAction: Font Awesome icon to display in the card
 
     Ex: [
-          {
-              "src": "https://example.com/image1.jpg",
-              "title": "Image 1",
-              "description": "This is the first image"
-          },
-          {
-              "src": "https://example.com/image2.jpg",
-              "title": "Image 2",
-              "description": "This is the second image"
-          }
-      ]
+      {
+        "redirectURL": "/",
+        "imgSrc": "/static/images/no_media.png",
+        "imgAlt": "No media",
+        "cardTitle": "Title",
+        "cardDescription": "Description",
+        "cardAction": "info-circle"
+      },
+      ...
+    ]
 
 #}
 <div class="container">
   <div class="row" id="grid"></div>
 </div>
-<script>
+<script type="module">
+  const cardHTML = `
+    <div class="card-container col-12 col-md-6 col-xl-3 p-3">
+      <div class="card" data-redirect="{redirectURL}" onclick="window.location.href = '{redirectURL}'">
+        <img class="card-img-top" src="{imgSrc}" alt="{imgAlt}">
+        <div class="card-body d-flex justify-content-between align-items-center" data-title="{cardTitle}" data-description="{cardDescription}" data-action="{cardAction}">
+          <div>
+            <h5 class="card-title">{cardTitle}</h5>
+            <p class="card-text">{cardDescription}</p>
+          </div>
+          <div>
+            <i class="fas fa-{cardAction}"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+
   const data = {{ data|tojson }};
   var data_index = 0
 
-  async function addCardToHTML(data_index) {
-      const delay = ms => new Promise(res => setTimeout(res, ms));
+  const heightIncrements = window.innerHeight
+  var targetHeight = window.innerHeight
 
-      // Create a new div element for the card container
-      const cardContainer = document.createElement('div');
-      cardContainer.classList.add('col-12', 'col-md-6', 'col-xl-3', 'p-3');
+  const grid = document.getElementById('grid')
 
-      // Create a div for the image card
-      const card = document.createElement('div');
-      card.classList.add('card');
-      cardContainer.appendChild(card);
+  async function addCardToHTML(data) {
+    var card = cardHTML
+      .replaceAll("{redirectURL}", data.redirectURL || "")
+      .replaceAll("{imgSrc}", data.imgSrc || "{{url_for('gui.static', filename='images/no_media.png')}}")
+      .replaceAll("{imgAlt}", data.imgAlt || "No media")
+      .replaceAll("{cardTitle}", data.cardTitle || "")
+      .replaceAll("{cardDescription}", data.cardDescription || "")
+      .replaceAll("{cardAction}", data.cardAction || "info-circle")
 
-      // Add onclick event if redirect is set
-      if (data[data_index].redirect) {
-          card.style.cursor = "pointer";
-          card.addEventListener('mouseenter', function() {
-            card.classList.add('shadow-sm');
-          });
-          card.addEventListener('mouseleave', function() {
-            card.classList.remove('shadow-sm');
-          });
-          card.addEventListener('click', function() {
-          window.location.href = data[data_index].redirect;
-          });
-      }
+    grid.innerHTML += card;
 
-      // Create card image
-      const cardImage = document.createElement('img');
-      cardImage.classList.add('card-img-top');
-      if (data[data_index].src == null) {
-          cardImage.src = "{{ url_for('gui.static', filename='images/no_media.png') }}";
-          cardImage.alt = "No media";
-      } else {
-          cardImage.src = data[data_index].src;
-          cardImage.alt = data[data_index].name;
-      }
-      card.appendChild(cardImage);
+    // Get the newly added image
+    const cardDiv = grid.querySelector('.card-container:last-of-type');
+    const img = cardDiv.querySelector('img');
 
-      // Create an i element for the arrow icon
-      if (data[data_index].zoom){
-        const arrowIcon = document.createElement('i');
-        arrowIcon.classList.add('mdi', 'mdi-arrow-expand', 'expand-image');
-        card.appendChild(arrowIcon);
-      }
+    // Wait for the image to load
+    await new Promise((resolve, _) => {
+      img.onload = async () => {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        resolve();
+      };
+      img.onerror = async () => {
+        img.src = "{{url_for('gui.static', filename='images/no_media.png')}}";
+        img.alt = "No media";
 
-      // Create card body
-      if (data[data_index].title != null || data[data_index].description != null) {
-          const cardBody = document.createElement('div');
-        cardBody.classList.add('card-body');
-        card.appendChild(cardBody);
-
-        // Create card title
-        if (data[data_index].title != null) {
-          const cardTitle = document.createElement('h5');
-          cardTitle.classList.add('card-title');
-          cardTitle.textContent = data[data_index].title;
-          cardBody.appendChild(cardTitle);
-        }
-
-        // Create card text
-        const cardText = document.createElement('p');
-        cardText.classList.add('card-text');
-        cardText.textContent = data[data_index].description;
-        cardBody.appendChild(cardText);
-      }
-
-      // Append the card container to the desired parent element in the DOM
-      document.getElementById('grid').appendChild(cardContainer);
-
-      await delay(10);
+        await new Promise(resolve => setTimeout(resolve, 10));
+      };
+    });
   }
 
-  async function addInitialCards() {
-      while (window.innerHeight * 1.5 > document.body.offsetHeight && data_index < data.length) {
-          await addCardToHTML(data_index);
+  async function addCards() {
+    while (document.body.offsetHeight < targetHeight && data_index < data.length) {
+      await addCardToHTML(data[data_index]);
+      data_index++
+      if (document.body.offsetHeight > targetHeight && data_index < data.length) {
+        let initialHeight = document.body.offsetHeight
+        while (document.body.offsetHeight == initialHeight && data_index < data.length) {
+          await addCardToHTML(data[data_index]);
           data_index++
+        }
+        if (document.body.offsetHeight > initialHeight) {
+          grid.removeChild(document.querySelector('.card-container:last-of-type'))
+          data_index--
+        }
       }
-
-      // Remove the last image if the page is not full
-      if (window.innerHeight * 1.5 <= document.body.offsetHeight)
-          document.getElementById("grid").removeChild(document.getElementById("grid").lastChild);
-          data_index--;
+    }
+    targetHeight += heightIncrements
   }
 
-  async function addCardsOnScroll() {
-      // Add more data if user is at 25% of the bottom of the page
-      if (window.innerHeight + window.scrollY == document.body.offsetHeight) {
-          let initialHeight = document.body.offsetHeight;
-          let heightIncrements = 0;
+  await addCards()
 
-          while(heightIncrements < 2 && data_index < data.length) {
-              await addCardToHTML(data_index);
-              data_index++;
-
-              if (document.body.offsetHeight > initialHeight) {
-                  heightIncrements++;
-                  initialHeight = document.body.offsetHeight;
-              }
-          }
-
-          if(heightIncrements >= 2) {
-              document.getElementById("grid").removeChild(document.getElementById("grid").lastChild);
-              data_index--;
-          }
-
-      }
+  window.onscroll = async () => {
+    if (window.innerHeight + window.scrollY >= 0.9 * document.body.offsetHeight) {
+      await addCards()
+    }
   }
 
-  addInitialCards();
-
-  window.onscroll = function(e) {
-      addCardsOnScroll();
-  }
 </script>
-<style>
-  .expand-image {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    width: 24px;
-    padding-left: 4px;
-    cursor: pointer;
-    color: var(--main-color-light)
-  }
-</style>
