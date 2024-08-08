@@ -233,13 +233,24 @@ def launch_node(cameras: dict[str, _realsense.Camera]) -> None:
 
         sys.exit(0)
 
+    def _camera_callback(camera_sn: str, frame: tuple):
+        """
+        Callback function to send the camera frames to the socket connection
+        """
+        try:
+            socketio.emit(camera_sn, pickle.dumps(frame))
+        except Exception:  # pylint: disable=broad-except
+            pass
+
     signal.signal(signal.SIGINT, _cleanup_callback)
 
     app = Flask(__name__)
     socketio = SocketIO(app)
 
     for sn, camera in cameras.items():
-        camera.set_stream_callback(lambda x, sn=sn: socketio.emit(sn, pickle.dumps(x)))
+        camera.set_stream_callback(
+            lambda x: _camera_callback(sn, x)  # pylint: disable=cell-var-from-loop
+        )
         _logger.info("Camera %s set stream callback for socket connection.", sn)
 
     app.config["cameras"] = cameras
