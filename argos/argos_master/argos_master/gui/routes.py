@@ -73,9 +73,11 @@ def node(node_id: int):
     if response.status_code == HTTPStatus.OK:
         content = [
             {
-                "title": entry,
-                "src": "/gui/static/images/realsense.png",
-                "redirect": f"/nodes/{node_id}/cameras/{entry}",
+                "cardId": f"c{entry}",
+                "cardTitle": entry,
+                "imgSrc": "/gui/static/images/realsense.png",
+                "imgAlt": f"Camera {entry} cover",
+                "redirectURL": f"/nodes/{node_id}/cameras/{entry}",
             }
             for entry in response.get_json()
         ]

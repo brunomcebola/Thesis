@@ -49,7 +49,7 @@ Expected parameters:
   `
 
   const data = {{ data|tojson }}
-  const actionIcon = {{ cardActionIcon|tojson or ""}}
+  const actionIcon = {{ cardActionIcon|default('""')|tojson}}
 
   var data_index = 0
 
