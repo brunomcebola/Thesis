@@ -387,7 +387,7 @@ def cameras(node_id: int):
     )
 
 
-@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/<string:action>")
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/<string:action>", methods=["POST"])
 def start_camera_stream(node_id: int, camera_id: str, action: str):
     """
     Starts the camera stream for a specific node and camera
@@ -423,7 +423,7 @@ def start_camera_stream(node_id: int, camera_id: str, action: str):
         )
 
     # Make a GET request to start the camera stream
-    response = requests.get(
+    response = requests.post(
         f"http://{node['address']}/cameras/{camera_id}/stream/{action}", timeout=5
     )
 
