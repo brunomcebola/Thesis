@@ -33,14 +33,14 @@ Expected parameters:
         <div class="card-img flex-grow-1 d-flex justify-content-center align-items-center">
           <img src="{imgSrc}" alt="{imgAlt}">
         </div>
-        <div class="card-body flex-grow-0 d-flex align-items-end border-top border-secondary-subtle" data-title="{cardTitle}" data-description="{cardDescription}" data-action-icon="{cardActionIcon}">
+        <div class="card-body flex-grow-0 d-flex align-items-end border-top border-secondary-subtle" data-title="{cardTitle}" data-description="{cardDescription}" data-has-actions="{cardHasActions}">
           <div class="w-100 d-flex justify-content-between align-items-center">
             <div class="body-content">
               <h5 class="card-title">{cardTitle}</h5>
               <p class="card-text">{cardDescription}</p>
             </div>
-            <div class="body-action">
-              <i class="fas fa-{cardActionIcon}"></i>
+            <div class="body-actions">
+              {cardActions}
             </div>
           </div>
         </div>
@@ -49,7 +49,8 @@ Expected parameters:
   `
 
   const data = {{ data|tojson }}
-  const actionIcon = {{ cardActionIcon|default("")|tojson}}
+  const actions = {{ actions|default([])|safe }}
+  const actionsHTML = actions.map(action => `<i class="fas fa-${action} ms-3"></i>`).join('')
 
   var data_index = 0
 
@@ -73,13 +74,12 @@ Expected parameters:
       .replaceAll("{imgSrc}", data.imgSrc)
       .replaceAll("{imgAlt}", data.imgAlt)
       .replaceAll("{redirectURL}", data.redirectURL)
-      .replaceAll("{cardActionIcon}", actionIcon);
+      .replaceAll("{cardHasActions}", actions.length > 0)
+      .replaceAll("{cardActions}", actionsHTML);
 
     grid.insertAdjacentHTML('beforeend', newCard);
 
-    const card = document.querySelector(`#${data.cardId} .card`);
     const img = document.querySelector(`#${data.cardId} img`);
-    const action = document.querySelector(`#${data.cardId} .body-action`);
 
     // Wait for the image to load
     await new Promise((resolve, _) => {
@@ -95,16 +95,20 @@ Expected parameters:
       };
     });
 
+    const card = document.querySelector(`#${data.cardId} .card`);
     card.addEventListener('click', () => {
-      const redirectURL = card.getAttribute('data-redirect');
+      const redirectURL = card.dataset.redirect;
       if (redirectURL) {
         window.location.href = redirectURL;
       }
     });
 
-    action.addEventListener('click', (event) => {
-      event.stopPropagation();
-      window.dispatchEvent(new CustomEvent('cardAction', { detail: data.cardId }))
+    actions.forEach(action => {
+      const actionSvg = document.querySelector(`#${data.cardId} .body-actions .fa-${action}`);
+      actionSvg.addEventListener('click', (event) => {
+        event.stopPropagation();
+        window.dispatchEvent(new CustomEvent(action, { detail: data.cardId }))
+      });
     });
   }
 

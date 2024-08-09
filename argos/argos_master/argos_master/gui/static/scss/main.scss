@@ -428,7 +428,7 @@ $navbar-active-item-underline: $main-color;
     }
 
     .card-body {
-      &[data-title=""][data-description=""][data-action-icon=""] {
+      &[data-title=""][data-description=""][data-has-actions=""] {
         display: none !important;
       }
 
@@ -438,18 +438,20 @@ $navbar-active-item-underline: $main-color;
         }
       }
 
-      &[data-action-icon=""] {
-        .body-action {
+      &[data-has-actions=""] {
+        .body-actions {
           display: none;
         }
       }
 
-      .body-action {
-        &:hover {
-          color: $main-color-hover;
-        }
-        &:active {
-          color: $main-color-active
+      .body-actions {
+        svg {
+          &:hover {
+            color: $main-color-hover;
+          }
+          &:active {
+            color: $main-color-active;
+          }
         }
       }
     }
