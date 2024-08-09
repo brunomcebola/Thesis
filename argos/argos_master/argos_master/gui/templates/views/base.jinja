@@ -36,7 +36,7 @@
     <div class="viewport-warning" id="viewport-warning">
       Your viewport width is less than 500px. Please resize your window.
     </div>
-    <div class="content" id="content">
+    <div id="body-content">
     {% include "components/navbar.jinja" %}
     {% block body %}
     {% endblock body %}
@@ -58,7 +58,7 @@
       function checkViewportWidth() {
         const minWidth = 500; // Minimum width in pixels
         const warningElement = document.getElementById('viewport-warning');
-        const contentElement = document.getElementById('content');
+        const contentElement = document.getElementById('body-content');
 
         if (window.innerWidth < minWidth) {
           // Show the warning and hide the content
