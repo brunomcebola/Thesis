@@ -225,4 +225,4 @@
     #grid .card:not([data-redirect=""]):hover {
       box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1125); }
   #grid .card .card-body[data-title=""][data-description=""][data-action=""] {
-    display: none; }
+    display: none !important; }

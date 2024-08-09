@@ -416,7 +416,7 @@ $navbar-active-item-underline: $main-color;
 
     .card-body {
       &[data-title=""][data-description=""][data-action=""] {
-        display: none;
+        display: none !important;
       }
     }
   }
