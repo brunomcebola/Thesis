@@ -68,11 +68,7 @@ def _set_logger() -> None:
         def filter(self, record):
             # Custom validation logic here
             # Return True to allow the log message, False to block it
-            if (
-                os.getenv("WERKZEUG_RUN_MAIN") == "true"
-                or os.getenv("HOT_RELOAD") == "false"
-                or signal.SIGINT
-            ):
+            if os.getenv("WERKZEUG_RUN_MAIN") == "true" or os.getenv("HOT_RELOAD") == "false":
                 return True
             return False
 
@@ -107,7 +103,8 @@ def _set_atexit_handler() -> None:
     """
 
     def _callback():
-        logger.info("ARGOS master stopped!")
+        os.environ["WERKZEUG_RUN_MAIN"] = "true"
+        logger.info("ARGOS node stopped!")
 
     atexit.register(_callback)
 
@@ -121,6 +118,24 @@ def _set_global_exception_hook() -> None:
         logger.error("%s: %s", exc_type.__name__, exc_value)
 
     sys.excepthook = _callback
+
+
+def _set_server() -> None:
+    """
+    Set up the Flask and SocketIO server
+    """
+
+    global app  # pylint: disable=global-statement
+    global socketio  # pylint: disable=global-statement
+
+    # Create the Flask app
+    app = Flask(__name__)
+
+    # Create the SocketIO app
+    socketio = SocketIO(app)
+
+    # Add app configs
+    app.config["WEBASSETS_CACHE"] = False
 
 
 # Initialization code
@@ -146,3 +161,5 @@ _set_logger()
 _set_atexit_handler()
 
 _set_global_exception_hook()
+
+_set_server()
