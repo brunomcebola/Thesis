@@ -5,8 +5,10 @@ Cameras controller module.
 from __future__ import annotations
 
 import os
+import atexit
 import pickle
 import threading
+import signal
 from http import HTTPStatus
 from typing import NamedTuple
 import yaml
@@ -15,6 +17,7 @@ from flask import Blueprint, jsonify, request
 
 from .. import realsense as _realsense
 from .. import logger as _logger
+from .. import app as _app
 from .. import socketio as _socketio
 
 blueprint = Blueprint("cameras_handlers", __name__, url_prefix="/cameras")
@@ -80,17 +83,6 @@ class _GroupTuple(NamedTuple):
 
 groups: dict[str, _GroupTuple] = {}
 cameras: dict[str, _realsense.Camera | None] = {}
-
-
-def cleanup() -> None:
-    """
-    Cleanup function to be called when the program is interrupted
-    """
-
-    for camera_sn, camera in cameras.items():
-        if camera is not None:
-            camera.cleanup()
-        del cameras[camera_sn]
 
 
 def _get_groups() -> None:
@@ -246,6 +238,11 @@ def _init() -> None:
     Initializes the nodes modul
     """
 
+    def _cleanup():
+        for camera in cameras.values():
+            if camera is not None:
+                camera.cleanup()
+
     _get_groups()
 
     for camera in _realsense.connected_cameras():
@@ -257,6 +254,8 @@ def _init() -> None:
 
     for camera in cameras:
         cameras[camera] = _launch_camera(camera, os.path.join(CAMERAS_DIR, f"{camera}.yaml"))
+
+    atexit.register(_cleanup)
 
 
 #
@@ -335,7 +334,7 @@ def update_camera(serial_number: str):
     del cameras[serial_number]
 
     with open(os.path.join(CAMERAS_DIR, f"{serial_number}.yaml"), "w", encoding="utf-8") as f:
-        yaml.safe_dump(new_config, f)
+        yaml.safe_dump(new_config, f, sort_keys=False)
 
     cameras[serial_number] = _launch_camera(
         serial_number, os.path.join(CAMERAS_DIR, f"{serial_number}.yaml")
