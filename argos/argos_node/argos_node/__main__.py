@@ -20,7 +20,7 @@ from . import realsense as _realsense
 from . import routes as _routes
 
 
-def launch_cameras() -> dict[str, _realsense.Camera]:
+def launch_cameras() -> dict[str, _realsense.Camera | None]:
     """
     Launch the cameras that have a .yaml file in the BASE_DIR/cameras directory
     """
@@ -132,13 +132,15 @@ def launch_cameras() -> dict[str, _realsense.Camera]:
         _logger.warning("Camera groups not set - unknown error.")
 
     # Launch each camera from its configuration .yaml file
-    cameras = {}
+    cameras: dict[str, _realsense.Camera | None] = {
+        camera: None for camera in _realsense.connected_cameras()
+    }
 
-    if not _realsense.connected_cameras():
+    if not cameras:
         _logger.warning("No cameras connected.")
-        return cameras
+        exit(0)
 
-    for camera in _realsense.connected_cameras():
+    for camera in cameras:
         try:
             with open(os.path.join(cameras_dir, f"{camera}.yaml"), "a", encoding="utf-8") as f:
                 pass
@@ -216,7 +218,7 @@ def launch_cameras() -> dict[str, _realsense.Camera]:
     return cameras
 
 
-def launch_node(cameras: dict[str, _realsense.Camera]) -> None:
+def launch_node(cameras: dict[str, _realsense.Camera | None]) -> None:
     """
     Launch the API
     """
@@ -228,7 +230,8 @@ def launch_node(cameras: dict[str, _realsense.Camera]) -> None:
 
         # Perform any necessary cleanup
         for camera in cameras.values():
-            camera.cleanup()
+            if camera is not None:
+                camera.cleanup()
             del camera
 
         sys.exit(0)
@@ -248,6 +251,9 @@ def launch_node(cameras: dict[str, _realsense.Camera]) -> None:
     socketio = SocketIO(app)
 
     for sn, camera in cameras.items():
+        if camera is None:
+            continue
+
         camera.set_stream_callback(
             lambda x: _camera_callback(sn, x)  # pylint: disable=cell-var-from-loop
         )

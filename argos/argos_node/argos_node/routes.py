@@ -19,7 +19,7 @@ def get_cameras():
     Get the list of connected cameras.
     """
 
-    cameras: dict[str, _realsense.Camera] = current_app.config["cameras"]
+    cameras: dict[str, _realsense.Camera | None] = current_app.config["cameras"]
 
     return jsonify(list(cameras.keys())), HTTPStatus.OK
 
@@ -30,14 +30,14 @@ def get_camera(serial_number: str):
     Get the details of a camera.
     """
 
-    cameras: dict[str, _realsense.Camera] = current_app.config["cameras"]
+    cameras: dict[str, _realsense.Camera | None] = current_app.config["cameras"]
 
     # check if camera exists
     if serial_number not in cameras:
         return jsonify("Camera not connected."), HTTPStatus.NOT_FOUND
 
     # check if camera is operational
-    if cameras[serial_number].is_stopped:
+    if cameras[serial_number] is None or cameras[serial_number].is_stopped:  # type: ignore
         return jsonify("Camera not operational."), HTTPStatus.SERVICE_UNAVAILABLE
 
     return jsonify("Camera operational."), HTTPStatus.OK
@@ -52,20 +52,20 @@ def start_stream(serial_number: str, action: str):
     if action not in ["start", "stop"]:
         return jsonify("Invalid action."), HTTPStatus.BAD_REQUEST
 
-    cameras: dict[str, _realsense.Camera] = current_app.config["cameras"]
+    cameras: dict[str, _realsense.Camera | None] = current_app.config["cameras"]
 
     # check if camera exists
     if serial_number not in cameras:
         return jsonify("Camera not connected."), HTTPStatus.NOT_FOUND
 
     # check if camera is operational
-    if cameras[serial_number].is_stopped:
+    if cameras[serial_number] is None or cameras[serial_number].is_stopped:  # type: ignore
         return jsonify("Camera not operational."), HTTPStatus.SERVICE_UNAVAILABLE
 
     # check if camera is already streaming
-    if action == "start" and cameras[serial_number].is_streaming:
+    if action == "start" and cameras[serial_number].is_streaming: # type: ignore
         return jsonify("Camera stream already started."), HTTPStatus.OK
-    elif action == "stop" and not cameras[serial_number].is_streaming:
+    elif action == "stop" and not cameras[serial_number].is_streaming: # type: ignore
         return jsonify("Camera stream already stopped."), HTTPStatus.OK
 
     getattr(cameras[serial_number], f"{action}_stream")()
