@@ -30,10 +30,10 @@ Expected parameters:
   const cardHTML = `
     <div class="card-container col-12 col-md-6 col-xl-3 p-3" id="{cardId}">
       <div class="card" data-redirect="{redirectURL}">
-        <div class="card-img flex-grow-1 d-flex justify-content-center align-items-center border-bottom border-secondary-subtle">
+        <div class="card-img flex-grow-1 d-flex justify-content-center align-items-center">
           <img src="{imgSrc}" alt="{imgAlt}">
         </div>
-        <div class="card-body flex-grow-0 d-flex align-items-end" data-title="{cardTitle}" data-description="{cardDescription}" data-action-icon="{cardActionIcon}">
+        <div class="card-body flex-grow-0 d-flex align-items-end border-top border-secondary-subtle" data-title="{cardTitle}" data-description="{cardDescription}" data-action-icon="{cardActionIcon}">
           <div class="w-100 d-flex justify-content-between align-items-center">
             <div class="body-content">
               <h5 class="card-title">{cardTitle}</h5>
@@ -49,7 +49,7 @@ Expected parameters:
   `
 
   const data = {{ data|tojson }}
-  const actionIcon = {{ cardActionIcon|default('""')|tojson}}
+  const actionIcon = {{ cardActionIcon|default("")|tojson}}
 
   var data_index = 0
 

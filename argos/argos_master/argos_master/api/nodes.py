@@ -193,14 +193,10 @@ _init()
 
 
 @blueprint.errorhandler(Exception)
-def handle_exception(e):
+def handle_exception(_):
     """
     Handles exceptions
     """
-
-    # TODO: remove this print
-
-    print(e)
 
     return (
         jsonify({"error": "Internal error."}),
@@ -387,8 +383,54 @@ def cameras(node_id: int):
     )
 
 
-@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/<string:action>", methods=["POST"])
-def start_camera_stream(node_id: int, camera_id: str, action: str):
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/stream")
+def get_camera_stream_status(node_id: int, camera_id: str):
+    """
+    Returns the status of the camera stream for a specific node and camera
+    """
+
+    # Get the node
+    node = next((node for node in nodes_list if node["id"] == node_id), None)
+    if node is None:
+        return (
+            jsonify({"error": "Node not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    # Try to connect node if it's not connected
+    if node["sio"] is None:
+        _connect_node(node)
+
+    if node["sio"] is None:
+        raise RuntimeError("Failed to connect to node.")
+
+    # Check if camera exists
+    if camera_id not in node["cameras"]:
+        return (
+            jsonify({"error": "Camera not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    # Make a GET request to retrieve the status of the camera stream
+    response = requests.get(f"http://{node['address']}/cameras/{camera_id}/stream", timeout=5)
+
+    if response.status_code != HTTPStatus.OK:
+        return (
+            jsonify({"error": "Failed to retrieve camera stream status."}),
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+        )
+
+    return (
+        jsonify(response.json()),
+        HTTPStatus.OK,
+    )
+
+
+@blueprint.route(
+    "/<int:node_id>/cameras/<string:camera_id>/stream/<string:action>",
+    methods=["POST"],
+)
+def set_camera_stream(node_id: int, camera_id: str, action: str):
     """
     Starts the camera stream for a specific node and camera
     """
