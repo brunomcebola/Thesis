@@ -122,7 +122,7 @@ def _connect_node(node: dict) -> None:
         node["cameras"] = []
 
 
-def _init():
+def _init() -> None:
     """
     Initializes the nodes module
     """

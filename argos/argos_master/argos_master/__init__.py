@@ -68,7 +68,6 @@ def _set_logger() -> None:
             if (
                 os.getenv("WERKZEUG_RUN_MAIN") == "true"
                 or os.getenv("HOT_RELOAD") == "false"
-                or signal.SIGINT
             ):
                 return True
             return False
@@ -104,6 +103,7 @@ def _set_atexit_handler() -> None:
     """
 
     def _callback():
+        os.environ["WERKZEUG_RUN_MAIN"] = "true"
         logger.info("ARGOS master stopped!")
 
     atexit.register(_callback)

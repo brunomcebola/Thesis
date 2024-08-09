@@ -6,7 +6,6 @@ from flask import Blueprint
 
 from .. import app as _app
 
-
 from . import datasets as _datasets
 from . import nodes as _nodes
 from . import logs as _logs
