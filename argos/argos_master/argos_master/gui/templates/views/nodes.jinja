@@ -72,7 +72,7 @@
     {% endcall %}
     {# TODO: add nodes grid correctly #}
     {% if content is defined %}
-      {% with data=content, cardActionIcon="trash" %}
+      {% with data=content, actions=["pencil", "trash"] %}
         {% include "components/grid.jinja" %}
       {% endwith %}
     {% else %}
@@ -119,7 +119,7 @@
       form.classList.add('was-validated')
     }, false)
 
-    window.addEventListener('cardAction', function (event) {
+    window.addEventListener('trash', function (event) {
       const node_id = event.detail.substring(1)
       fetch(`/api/nodes/${node_id}`, {
         method: 'DELETE'

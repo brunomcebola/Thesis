@@ -233,13 +233,13 @@
       max-height: 25vh;
       max-width: 100%;
       width: auto; }
-  #grid .card .card-body[data-title=""][data-description=""][data-action-icon=""] {
+  #grid .card .card-body[data-title=""][data-description=""][data-has-actions=""] {
     display: none !important; }
     #grid .card .card-body[data-title=""][data-description=""] .body-content {
       display: none; }
-  #grid .card .card-body[data-action-icon=""] .body-action {
+  #grid .card .card-body[data-has-actions=""] .body-actions {
     display: none; }
-  #grid .card .card-body .body-action:hover {
+  #grid .card .card-body .body-actions svg:hover {
     color: #8a000a; }
-    #grid .card .card-body .body-action:active {
+    #grid .card .card-body .body-actions svg:active {
       color: #660005; }
