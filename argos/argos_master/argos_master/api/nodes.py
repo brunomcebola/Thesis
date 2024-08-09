@@ -271,7 +271,7 @@ def create_node():
 
     # Add to nodes.yaml
     with open(NODES_FILE, "a", encoding="utf-8") as f:
-        yaml.safe_dump([node_data], f)
+        yaml.safe_dump([node_data], f, sort_keys=False)
 
     # Save image
     if node_data["has_image"]:
@@ -316,7 +316,10 @@ def delete_node(node_id: int):
             for node in nodes_list
         ]
 
-        yaml.safe_dump(sanitized_nodes_list, f, sort_keys=False)
+        if not sanitized_nodes_list:
+            f.write("")
+        else:
+            yaml.safe_dump(sanitized_nodes_list, f, sort_keys=False)
 
     # Remove the image
     for file in os.listdir(IMAGES_DIR):
