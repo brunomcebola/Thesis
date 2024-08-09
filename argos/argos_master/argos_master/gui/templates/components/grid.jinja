@@ -30,14 +30,18 @@ Expected parameters:
   const cardHTML = `
     <div class="card-container col-12 col-md-6 col-xl-3 p-3">
       <div class="card" data-redirect="{redirectURL}" onclick="window.location.href = '{redirectURL}'">
-        <img class="card-img-top" src="{imgSrc}" alt="{imgAlt}">
-        <div class="card-body d-flex justify-content-between align-items-center" data-title="{cardTitle}" data-description="{cardDescription}" data-action="{cardAction}">
-          <div>
-            <h5 class="card-title">{cardTitle}</h5>
-            <p class="card-text">{cardDescription}</p>
-          </div>
-          <div>
-            <i class="fas fa-{cardAction}"></i>
+        <div class="flex-grow-1 d-flex justify-content-center align-items-center border-bottom border-secondary-subtle">
+          <img class="card-img-top" src="{imgSrc}" alt="{imgAlt}">
+        </div>
+        <div class="card-body flex-grow-0 d-flex align-items-end" data-title="{cardTitle}" data-description="{cardDescription}" data-action="{cardAction}">
+          <div class="w-100 d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="card-title">{cardTitle}</h5>
+              <p class="card-text">{cardDescription}</p>
+            </div>
+            <div>
+              <i class="fas fa-{cardAction}"></i>
+            </div>
           </div>
         </div>
       </div>
@@ -59,7 +63,7 @@ Expected parameters:
       .replaceAll("{imgAlt}", data.imgAlt || "No media")
       .replaceAll("{cardTitle}", data.cardTitle || "")
       .replaceAll("{cardDescription}", data.cardDescription || "")
-      .replaceAll("{cardAction}", data.cardAction || "info-circle")
+      .replaceAll("{cardAction}", data.cardAction || "")
 
     grid.innerHTML += card;
 

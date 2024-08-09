@@ -49,10 +49,10 @@ def nodes():
             {
                 "cardTitle": entry["name"],
                 "cardDescription": entry["address"],
+                "cardAction": "trash",
                 "imgSrc": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else None,
                 "imgAlt": f"{entry['name']} node cover",
                 "redirectURL": f"/nodes/{entry['id']}",
-                "cardAction": "trash",
             }
             for entry in response.get_json()
         ]
