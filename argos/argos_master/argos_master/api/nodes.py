@@ -242,7 +242,7 @@ def create_node():
 
     # Attribute id to node
     ids = [node["id"] for node in nodes_list]
-    node_data["id"] = max(ids) + 1
+    node_data["id"] = max(ids) + 1 if len(ids) else 1
 
     # Validate provided data structure
     try:
