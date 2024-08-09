@@ -11,7 +11,7 @@ from http import HTTPStatus
 from typing import NamedTuple
 import yaml
 import jsonschema
-from flask import Blueprint, current_app, jsonify
+from flask import Blueprint, jsonify
 
 from .. import realsense as _realsense
 from .. import logger as _logger
@@ -139,11 +139,7 @@ def _get_groups() -> None:
         _logger.warning("Camera groups not set - unknown error.")
 
 
-def _launch_camera(
-    camera_sn: str,
-    config_file: str,
-    camera_controls: tuple[threading.Event, threading.Condition] | tuple[None, None],
-) -> _realsense.Camera | None:
+def _launch_camera(camera_sn: str, config_file: str) -> _realsense.Camera | None:
     """
     Launches a camera instance.
 
@@ -167,6 +163,10 @@ def _launch_camera(
             pass
 
     _logger.info("Launching camera %s...", camera_sn)
+
+    controls = next(
+        (group.controls for group in groups.values() if camera_sn in group.cameras), (None, None)
+    )
 
     try:
         with open(config_file, "a", encoding="utf-8") as f:
@@ -200,7 +200,7 @@ def _launch_camera(
                         else None
                     )
 
-                    control_signal, control_condition = camera_controls
+                    control_signal, control_condition = controls
 
                     # Creates the camera_sn instance
                     try:
@@ -256,12 +256,7 @@ def _init() -> None:
         exit(0)
 
     for camera in cameras:
-        controls = next(
-            (group.controls for group in groups.values() if camera in group.cameras), (None, None)
-        )
-        cameras[camera] = _launch_camera(
-            camera, os.path.join(CAMERAS_DIR, f"{camera}.yaml"), controls
-        )
+        cameras[camera] = _launch_camera(camera, os.path.join(CAMERAS_DIR, f"{camera}.yaml"))
 
 
 #
@@ -299,6 +294,38 @@ def get_camera(serial_number: str):
         return jsonify("Camera not operational."), HTTPStatus.SERVICE_UNAVAILABLE
 
     return jsonify("Camera operational."), HTTPStatus.OK
+
+
+@blueprint.route("/<string:serial_number>/launch", methods=["GET"])
+def launch_camera(serial_number: str):
+    """
+    Launch a camera.
+    """
+
+    if serial_number not in cameras:
+        return (
+            jsonify("Camera not connected."),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    if cameras[serial_number] is not None and not cameras[serial_number].is_stopped:  # type: ignore
+        return (
+            jsonify("Camera already launched."),
+            HTTPStatus.OK,
+        )
+
+    if cameras[serial_number] is not None and cameras[serial_number].is_stopped:  # type: ignore
+        cameras[serial_number].cleanup()  # type: ignore
+        del cameras[serial_number]
+
+    cameras[serial_number] = _launch_camera(
+        serial_number, os.path.join(CAMERAS_DIR, f"{serial_number}.yaml")
+    )
+
+    if cameras[serial_number] is None:
+        return jsonify("Camera not launched."), HTTPStatus.INTERNAL_SERVER_ERROR
+
+    return jsonify("Camera launched."), HTTPStatus.OK
 
 
 @blueprint.route("/<string:serial_number>/stream/<string:action>", methods=["GET"])
