@@ -278,23 +278,6 @@ def get_cameras():
     return jsonify(list(cameras.keys())), HTTPStatus.OK
 
 
-@blueprint.route("/<string:serial_number>/status", methods=["GET"])
-def get_camera(serial_number: str):
-    """
-    Get the details of a camera.
-    """
-
-    # check if camera exists
-    if serial_number not in cameras:
-        return jsonify("Camera not connected."), HTTPStatus.NOT_FOUND
-
-    # check if camera is operational
-    if cameras[serial_number] is None or cameras[serial_number].is_stopped:  # type: ignore
-        return jsonify("Camera not operational."), HTTPStatus.SERVICE_UNAVAILABLE
-
-    return jsonify("Camera operational."), HTTPStatus.OK
-
-
 @blueprint.route("/<string:serial_number>/config", methods=["PUT"])
 def update_camera(serial_number: str):
     """
@@ -374,6 +357,22 @@ def launch_camera(serial_number: str):
 
     return jsonify("Camera launched."), HTTPStatus.OK
 
+
+@blueprint.route("/<string:serial_number>/stream", methods=["GET"])
+def get_camera(serial_number: str):
+    """
+    Get the details of a camera.
+    """
+
+    # check if camera exists
+    if serial_number not in cameras:
+        return jsonify("Camera not connected."), HTTPStatus.NOT_FOUND
+
+    # check if camera is operational
+    if cameras[serial_number] is None or cameras[serial_number].is_stopped:  # type: ignore
+        return jsonify("Camera not operational."), HTTPStatus.SERVICE_UNAVAILABLE
+
+    return jsonify(cameras[serial_number].is_streaming), HTTPStatus.OK # type: ignore
 
 @blueprint.route("/<string:serial_number>/stream/<string:action>", methods=["POST"])
 def start_stream(serial_number: str, action: str):
