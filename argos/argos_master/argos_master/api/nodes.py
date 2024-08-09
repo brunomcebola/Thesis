@@ -295,6 +295,45 @@ def create_node():
     )
 
 
+@blueprint.route("/<int:node_id>", methods=["DELETE"])
+def delete_node(node_id: int):
+    """
+    Deletes a node
+    """
+
+    # Get the node
+    node = next((node for node in nodes_list if node["id"] == node_id), None)
+    if node is None:
+        return (
+            jsonify({"error": "Node not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    # Remove the node from the nodes_list
+    nodes_list.remove(node)
+
+    # Remove the node from the nodes.yaml
+    with open(NODES_FILE, "w", encoding="utf-8") as f:
+        keys_to_keep = ["id", "name", "address", "has_image"]
+        sanitized_nodes_list = [
+            {key: value for key, value in node.items() if key in keys_to_keep}
+            for node in nodes_list
+        ]
+
+        yaml.safe_dump(sanitized_nodes_list, f, sort_keys=False)
+
+    # Remove the image
+    for file in os.listdir(IMAGES_DIR):
+        if file.startswith(f"{node_id}."):
+            os.remove(os.path.join(IMAGES_DIR, file))
+
+    # Return a success message
+    return (
+        jsonify({"message": "Node deleted successfully."}),
+        HTTPStatus.OK,
+    )
+
+
 @blueprint.route("/<int:node_id>/image")
 def image(node_id: int):
     """

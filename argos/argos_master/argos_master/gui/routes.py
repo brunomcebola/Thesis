@@ -47,9 +47,9 @@ def nodes():
     if response.status_code == HTTPStatus.OK:
         content = [
             {
+                "cardId": f"n{entry['id']}",
                 "cardTitle": entry["name"],
                 "cardDescription": entry["address"],
-                "cardAction": "trash",
                 "imgSrc": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else None,
                 "imgAlt": f"{entry['name']} node cover",
                 "redirectURL": f"/nodes/{entry['id']}",

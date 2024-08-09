@@ -3,24 +3,24 @@
 Expected parameters:
 
 - data: List of dictionaries containing the following keys:
-    - redirectURL: URL to redirect to when the card is clicked
-    - imgSrc: URL of the image to display in the card
-    - imgAlt: Alt text for the image
     - cardTitle: Title of the card
     - cardDescription: Description of the card
-    - cardAction: Font Awesome icon to display in the card
+    - imgSrc: URL of the image to display in the card
+    - imgAlt: Alt text for the image
+    - redirectURL: URL to redirect to when the card is clicked
 
     Ex: [
       {
-        "redirectURL": "/",
-        "imgSrc": "/static/images/no_media.png",
-        "imgAlt": "No media",
         "cardTitle": "Title",
         "cardDescription": "Description",
-        "cardAction": "info-circle"
+        "imgSrc": "/static/images/no_media.png",
+        "imgAlt": "No media",
+        "redirectURL": "/",
       },
       ...
     ]
+
+- cardAction: Font Awesome icon to display in the cards action section
 
 #}
 <div class="container">
@@ -28,19 +28,19 @@ Expected parameters:
 </div>
 <script type="module">
   const cardHTML = `
-    <div class="card-container col-12 col-md-6 col-xl-3 p-3">
-      <div class="card" data-redirect="{redirectURL}" onclick="window.location.href = '{redirectURL}'">
-        <div class="flex-grow-1 d-flex justify-content-center align-items-center border-bottom border-secondary-subtle">
-          <img class="card-img-top" src="{imgSrc}" alt="{imgAlt}">
+    <div class="card-container col-12 col-md-6 col-xl-3 p-3" id="{cardId}">
+      <div class="card" data-redirect="{redirectURL}">
+        <div class="card-img flex-grow-1 d-flex justify-content-center align-items-center border-bottom border-secondary-subtle">
+          <img src="{imgSrc}" alt="{imgAlt}">
         </div>
-        <div class="card-body flex-grow-0 d-flex align-items-end" data-title="{cardTitle}" data-description="{cardDescription}" data-action="{cardAction}">
+        <div class="card-body flex-grow-0 d-flex align-items-end" data-title="{cardTitle}" data-description="{cardDescription}" data-action-icon="{cardActionIcon}">
           <div class="w-100 d-flex justify-content-between align-items-center">
-            <div>
+            <div class="body-content">
               <h5 class="card-title">{cardTitle}</h5>
               <p class="card-text">{cardDescription}</p>
             </div>
-            <div>
-              <i class="fas fa-{cardAction}"></i>
+            <div class="body-action">
+              <i class="fas fa-{cardActionIcon}"></i>
             </div>
           </div>
         </div>
@@ -48,7 +48,9 @@ Expected parameters:
     </div>
   `
 
-  const data = {{ data|tojson }};
+  const data = {{ data|tojson }}
+  const actionIcon = {{ cardActionIcon|tojson or ""}}
+
   var data_index = 0
 
   const heightIncrements = window.innerHeight
@@ -57,19 +59,27 @@ Expected parameters:
   const grid = document.getElementById('grid')
 
   async function addCardToHTML(data) {
-    var card = cardHTML
-      .replaceAll("{redirectURL}", data.redirectURL || "")
-      .replaceAll("{imgSrc}", data.imgSrc || "{{url_for('gui.static', filename='images/no_media.png')}}")
-      .replaceAll("{imgAlt}", data.imgAlt || "No media")
-      .replaceAll("{cardTitle}", data.cardTitle || "")
-      .replaceAll("{cardDescription}", data.cardDescription || "")
-      .replaceAll("{cardAction}", data.cardAction || "")
+    data.cardId = data.cardId || "c" + Math.random().toString(36).substring(7);
+    data.cardTitle = data.cardTitle || "";
+    data.cardDescription = data.cardDescription || "";
+    data.imgSrc = data.imgSrc || "{{url_for('gui.static', filename='images/no_media.png')}}";
+    data.imgAlt = data.imgAlt || "No media";
+    data.redirectURL = data.redirectURL || "";
 
-    grid.innerHTML += card;
+    var newCard = cardHTML
+      .replaceAll("{cardId}", data.cardId)
+      .replaceAll("{cardTitle}", data.cardTitle)
+      .replaceAll("{cardDescription}", data.cardDescription)
+      .replaceAll("{imgSrc}", data.imgSrc)
+      .replaceAll("{imgAlt}", data.imgAlt)
+      .replaceAll("{redirectURL}", data.redirectURL)
+      .replaceAll("{cardActionIcon}", actionIcon);
 
-    // Get the newly added image
-    const cardDiv = grid.querySelector('.card-container:last-of-type');
-    const img = cardDiv.querySelector('img');
+    grid.insertAdjacentHTML('beforeend', newCard);
+
+    const card = document.querySelector(`#${data.cardId} .card`);
+    const img = document.querySelector(`#${data.cardId} img`);
+    const action = document.querySelector(`#${data.cardId} .body-action`);
 
     // Wait for the image to load
     await new Promise((resolve, _) => {
@@ -83,6 +93,18 @@ Expected parameters:
 
         await new Promise(resolve => setTimeout(resolve, 10));
       };
+    });
+
+    card.addEventListener('click', () => {
+      const redirectURL = card.getAttribute('data-redirect');
+      if (redirectURL) {
+        window.location.href = redirectURL;
+      }
+    });
+
+    action.addEventListener('click', (event) => {
+      event.stopPropagation();
+      window.dispatchEvent(new CustomEvent('cardAction', { detail: data.cardId }))
     });
   }
 
@@ -111,6 +133,11 @@ Expected parameters:
     if (window.innerHeight + window.scrollY >= 0.9 * document.body.offsetHeight) {
       await addCards()
     }
+  }
+
+  window.onresize = async () => {
+    targetHeight = window.innerHeight
+    await addCards()
   }
 
 </script>
