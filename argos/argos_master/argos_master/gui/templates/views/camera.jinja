@@ -98,14 +98,16 @@
 
     startPauseButton.addEventListener('click', function() {
       action = startPauseButton.dataset.status == "play" ? "start" : "stop";
-      fetch(`/api/nodes/${node}/cameras/${camera}/${action}`)
-        .then(response => {
-          if (response.ok) {
-            var newStatus = startPauseButton.dataset.status == "play" ? "pause" : "play";
-            startPauseButton.dataset.status = newStatus;
-            startPauseButton.innerHTML = `<i class="fas fa-${newStatus}"></i>`;
-          }
-        })
+      fetch(`/api/nodes/${node}/cameras/${camera}/${action}`, {
+        method: 'POST'
+      })
+      .then(response => {
+        if (response.ok) {
+          var newStatus = startPauseButton.dataset.status == "play" ? "pause" : "play";
+          startPauseButton.dataset.status = newStatus;
+          startPauseButton.innerHTML = `<i class="fas fa-${newStatus}"></i>`;
+        }
+      })
     });
   </script>
 {% endblock script %}

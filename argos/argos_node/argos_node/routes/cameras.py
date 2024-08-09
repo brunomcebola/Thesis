@@ -11,7 +11,7 @@ from http import HTTPStatus
 from typing import NamedTuple
 import yaml
 import jsonschema
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 from .. import realsense as _realsense
 from .. import logger as _logger
@@ -296,7 +296,55 @@ def get_camera(serial_number: str):
     return jsonify("Camera operational."), HTTPStatus.OK
 
 
-@blueprint.route("/<string:serial_number>/launch", methods=["GET"])
+@blueprint.route("/<string:serial_number>/config", methods=["PUT"])
+def update_camera(serial_number: str):
+    """
+    Update the configuration of a camera.
+    """
+
+    # check if camera exists
+    if serial_number not in cameras:
+        return (
+            jsonify("Camera not connected."),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    new_config: dict = request.get_json()
+
+    if not new_config:
+        return (
+            jsonify("Invalid configuration: empty configuration."),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Validate new configuration
+    try:
+        jsonschema.validate(instance=new_config, schema=CAMERA_CONFIG_SCHEMA)
+    except jsonschema.ValidationError as e:
+        return (
+            jsonify("Invalid configuration: %s.", str(e).split("\n", maxsplit=1)[0]),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    _logger.info("Updating camera %s configuration...", serial_number)
+
+    # Stop camera if exists
+    if cameras[serial_number] is not None:
+        cameras[serial_number].cleanup()  # type: ignore
+        _logger.info("Camera %s stopped.", serial_number)
+    del cameras[serial_number]
+
+    with open(os.path.join(CAMERAS_DIR, f"{serial_number}.yaml"), "w", encoding="utf-8") as f:
+        yaml.safe_dump(new_config, f)
+
+    cameras[serial_number] = _launch_camera(
+        serial_number, os.path.join(CAMERAS_DIR, f"{serial_number}.yaml")
+    )
+
+    return jsonify("Camera updated."), HTTPStatus.OK
+
+
+@blueprint.route("/<string:serial_number>/launch", methods=["POST"])
 def launch_camera(serial_number: str):
     """
     Launch a camera.
@@ -328,7 +376,7 @@ def launch_camera(serial_number: str):
     return jsonify("Camera launched."), HTTPStatus.OK
 
 
-@blueprint.route("/<string:serial_number>/stream/<string:action>", methods=["GET"])
+@blueprint.route("/<string:serial_number>/stream/<string:action>", methods=["POST"])
 def start_stream(serial_number: str, action: str):
     """
     Start the streaming of a camera.
