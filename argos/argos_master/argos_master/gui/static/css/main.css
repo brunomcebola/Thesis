@@ -6,7 +6,7 @@
   --main-color-darker: #111; }
 
   body {
-    background-color: #f5f5f5; }
+    background-color: #f9f9f9; }
 
     .viewport-warning {
       display: none;
@@ -139,7 +139,7 @@
     text-decoration: none; }
     .data-list .list .list-item .type-icon i {
       font-size: 20px;
-      color: #f5f5f5; }
+      color: #f9f9f9; }
     .data-list .list .list-item .text-container p {
       line-height: 1.2;
       overflow: hidden;
@@ -149,7 +149,7 @@
         font-size: 1.2rem;
         font-weight: bold; }
         .data-list .list .list-item .text-container p#description {
-          color: #f5f5f5;
+          color: #f9f9f9;
           font-size: 1rem;
           font-weight: 350; }
     .data-list .list .list-item .actions-container {
@@ -163,7 +163,7 @@
         border: none; }
         .data-list .list .list-item .actions-container .btn i {
           font-size: 20px;
-          color: #f5f5f5; }
+          color: #f9f9f9; }
 
 .breadcrumb {
   --bs-breadcrumb-divider: ">"; }
