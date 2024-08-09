@@ -48,6 +48,20 @@
 
     window.dispatchEvent(new Event('resize'));
 
+
+    fetch(`/api/nodes/${node}/cameras/${camera}/stream`)
+    .then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+    })
+    .then(data => {
+      if (data) {
+        startPauseButton.dataset.status = "pause";
+        startPauseButton.innerHTML = `<i class="fas fa-pause"></i>`;
+      }
+    });
+
     socket.on(`${node}_${camera}`, function(data) {
       var img = new Image();
       img.onload = function() {
@@ -98,7 +112,7 @@
 
     startPauseButton.addEventListener('click', function() {
       action = startPauseButton.dataset.status == "play" ? "start" : "stop";
-      fetch(`/api/nodes/${node}/cameras/${camera}/${action}`, {
+      fetch(`/api/nodes/${node}/cameras/${camera}/stream/${action}`, {
         method: 'POST'
       })
       .then(response => {

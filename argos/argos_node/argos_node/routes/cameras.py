@@ -8,7 +8,6 @@ import os
 import atexit
 import pickle
 import threading
-import signal
 from http import HTTPStatus
 from typing import NamedTuple
 import yaml
