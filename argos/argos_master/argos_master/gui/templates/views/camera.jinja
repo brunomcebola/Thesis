@@ -44,9 +44,9 @@
       canvas.height = visualHeight;
     }
 
-    resizeCanvas();
-
     window.addEventListener('resize', resizeCanvas);
+
+    window.dispatchEvent(new Event('resize'));
 
     socket.on(`${node}_${camera}`, function(data) {
       var img = new Image();
@@ -109,5 +109,8 @@
         }
       })
     });
+
+
+    // TODO: check cavas size on page load
   </script>
 {% endblock script %}
