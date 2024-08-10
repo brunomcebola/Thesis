@@ -103,6 +103,11 @@ Expected parameters:
       }
     });
 
+    const bodyActions = document.querySelector(`#${data.cardId} .body-actions`);
+    bodyActions.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+
     actions.forEach(action => {
       const actionSvg = document.querySelector(`#${data.cardId} .body-actions .fa-${action}`);
       actionSvg.addEventListener('click', (event) => {

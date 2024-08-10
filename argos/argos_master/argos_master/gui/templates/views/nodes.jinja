@@ -20,10 +20,10 @@
         <button type="button"
                 class="btn btn-primary"
                 data-bs-toggle="modal"
-                data-bs-target="#modal">Add node</button>
+                data-bs-target="#new-node-modal">Add node</button>
       </div>
     </div>
-    {% call modal("Add node") %}
+    {% call modal("new-node-modal", "Add node") %}
       <form id="add-node-form" class="row g-3 mx-n4 needs-validation" novalidate>
         <div class="col-12">
           <label for="name" class="form-label">Name</label>
@@ -65,8 +65,18 @@
         </div>
         <div class="col-12 d-flex justify-content-between align-items-center"
              id="submit">
-          <span id="error-message" class="text-danger"></span>
+          <span id="add-modal-message" class="text-danger"></span>
           <button class="btn btn-primary" type="submit">Submit</button>
+        </div>
+      </form>
+    {% endcall %}
+    {% call modal("del-node-modal", "Delete node") %}
+      <form id="del-node-form" class="row">
+        <div class="col-12">
+          <p id="del-modal-message"></p>
+        </div>
+        <div class="col-12 d-flex justify-content-end align-items-center">
+          <button class="btn btn-primary" type="submit">Delete</button>
         </div>
       </form>
     {% endcall %}
@@ -84,14 +94,52 @@
 {% endblock body %}
 {% block script %}
   <script>
-    const form = document.getElementById('add-node-form')
-    const errorMessage = document.getElementById('error-message')
+    const data = {{ content|default([])|safe }}
 
-    form.addEventListener('submit', function (event) {
+    const delModal = new bootstrap.Modal(document.getElementById('del-node-modal'))
+    const delModalForm = document.getElementById("del-node-form")
+    const delModalMsg = document.getElementById("del-modal-message")
+
+
+    window.addEventListener('trash', function (event) {
+      const node = data.find(dict => dict.cardId == event.detail);
+      delModalMsg.innerHTML = `Are you sure you want to delete ${node.cardTitle} @ ${node.cardDescription}?`
+      delModal.show()
+      delModalForm.dataset.id = node.cardId.substring(1)
+    }, false)
+
+    delModalForm.addEventListener('submit', function (event) {
       event.preventDefault()
       event.stopPropagation()
-      if (form.checkValidity()) {
-        const formData = new FormData(form);
+
+      fetch(`/api/nodes/${delModalForm.dataset.id}`, {
+        method: 'DELETE'
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(errorData => {
+            throw new Error(errorData.error);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        window.location.reload()
+      })
+      .catch(error => {
+        delModal.hide()
+        alert(error.message)
+      });
+    }, false)
+
+    const addModalForm = document.getElementById('add-node-form')
+    const addModalMsg = document.getElementById('add-modal-message')
+
+    addModalForm.addEventListener('submit', function (event) {
+      event.preventDefault()
+      event.stopPropagation()
+      if (addModalForm.checkValidity()) {
+        const formData = new FormData(addModalForm);
 
         formData.append("address", formData.get("host")+":"+formData.get("port"))
         formData.delete("host")
@@ -116,28 +164,7 @@
           errorMessage.innerHTML = error.message
         });
       }
-      form.classList.add('was-validated')
-    }, false)
-
-    window.addEventListener('trash', function (event) {
-      const node_id = event.detail.substring(1)
-      fetch(`/api/nodes/${node_id}`, {
-        method: 'DELETE'
-      })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(errorData => {
-            throw new Error(errorData.error);
-          });
-        }
-        return response.json();
-      })
-      .then(data => {
-        window.location.reload()
-      })
-      .catch(error => {
-        alert(error.message)
-      });
+      addModalForm.classList.add('was-validated')
     }, false)
   </script>
 {% endblock script %}
