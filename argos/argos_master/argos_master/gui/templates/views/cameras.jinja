@@ -19,7 +19,7 @@
       </div>
     </div>
     {% if content is defined %}
-      {% with data=content %}
+      {% with data=content, actions=["pencil"] %}
         {% include "components/grid.jinja" %}
       {% endwith %}
     {% else %}
