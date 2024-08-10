@@ -306,6 +306,7 @@ def delete_node(node_id: int):
         )
 
     # Remove the node from the nodes_list
+    node["sio"].disconnect()
     nodes_list.remove(node)
 
     # Remove the node from the nodes.yaml
