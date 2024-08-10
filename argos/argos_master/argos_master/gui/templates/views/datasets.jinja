@@ -36,10 +36,10 @@
         <button type="button"
                 class="btn btn-primary"
                 data-bs-toggle="modal"
-                data-bs-target="#modal">Add dataset</button>
+                data-bs-target="#add-dataset-modal">Add dataset</button>
       </div>
     </div>
-    {% call modal("Add dataset") %}
+    {% call(content) modal("add-dataset-modal", "Add dataset") %}
     {% endcall %}
     {% if content is defined and content|length %}
       <div class="container">
