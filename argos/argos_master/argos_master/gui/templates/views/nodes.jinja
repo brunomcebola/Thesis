@@ -20,67 +20,9 @@
         <button type="button"
                 class="btn btn-primary"
                 data-bs-toggle="modal"
-                data-bs-target="#new-node-modal">Add node</button>
+                data-bs-target="#add-node-modal">Add node</button>
       </div>
     </div>
-    {% call modal("new-node-modal", "Add node") %}
-      <form id="add-node-form" class="row g-3 mx-n4 needs-validation" novalidate>
-        <div class="col-12">
-          <label for="name" class="form-label">Name</label>
-          <input type="text"
-                 id="name"
-                 name="name"
-                 pattern="^[a-zA-Z0-9]{1,15}$"
-                 placeholder="ex: Algarve 1365"
-                 class="form-control"
-                 required>
-          <div class="invalid-feedback">Please provide a valid name. Only letter and numbers are allowed</div>
-        </div>
-        <div class="col-12">
-          <label for="address" class="form-label">Address</label>
-          <div class="input-group" id="address" name="address">
-            <input type="text"
-                   id="host"
-                   name="host"
-                   pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$"
-                   class="form-control"
-                   placeholder="ex: 127.0.0.1"
-                   required>
-            <span class="input-group-text">:</span>
-            <input type="text"
-                   id="port"
-                   name="port"
-                   pattern="^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)$"
-                   placeholder="ex: 5000"
-                   class="form-control"
-                   required>
-            <div class="invalid-feedback">
-              Please provide a valid address. Host must be in the range 0.0.0.0 to 255.255.255.255 and port in the range 0 to 65535
-            </div>
-          </div>
-        </div>
-        <div class="col-12">
-          <label for="image" class="form-label">Cover image</label>
-          <input type="file" id="image" name="image" class="form-control">
-        </div>
-        <div class="col-12 d-flex justify-content-between align-items-center"
-             id="submit">
-          <span id="add-modal-message" class="text-danger"></span>
-          <button class="btn btn-primary" type="submit">Submit</button>
-        </div>
-      </form>
-    {% endcall %}
-    {% call modal("del-node-modal", "Delete node") %}
-      <form id="del-node-form" class="row">
-        <div class="col-12">
-          <p id="del-modal-message"></p>
-        </div>
-        <div class="col-12 d-flex justify-content-end align-items-center">
-          <button class="btn btn-primary" type="submit">Delete</button>
-        </div>
-      </form>
-    {% endcall %}
-    {# TODO: add nodes grid correctly #}
     {% if content is defined %}
       {% with data=content, actions=["pencil", "trash"] %}
         {% include "components/grid.jinja" %}
@@ -90,50 +32,122 @@
         {% include "components/empty.jinja" %}
       {% endwith %}
     {% endif %}
+    <!-- Add node modal -->
+    {% call(content) modal("add-node-modal", "Add node") %}
+      {% if content == 'modal_body' %}
+        <form class="row g-3 mx-n4 needs-validation" novalidate>
+          <div class="col-12">
+            <label for="name" class="form-label">Name</label>
+            <input type="text"
+                   name="name"
+                   pattern="^[a-zA-Z0-9]{1,15}$"
+                   placeholder="ex: Algarve 1365"
+                   class="form-control"
+                   required>
+            <div class="invalid-feedback">Please provide a valid name. Only letter and numbers are allowed</div>
+          </div>
+          <div class="col-12">
+            <label for="address" class="form-label">Address</label>
+            <div class="input-group" id="address" name="address">
+              <input type="text"
+                     name="host"
+                     pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$"
+                     class="form-control"
+                     placeholder="ex: 127.0.0.1"
+                     required>
+              <span class="input-group-text">:</span>
+              <input type="text"
+                     name="port"
+                     pattern="^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)$"
+                     placeholder="ex: 5000"
+                     class="form-control"
+                     required>
+              <div class="invalid-feedback">
+                Please provide a valid address. Host must be in the range 0.0.0.0 to 255.255.255.255 and port in the range 0 to 65535
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <label for="image" class="form-label">Cover image</label>
+            <input type="file" name="image" class="form-control">
+          </div>
+        </form>
+      {% endif %}
+      {% if content == 'modal_footer' %}
+        <div class="col-12 d-flex justify-content-between align-items-center">
+          <span class="text-danger"></span>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      {% endif %}
+    {% endcall %}
+    <!-- Edit node modal -->
+    {% call(content) modal("edit-node-modal", "Edit node") %}
+      {% if content == 'modal_body' %}
+        <form class="row g-3 mx-n4 needs-validation" novalidate>
+          <div class="col-12">
+            <label for="name" class="form-label">Name</label>
+            <input type="text"
+                   name="name"
+                   pattern="^[a-zA-Z0-9]{1,15}$"
+                   placeholder="ex: Algarve 1365"
+                   class="form-control"
+                   required>
+            <div class="invalid-feedback">Please provide a valid name. Only letter and numbers are allowed</div>
+          </div>
+          <div class="col-12">
+            <label for="address" class="form-label">Address</label>
+            <div class="input-group" id="address" name="address">
+              <input type="text"
+                     name="host"
+                     pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$"
+                     class="form-control"
+                     placeholder="ex: 127.0.0.1"
+                     required>
+              <span class="input-group-text">:</span>
+              <input type="text"
+                     name="port"
+                     pattern="^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)$"
+                     placeholder="ex: 5000"
+                     class="form-control"
+                     required>
+              <div class="invalid-feedback">
+                Please provide a valid address. Host must be in the range 0.0.0.0 to 255.255.255.255 and port in the range 0 to 65535
+              </div>
+            </div>
+          </div>
+        </form>
+      {% endif %}
+      {% if content == 'modal_footer' %}
+        <div class="col-12 d-flex justify-content-between align-items-center">
+          <span class="text-danger"></span>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      {% endif %}
+    {% endcall %}
+    <!-- Delete node modal -->
+    {% call(content) modal("del-node-modal", "Delete node") %}
+      {% if content == 'modal_footer' %}
+        <div class="col-12 d-flex justify-content-end align-items-center">
+          <button class="btn btn-primary">Delete</button>
+        </div>
+      {% endif %}
+    {% endcall %}
   </div>
 {% endblock body %}
 {% block script %}
   <script>
     const data = {{ content|default([])|safe }}
 
-    const delModal = new bootstrap.Modal(document.getElementById('del-node-modal'))
-    const delModalForm = document.getElementById("del-node-form")
-    const delModalMsg = document.getElementById("del-modal-message")
+    // Add node
 
+    const addModal = document.getElementById('add-node-modal')
+    const addModalForm = addModal.querySelector('form')
+    const addModalMsg = addModal.querySelector('.modal-footer span')
+    const addModalBtn = addModal.querySelector('.modal-footer button')
 
-    window.addEventListener('trash', function (event) {
-      const node = data.find(dict => dict.cardId == event.detail);
-      delModalMsg.innerHTML = `Are you sure you want to delete ${node.cardTitle} @ ${node.cardDescription}?`
-      delModal.show()
-      delModalForm.dataset.id = node.cardId.substring(1)
+    addModalBtn.addEventListener('click', function (event) {
+      addModalForm.dispatchEvent(new Event('submit', { bubbles: true }));
     }, false)
-
-    delModalForm.addEventListener('submit', function (event) {
-      event.preventDefault()
-      event.stopPropagation()
-
-      fetch(`/api/nodes/${delModalForm.dataset.id}`, {
-        method: 'DELETE'
-      })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(errorData => {
-            throw new Error(errorData.error);
-          });
-        }
-        return response.json();
-      })
-      .then(data => {
-        window.location.reload()
-      })
-      .catch(error => {
-        delModal.hide()
-        alert(error.message)
-      });
-    }, false)
-
-    const addModalForm = document.getElementById('add-node-form')
-    const addModalMsg = document.getElementById('add-modal-message')
 
     addModalForm.addEventListener('submit', function (event) {
       event.preventDefault()
@@ -161,10 +175,103 @@
           window.location.reload()
         })
         .catch(error => {
-          errorMessage.innerHTML = error.message
+          addModalMsg.innerHTML = error.message
         });
       }
       addModalForm.classList.add('was-validated')
+    }, false)
+
+    // Edit node
+
+    const editModal = document.getElementById('edit-node-modal')
+    const editModalForm = editModal.querySelector('form')
+    const editModalMsg = editModal.querySelector('.modal-footer span')
+    const editModalBtn = editModal.querySelector('.modal-footer button')
+    const editModalInstance = new bootstrap.Modal(editModal)
+
+    window.addEventListener('pencil', function (event) {
+      const node = data.find(dict => dict.cardId == event.detail);
+      editModalForm.dataset.id = node.cardId.substring(1)
+
+      editModalForm.querySelector('[name="name"]').value = node.cardTitle;
+      editModalForm.querySelector('[name="host"]').value = node.cardDescription.split(':')[0];
+      editModalForm.querySelector('[name="port"]').value = node.cardDescription.split(':')[1];
+
+      editModalInstance.show()
+    }, false)
+
+    editModalBtn.addEventListener('click', function (event) {
+      editModalForm.dispatchEvent(new Event('submit', { bubbles: true }));
+    }, false)
+
+    editModalForm.addEventListener('submit', function (event) {
+      event.preventDefault()
+      event.stopPropagation()
+      if (editModalForm.checkValidity()) {
+        const formData = new FormData(editModalForm);
+
+        formData.append("address", formData.get("host")+":"+formData.get("port"))
+        formData.delete("host")
+        formData.delete("port")
+
+        fetch(`/api/nodes/${editModalForm.dataset.id}`, {
+          method: 'PUT',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(errorData => {
+              throw new Error(errorData.error);
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          window.location.reload()
+        })
+        .catch(error => {
+          editModalMsg.innerHTML = error.message
+        });
+      }
+      editModalForm.classList.add('was-validated')
+    }, false)
+
+    // Delete node
+
+    const delModal = document.getElementById('del-node-modal')
+    const delModalMsg = delModal.querySelector('.modal-body')
+    const delModalBtn = delModal.querySelector('.modal-footer button')
+    const delModalInstance = new bootstrap.Modal(delModal)
+
+    window.addEventListener('trash', function (event) {
+      const node = data.find(dict => dict.cardId == event.detail);
+      delModalMsg.innerHTML = `Are you sure you want to delete ${node.cardTitle} @ ${node.cardDescription}?`
+      delModalBtn.dataset.id = node.cardId.substring(1)
+      delModalInstance.show()
+    }, false)
+
+    delModalBtn.addEventListener('click', function (event) {
+      event.preventDefault()
+      event.stopPropagation()
+
+      fetch(`/api/nodes/${delModalBtn.dataset.id}`, {
+        method: 'DELETE'
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(errorData => {
+            throw new Error(errorData.error);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        window.location.reload()
+      })
+      .catch(error => {
+        delModalInstance.hide()
+        alert(error.message)
+      });
     }, false)
   </script>
 {% endblock script %}

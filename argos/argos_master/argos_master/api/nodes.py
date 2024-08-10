@@ -251,7 +251,7 @@ def create_node():
         jsonschema.validate(instance=[node_data], schema=NODES_CONFIG_SCHEMA)
     except jsonschema.ValidationError:
         return (
-            jsonify({"error": "Invalid data format"}),
+            jsonify({"error": "Invalid data"}),
             HTTPStatus.BAD_REQUEST,
         )
 
@@ -294,6 +294,89 @@ def create_node():
     # Return a success message with the newly created node
     return (
         jsonify({"message": "Node created successfully"}),
+        HTTPStatus.CREATED,
+    )
+
+@blueprint.route("/<int:node_id>", methods=["PUT"])
+def edit_node(node_id: int):
+    """
+    Creates new node
+    """
+
+    # Get the node
+    node = next((node for node in nodes_list if node["id"] == node_id), None)
+    if node is None:
+        return (
+            jsonify({"error": "Node not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    # Get the textual data
+    node_data: dict = {"name": request.form.get("name"), "address": request.form.get("address")}
+
+    if not node_data:
+        return (
+            jsonify({"error": "No data provided"}),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    node_data["id"] = node_id
+    node_data["has_image"] = node["has_image"]
+
+    # Validate provided data structure
+    try:
+        jsonschema.validate(instance=[node_data], schema=NODES_CONFIG_SCHEMA)
+    except jsonschema.ValidationError:
+        return (
+            jsonify({"error": "Invalid data"}),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Ensure name is not taken
+    names = [node["name"] for node in nodes_list]
+    if node_data["name"] in names and node_data["name"] != node["name"]:
+        return (
+            jsonify({"error": "Name already in use."}),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Ensure unique addresses
+    addresses = [node["address"] for node in nodes_list]
+    if node_data["address"] in addresses and node_data["address"] != node["address"]:
+        return (
+            jsonify({"error": "Address already in use."}),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Disconnect from node
+    if node["sio"]:
+        node["sio"].disconnect()
+
+    # Update node
+    node["name"] = node_data["name"]
+    node["address"] = node_data["address"]
+
+    # Edit nodes.yaml
+    with open(NODES_FILE, "w", encoding="utf-8") as f:
+        keys_to_keep = ["id", "name", "address", "has_image"]
+        sanitized_nodes_list = [
+            {key: value for key, value in node.items() if key in keys_to_keep}
+            for node in nodes_list
+        ]
+
+        yaml.safe_dump(sanitized_nodes_list, f, sort_keys=False)
+
+    # Log creation
+    _logger.info(
+        "Edited node %s (%s @ %s)", node_data["id"], node_data["name"], node_data["address"]
+    )
+
+    # Connect to node
+    _connect_node(node_data)
+
+    # Return a success message with the newly created node
+    return (
+        jsonify({"message": "Node edited successfully"}),
         HTTPStatus.CREATED,
     )
 
