@@ -438,6 +438,14 @@ $navbar-active-item-underline: $main-color;
         }
       }
 
+      &[data-description=""] {
+        .body-content {
+          .card-title {
+            margin-bottom: 0;
+          }
+        }
+      }
+
       &[data-has-actions=""] {
         .body-actions {
           display: none;

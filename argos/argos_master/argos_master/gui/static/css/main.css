@@ -237,6 +237,8 @@
     display: none !important; }
     #grid .card .card-body[data-title=""][data-description=""] .body-content {
       display: none; }
+  #grid .card .card-body[data-description=""] .body-content .card-title {
+    margin-bottom: 0; }
   #grid .card .card-body[data-has-actions=""] .body-actions {
     display: none; }
   #grid .card .card-body .body-actions svg:hover {

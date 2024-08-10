@@ -16,7 +16,12 @@
                   data-bs-dismiss="modal"
                   aria-label="Close"></button>
         </div>
-        <div class="modal-body">{{ caller() }}</div>
+        <div class="modal-body">
+          {{ caller('modal_body') }}
+        </div>
+        <div class="modal-footer">
+          {{ caller('modal_footer') }}
+        </div>
       </div>
     </div>
   </div>
