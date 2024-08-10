@@ -1,6 +1,6 @@
-{% macro modal(title) %}
+{% macro modal(id, title) %}
   <div class="modal fade mt-5 mt-sm-0"
-       id="modal"
+       id="{{ id }}"
        data-bs-backdrop="static"
        data-bs-keyboard="true"
        tabindex="-1"

@@ -193,10 +193,12 @@ _init()
 
 
 @blueprint.errorhandler(Exception)
-def handle_exception(_):
+def handle_exception(e):
     """
     Handles exceptions
     """
+
+    _logger.warning(e)
 
     return (
         jsonify({"error": "Internal error."}),
@@ -281,6 +283,11 @@ def create_node():
     # Add the new node to the nodes_list
     nodes_list.append(node_data)
 
+    # Log creation
+    _logger.info(
+        "Added node %s (%s @ %s)", node_data["id"], node_data["name"], node_data["address"]
+    )
+
     # Connect to node
     _connect_node(node_data)
 
@@ -305,8 +312,12 @@ def delete_node(node_id: int):
             HTTPStatus.NOT_FOUND,
         )
 
+    node_name = node["name"]
+    node_address = node["address"]
+
     # Remove the node from the nodes_list
-    node["sio"].disconnect()
+    if node["sio"]:
+        node["sio"].disconnect()
     nodes_list.remove(node)
 
     # Remove the node from the nodes.yaml
@@ -326,6 +337,8 @@ def delete_node(node_id: int):
     for file in os.listdir(IMAGES_DIR):
         if file.startswith(f"{node_id}."):
             os.remove(os.path.join(IMAGES_DIR, file))
+
+    _logger.info("Removed node %s (%s @ %s)", node_id, node_name, node_address)
 
     # Return a success message
     return (
