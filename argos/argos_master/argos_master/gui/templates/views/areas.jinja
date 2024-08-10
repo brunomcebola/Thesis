@@ -20,10 +20,10 @@
         <button type="button"
                 class="btn btn-primary"
                 data-bs-toggle="modal"
-                data-bs-target="#modal">Add area</button>
+                data-bs-target="#add-area-modal">Add area</button>
       </div>
     </div>
-    {% call modal("Add area") %}
+    {% call(content) modal("add-area-modal", "Add area") %}
     {% endcall %}
     {% if content is defined %}
       {% with content=content %}

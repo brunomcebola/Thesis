@@ -17,13 +17,13 @@
     const reloadBtn = document.getElementById('reload-btn');
     const indicator = document.getElementById('indicator');
 
-    const logsLineHeight = parseInt(window.getComputedStyle(logs).lineHeight);
-    const logsDivHeight = logs.clientHeight - parseInt(window.getComputedStyle(logs).paddingTop) - parseInt(window.getComputedStyle(logs).paddingBottom);
-    const numLines = Math.floor(logsDivHeight / logsLineHeight);
-
     var lineCount = 1;
 
     function loadLogs() {
+      const logsLineHeight = parseInt(window.getComputedStyle(logs).lineHeight);
+      const logsDivHeight = logs.clientHeight - parseInt(window.getComputedStyle(logs).paddingTop) - parseInt(window.getComputedStyle(logs).paddingBottom);
+      const numLines = Math.floor(logsDivHeight / logsLineHeight);
+
       fetch('/api/logs?start_line=' + lineCount + '&nb_lines=' + Math.floor((numLines * 1.5)))
         .then(response => response.json())
         .then(lines => {
@@ -45,8 +45,6 @@
 
     }
 
-    loadLogs()
-
     logs.addEventListener('scroll', function() {
       if (logs.scrollTop === 0) {
         loadLogs()
@@ -57,6 +55,6 @@
       location.reload();
     });
 
-
+    window.onload = loadLogs;
   </script>
 {% endblock script %}
