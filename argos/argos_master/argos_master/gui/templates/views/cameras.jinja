@@ -130,7 +130,7 @@
         })
         .catch(error => {
           // Handle errors from axios
-          const errorMessage = error.response?.data?.error || error.message;
+          const errorMessage = error.response?.data?.error || "Service unavailable";
           alert(errorMessage);
         });
     }, false)

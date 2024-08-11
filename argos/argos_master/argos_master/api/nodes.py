@@ -7,13 +7,14 @@ import pickle
 import io
 from http import HTTPStatus
 import base64
+from functools import wraps
 import yaml
 import requests
 import jsonschema
 import socketio
 import socketio.exceptions
 from PIL import Image
-from flask import Blueprint, jsonify, send_file, request
+from flask import Blueprint, jsonify, send_file, request, Response
 
 from .. import logger as _logger
 from .. import socketio as _socketio  # pylint: disable=reimported
@@ -122,6 +123,74 @@ def _connect_node(node: dict) -> None:
         node["cameras"] = []
 
 
+def _verify_node_existance(f):
+    """
+    Decorator to verify if a node exists
+    """
+
+    @wraps(f)
+    def decorated_function(node_id, *args, **kwargs):
+        # Find the node in the global nodes_list
+        node = next((node for node in nodes_list if node["id"] == node_id), None)
+
+        # If the node is not found, return a 404 error
+        if node is None:
+            return (
+                jsonify({"error": "Node not found."}),
+                HTTPStatus.NOT_FOUND,
+            )
+
+        # If the node is found, pass it to the route function
+        return f(node=node, *args, **kwargs)
+
+    return decorated_function
+
+
+def _redirect_request_to_node(f):
+    """
+    Decorator to redirect the request to the node
+    """
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Construct the target URL for proxying
+
+        if "node" not in kwargs:
+            return (
+                jsonify({"error": "Internal error."}),
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+
+        route = request.path.split(f"/api/nodes/{kwargs['node']['id']}/")[1]
+        target_url = f"http://{kwargs['node']['address']}/{route}"
+
+        try:
+
+            # Forward the request to the target URL using requests
+            response = requests.request(
+                method=request.method,
+                url=target_url,
+                json=request.json if "Content-Type" in dict(request.headers) else None,
+                timeout=5,
+            )
+            # Convert the proxied response to a Flask Response object
+            response = (
+                jsonify(response.json()),
+                response.status_code,
+            )
+
+            # Pass the response object to the wrapped function
+            return f(response, *args, **kwargs)
+
+        except requests.exceptions.RequestException:
+            return (
+                jsonify({"error": "Unable to connect to node."}),
+                HTTPStatus.SERVICE_UNAVAILABLE,
+            )
+
+    return decorated_function
+
+
 def _init() -> None:
     """
     Initializes the nodes module
@@ -186,6 +255,10 @@ def _init() -> None:
 #
 
 _init()
+
+#
+#
+#
 
 #
 # Routes
@@ -299,18 +372,11 @@ def create_node():
 
 
 @blueprint.route("/<int:node_id>", methods=["PUT"])
-def edit_node(node_id: int):
+@_verify_node_existance
+def edit_node(node: dict):
     """
     Edits node
     """
-
-    # Get the node
-    node = next((node for node in nodes_list if node["id"] == node_id), None)
-    if node is None:
-        return (
-            jsonify({"error": "Node not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
 
     # Get the textual data
     node_data: dict = {"name": request.form.get("name"), "address": request.form.get("address")}
@@ -321,7 +387,7 @@ def edit_node(node_id: int):
             HTTPStatus.BAD_REQUEST,
         )
 
-    node_data["id"] = node_id
+    node_data["id"] = node["id"]
     node_data["has_image"] = node["has_image"]
 
     # Validate provided data structure
@@ -383,19 +449,13 @@ def edit_node(node_id: int):
 
 
 @blueprint.route("/<int:node_id>", methods=["DELETE"])
-def delete_node(node_id: int):
+@_verify_node_existance
+def delete_node(node: dict):
     """
     Deletes a node
     """
 
-    # Get the node
-    node = next((node for node in nodes_list if node["id"] == node_id), None)
-    if node is None:
-        return (
-            jsonify({"error": "Node not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
-
+    node_id = node["id"]
     node_name = node["name"]
     node_address = node["address"]
 
@@ -419,7 +479,7 @@ def delete_node(node_id: int):
 
     # Remove the image
     for file in os.listdir(IMAGES_DIR):
-        if file.startswith(f"{node_id}."):
+        if file.startswith(str(node_id)):
             os.remove(os.path.join(IMAGES_DIR, file))
 
     _logger.info("Removed node %s (%s @ %s)", node_id, node_name, node_address)
@@ -432,20 +492,15 @@ def delete_node(node_id: int):
 
 
 @blueprint.route("/<int:node_id>/image")
-def image(node_id: int):
+@_verify_node_existance
+def image(node: dict):
     """
     Returns the image of the node
     """
 
-    if node_id not in [node["id"] for node in nodes_list]:
-        return (
-            jsonify({"error": "Node not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
-
     # Get the node image
     for file in os.listdir(IMAGES_DIR):
-        if file.startswith(f"{node_id}."):
+        if file.startswith(str(node["id"])):
             return send_file(os.path.join(IMAGES_DIR, file))
 
     return (
@@ -460,158 +515,59 @@ def image(node_id: int):
 
 
 @blueprint.route("/<int:node_id>/cameras")
-def cameras(node_id: int):
+@_verify_node_existance
+@_redirect_request_to_node
+def cameras(
+    response: tuple[Response, int],
+    node: dict,
+):  # pylint: disable=unused-argument
     """
     Returns a list with the cameras of the node
     """
 
-    # Get the node
-    node = next((node for node in nodes_list if node["id"] == node_id), None)
-    if node is None:
-        return (
-            jsonify({"error": "Node not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
-
-    # Make a GET request to retrieve the list of cameras
-    response = requests.get(f"http://{node['address']}/cameras", timeout=5)
-
-    return (
-        jsonify(response.json() if response.status_code == HTTPStatus.OK else []),
-        HTTPStatus.OK,
-    )
+    return response
 
 
 @blueprint.route("/<int:node_id>/cameras/<string:camera_id>/config")
-def get_camera_config(node_id: int, camera_id: str):
+@_verify_node_existance
+@_redirect_request_to_node
+def get_camera_config(
+    response: tuple[Response, int],
+    node: dict,
+    camera_id: str,
+):  # pylint: disable=unused-argument
     """
     Returns the configuration of a specific camera
     """
 
-    # Get the node
-    node = next((node for node in nodes_list if node["id"] == node_id), None)
-    if node is None:
-        return (
-            jsonify({"error": "Node not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
-
-    # Check if camera exists
-    if camera_id not in node["cameras"]:
-        return (
-            jsonify({"error": "Camera not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
-
-    # Make a GET request to retrieve the configuration of the camera
-    response = requests.get(f"http://{node['address']}/cameras/{camera_id}/config", timeout=5)
-
-    if response.status_code != HTTPStatus.OK:
-        return (
-            jsonify({"error": "Failed to retrieve camera configuration."}),
-            HTTPStatus.INTERNAL_SERVER_ERROR,
-        )
-
-    return (
-        jsonify(response.json()),
-        HTTPStatus.OK,
-    )
+    return response
 
 
 @blueprint.route("/<int:node_id>/cameras/<string:camera_id>/stream")
-def get_camera_stream_status(node_id: int, camera_id: str):
+@_verify_node_existance
+@_redirect_request_to_node
+def get_camera_stream_status(
+    response: tuple[Response, int],
+    node: dict,
+    camera_id: str,
+):  # pylint: disable=unused-argument
     """
     Returns the status of the camera stream for a specific node and camera
     """
 
-    # Get the node
-    node = next((node for node in nodes_list if node["id"] == node_id), None)
-    if node is None:
-        return (
-            jsonify({"error": "Node not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
-
-    # Check if camera exists
-    if camera_id not in node["cameras"]:
-        return (
-            jsonify({"error": "Camera not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
-
-    # Try to connect node if it's not connected
-    if node["sio"] is None:
-        _connect_node(node)
-
-    if node["sio"] is None:
-        raise RuntimeError("Failed to connect to node.")
+    return response
 
 
-    # Make a GET request to retrieve the status of the camera stream
-    response = requests.get(f"http://{node['address']}/cameras/{camera_id}/stream", timeout=5)
-
-    if response.status_code != HTTPStatus.OK:
-        return (
-            jsonify({"error": "Failed to retrieve camera stream status."}),
-            HTTPStatus.INTERNAL_SERVER_ERROR,
-        )
-
-    return (
-        jsonify(response.json()),
-        HTTPStatus.OK,
-    )
-
-
-@blueprint.route(
-    "/<int:node_id>/cameras/<string:camera_id>/stream/<string:action>",
-    methods=["POST"],
-)
-def set_camera_stream(node_id: int, camera_id: str, action: str):
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/stream", methods=["POST"])
+@_verify_node_existance
+@_redirect_request_to_node
+def set_camera_stream(
+    response: tuple[Response, int],
+    node: dict,
+    camera_id: str,
+):  # pylint: disable=unused-argument
     """
     Starts the camera stream for a specific node and camera
     """
 
-    # Check if valid action
-    if action not in ["start", "stop"]:
-        return (
-            jsonify({"error": "Invalid action."}),
-            HTTPStatus.BAD_REQUEST,
-        )
-
-    # Get the node
-    node = next((node for node in nodes_list if node["id"] == node_id), None)
-    if node is None:
-        return (
-            jsonify({"error": "Node not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
-
-    # Try to connect node if it's not connected
-    if node["sio"] is None:
-        _connect_node(node)
-
-    if node["sio"] is None:
-        raise RuntimeError("Failed to connect to node.")
-
-    # Check if camera exists
-    if camera_id not in node["cameras"]:
-        return (
-            jsonify({"error": "Camera not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
-
-    # Make a GET request to start the camera stream
-    response = requests.post(
-        f"http://{node['address']}/cameras/{camera_id}/stream/{action}", timeout=5
-    )
-
-    if response.status_code != HTTPStatus.OK:
-        return (
-            jsonify({"error": f"Failed to {action} camera stream."}),
-            HTTPStatus.INTERNAL_SERVER_ERROR,
-        )
-
-    return (
-        jsonify({"message": f"Camera stream {'started' if action == 'start' else 'stopped'}."}),
-        HTTPStatus.OK,
-    )
+    return response

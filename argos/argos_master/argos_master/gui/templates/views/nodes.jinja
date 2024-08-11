@@ -219,7 +219,7 @@
             window.location.reload()
           })
           .catch(error => {
-            const errorMessage = error.response?.data?.error || error.message;
+            const errorMessage = error.response?.data?.error || "Service unavailable";
             editModalMsg.innerHTML = errorMessage
           });
       }
@@ -249,7 +249,7 @@
           window.location.reload()
         })
         .catch(error => {
-          const errorMessage = error.response?.data?.error || error.message;
+          const errorMessage = error.response?.data?.error || "Service unavailable";
           delModalInstance.hide()
           alert(errorMessage)
         });
