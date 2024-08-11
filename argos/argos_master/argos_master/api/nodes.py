@@ -301,7 +301,7 @@ def create_node():
 @blueprint.route("/<int:node_id>", methods=["PUT"])
 def edit_node(node_id: int):
     """
-    Creates new node
+    Edits node
     """
 
     # Get the node

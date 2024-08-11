@@ -1,4 +1,5 @@
 {% extends "views/base.jinja" %}
+{% from "components/modal.jinja" import modal with context %}
 {% block title %}
   Cameras
 {% endblock title %}
@@ -15,8 +16,7 @@
                  placeholder="Search for a camera" />
         </div>
       </div>
-      <div class="col my-auto align-right pe-3">
-      </div>
+      <div class="col my-auto align-right pe-3"></div>
     </div>
     {% if content is defined %}
       {% with data=content, actions=["pencil"] %}
@@ -27,5 +27,140 @@
         {% include "components/empty.jinja" %}
       {% endwith %}
     {% endif %}
+    <!-- Edit config modal -->
+    {% call(content) modal("edit-config-modal", "Edit configuration") %}
+      {% if content == 'modal_body' %}
+        <form class="row g-3 mx-n4 needs-validation" novalidate>
+          <div class="col-12">
+            <div class="textarea p-1" contenteditable="true"></div>
+            <div class="invalid-feedback"></div>
+          </div>
+        </form>
+      {% endif %}
+      {% if content == 'modal_footer' %}
+        <div class="col-12 d-flex justify-content-between align-items-center">
+          <span class="text-danger"></span>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      {% endif %}
+    {% endcall %}
   </div>
 {% endblock body %}
+{% block script %}
+  <script>
+    const node_id = {{ request.path.split("/")[-1] }}
+
+    // Edit config
+
+    const editModal = document.getElementById('edit-config-modal')
+    const editModalForm = editModal.querySelector('form')
+    const editModalTextarea = editModalForm.querySelector('.modal-body .textarea')
+    const editModalInvalidFeedback = editModalForm.querySelector('.modal-body .invalid-feedback')
+    const editModalMsg = editModal.querySelector('.modal-footer span')
+    const editModalBtn = editModal.querySelector('.modal-footer button')
+    const editModalInstance = new bootstrap.Modal(editModal)
+
+    function validateConfig(){
+      editModalTextarea.classList.add('is-invalid')
+
+      // Parse the JSON content
+      try{
+        var config = JSON.parse(editModalTextarea.textContent.trim())
+      } catch (error) {
+        editModalInvalidFeedback.textContent = 'Invalid JSON format.'
+        return false
+      }
+
+      if (typeof config !== 'object' || config === null){
+        editModalInvalidFeedback.textContent = 'Config must be a dictionary in JSON format.'
+        return false
+      }
+
+      // Check top-level properties
+      if (!('alignment' in config)) {
+        editModalInvalidFeedback.textContent = 'Config must have an "alignment" property.'
+        return false
+      }
+      else if (!('stream_configs' in config)) {
+        editModalInvalidFeedback.textContent = 'Config must have a "stream_configs" property.'
+        return false
+      }
+      else if (!Array.isArray(config.stream_configs)) {
+        editModalInvalidFeedback.textContent = 'Config.stream_configs must be an array inb JSON format.'
+        return false
+      }
+
+      // Validate each item in stream_configs array
+      for (var i = 0; i < config.stream_configs.length; i++) {
+        var streamConfig = config.stream_configs[i];
+
+        if (typeof streamConfig !== 'object' || streamConfig === null) {
+          editModalInvalidFeedback.textContent = 'Each item in stream_configs must be a dictionary in JSON format.'
+        }
+
+        if (!('format' in streamConfig)) {
+          editModalInvalidFeedback.textContent = 'Each item in stream_configs must have a "format" property.'
+          return false
+        }
+        else if (!('fps' in streamConfig)) {
+          editModalInvalidFeedback.textContent = 'Each item in stream_configs must have a "fps" property.'
+          return false
+        }
+        else if (!('resolution' in streamConfig)) {
+          editModalInvalidFeedback.textContent = 'Each item in stream_configs must have a "resolution" property.'
+          return false
+        }
+        else if (!('type' in streamConfig)) {
+          editModalInvalidFeedback.textContent = 'Each item in stream_configs must have a "type" property.'
+          return false
+        }
+      }
+
+      editModalTextarea.classList.remove('is-invalid')
+      return true
+    }
+
+    window.addEventListener('pencil', async function (event) {
+      axios.get(`/api/nodes/${node_id}/cameras/${event.detail.substring(1)}/config`)
+        .then(response => {
+          // The response data is already parsed as JSON by axios
+          editModalTextarea.textContent = JSON.stringify(response.data, null, "\t");
+          editModalTextarea.classList.remove('is-invalid')
+          editModalInstance.show();
+        })
+        .catch(error => {
+          // Handle errors from axios
+          const errorMessage = error.response?.data?.error || error.message;
+          alert(errorMessage);
+        });
+    }, false)
+
+    editModalTextarea.addEventListener('keydown', function(event) {
+      if (event.key === 'Tab') {
+        event.preventDefault(); // Prevent the default tab behavior
+
+        document.execCommand('insertText', false, '\t');
+      }
+    });
+
+    editModalTextarea.addEventListener('input', function (event) {
+      validateConfig()
+    }, false)
+
+    editModalBtn.addEventListener('click', function (event) {
+      editModalForm.dispatchEvent(new Event('submit', { bubbles: true }));
+    }, false)
+
+    editModalForm.addEventListener('submit', function (event) {
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (validateConfig()) {
+        alert("Nice")
+      }
+
+    }, false)
+
+
+  </script>
+{% endblock script %}
