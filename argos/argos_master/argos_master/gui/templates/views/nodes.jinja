@@ -24,7 +24,7 @@
       </div>
     </div>
     {% if content is defined %}
-      {% with data=content, actions=["pencil", "trash"] %}
+      {% with data=content, actions=["pencil","circle-info", "trash"] %}
         {% include "components/grid.jinja" %}
       {% endwith %}
     {% else %}
@@ -159,24 +159,14 @@
         formData.delete("host")
         formData.delete("port")
 
-        fetch('/api/nodes', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => {
-          if (!response.ok) {
-            return response.json().then(errorData => {
-              throw new Error(errorData.error);
-            });
-          }
-          return response.json();
-        })
-        .then(data => {
-          window.location.reload()
-        })
-        .catch(error => {
-          addModalMsg.innerHTML = error.message
-        });
+        axios.post('/api/nodes', formData)
+          .then(response => {
+            window.location.reload()
+          })
+          .catch(error => {
+            const errorMessage = error.response?.data || "Service unavailable";
+            addModalMsg.innerHTML = errorMessage
+          });
       }
       addModalForm.classList.add('was-validated')
     }, false)
@@ -215,7 +205,7 @@
         formData.delete("port")
 
         axios.put(`/api/nodes/${editModalForm.dataset.id}`, formData)
-          .then(data => {
+          .then(response => {
             window.location.reload()
           })
           .catch(error => {
@@ -245,7 +235,7 @@
       event.stopPropagation()
 
       axios.delete(`/api/nodes/${delModalBtn.dataset.id}`)
-        .then(data => {
+        .then(response => {
           window.location.reload()
         })
         .catch(error => {
@@ -253,6 +243,12 @@
           delModalInstance.hide()
           alert(errorMessage)
         });
+    }, false)
+
+    // Go to logs
+
+    window.addEventListener('circle-info', function (event) {
+      window.location.href = `/nodes/${event.detail.substring(1)}/logs`
     }, false)
   </script>
 {% endblock script %}
