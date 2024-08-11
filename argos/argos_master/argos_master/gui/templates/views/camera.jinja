@@ -8,7 +8,8 @@
       Camera {{ request.path.split("/")[-1] }} @ <a href="{{ url_for('gui.node', node_id=request.path.split('/')[-3] ) }}">node {{ request.path.split("/")[-3] }}</a>
     </h4>
     <div id="video-container">
-      <canvas id="video"></canvas>
+      <canvas id="video">
+      </canvas>
       <div id="controls">
         <button class="btn" id="start-pause" data-status="play">
           <i class="fas fa-play"></i>
@@ -26,10 +27,9 @@
     const camera = {{ request.path.split("/")[-1] }};
 
     const videoContainer = document.getElementById('video-container');
-    const canvas = document.getElementById('video');
-    const context = canvas.getContext('2d');
-    const startPauseButton = document.getElementById('start-pause');
-    const fullscreenButton = document.getElementById('fullscreen');
+    const canvas = videoContainer.querySelector('canvas');
+    const startPauseButton = videoContainer.querySelector('#controls #start-pause');
+    const bottomFullscreenButton = videoContainer.querySelector('#controls #fullscreen');
 
     const socket = io();  // Connect to the same origin
 
@@ -44,49 +44,22 @@
       canvas.height = visualHeight;
     }
 
-    window.addEventListener('resize', resizeCanvas);
+    function toggleStream() {
+      action = startPauseButton.dataset.status == "play" ? "start" : "stop";
 
-    window.dispatchEvent(new Event('resize'));
+      axios.post(`/api/nodes/${node}/cameras/${camera}/stream/${action}`)
+        .then(response => {
+          var newStatus = startPauseButton.dataset.status == "play" ? "pause" : "play";
+          startPauseButton.dataset.status = newStatus;
+          startPauseButton.innerHTML = `<i class="fas fa-${newStatus}"></i>`;
+        })
+        .catch(error => {
+          const errorMessage = error.response?.data?.error || error.message;
+          alert(errorMessage);
+        });
+    }
 
-
-    fetch(`/api/nodes/${node}/cameras/${camera}/stream`)
-    .then(response => {
-      if (response.ok) {
-        return response.json();
-      }
-    })
-    .then(data => {
-      if (data) {
-        startPauseButton.dataset.status = "pause";
-        startPauseButton.innerHTML = `<i class="fas fa-pause"></i>`;
-      }
-    });
-
-    socket.on(`${node}_${camera}`, function(data) {
-      var img = new Image();
-      img.onload = function() {
-        const aspectRatio = img.width / img.height;
-        const canvasAspectRatio = canvas.width / canvas.height;
-        let drawWidth, drawHeight, drawX, drawY;
-
-        if (aspectRatio > canvasAspectRatio) {
-          drawWidth = canvas.width;
-          drawHeight = canvas.width / aspectRatio;
-          drawX = 0;
-          drawY = (canvas.height - drawHeight) / 2;
-        } else {
-          drawWidth = canvas.height * aspectRatio;
-          drawHeight = canvas.height;
-          drawX = (canvas.width - drawWidth) / 2;
-          drawY = 0;
-        }
-
-        context.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-      };
-      img.src = 'data:image/jpeg;base64,' + data;
-    });
-
-    fullscreenButton.addEventListener('click', function() {
+    function toggleFullscreen() {
       if (document.fullscreenElement) {
         if (document.exitFullscreen) {
           document.exitFullscreen();
@@ -108,23 +81,46 @@
           videoContainer.msRequestFullscreen();
         }
       }
-    });
+    }
 
-    startPauseButton.addEventListener('click', function() {
-      action = startPauseButton.dataset.status == "play" ? "start" : "stop";
-      fetch(`/api/nodes/${node}/cameras/${camera}/stream/${action}`, {
-        method: 'POST'
-      })
+    window.addEventListener('resize', resizeCanvas);
+
+    window.dispatchEvent(new Event('resize'));
+
+    axios.get(`/api/nodes/${node}/cameras/${camera}/stream`)
       .then(response => {
-        if (response.ok) {
-          var newStatus = startPauseButton.dataset.status == "play" ? "pause" : "play";
-          startPauseButton.dataset.status = newStatus;
-          startPauseButton.innerHTML = `<i class="fas fa-${newStatus}"></i>`;
+        if (response.data) {
+          startPauseButton.dataset.status = "pause";
+          startPauseButton.innerHTML = `<i class="fas fa-pause"></i>`;
         }
-      })
+      });
+
+    socket.on(`${node}_${camera}`, function(data) {
+      var img = new Image();
+      img.onload = function() {
+        const aspectRatio = img.width / img.height;
+        const canvasAspectRatio = canvas.width / canvas.height;
+        let drawWidth, drawHeight, drawX, drawY;
+
+        if (aspectRatio > canvasAspectRatio) {
+          drawWidth = canvas.width;
+          drawHeight = canvas.width / aspectRatio;
+          drawX = 0;
+          drawY = (canvas.height - drawHeight) / 2;
+        } else {
+          drawWidth = canvas.height * aspectRatio;
+          drawHeight = canvas.height;
+          drawX = (canvas.width - drawWidth) / 2;
+          drawY = 0;
+        }
+
+        canvas.getContext('2d').drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      };
+      img.src = 'data:image/jpeg;base64,' + data;
     });
 
+    startPauseButton.onclick = toggleStream;
 
-    // TODO: check cavas size on page load
+    bottomFullscreenButton.onclick = toggleFullscreen;
   </script>
 {% endblock script %}
