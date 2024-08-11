@@ -543,6 +543,22 @@ def get_camera_config(
     return response
 
 
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/config",  methods=["PUT"])
+@_verify_node_existance
+@_redirect_request_to_node
+def edit_camera_config(
+    response: tuple[Response, int],
+    node: dict,
+    camera_id: str,
+):  # pylint: disable=unused-argument
+    """
+    Returns the configuration of a specific camera
+    """
+
+    return response
+
+
+
 @blueprint.route("/<int:node_id>/cameras/<string:camera_id>/stream")
 @_verify_node_existance
 @_redirect_request_to_node
@@ -558,10 +574,10 @@ def get_camera_stream_status(
     return response
 
 
-@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/stream", methods=["POST"])
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/stream", methods=["PUT"])
 @_verify_node_existance
 @_redirect_request_to_node
-def set_camera_stream(
+def set_camera_stream_status(
     response: tuple[Response, int],
     node: dict,
     camera_id: str,
