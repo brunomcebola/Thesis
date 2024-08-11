@@ -47,14 +47,14 @@
     function toggleStream() {
       action = startPauseButton.dataset.status == "play" ? "start" : "stop";
 
-      axios.post(`/api/nodes/${node}/cameras/${camera}/stream`, { action: action })
+      axios.put(`/api/nodes/${node}/cameras/${camera}/stream`, { action: action })
         .then(response => {
           var newStatus = startPauseButton.dataset.status == "play" ? "pause" : "play";
           startPauseButton.dataset.status = newStatus;
           startPauseButton.innerHTML = `<i class="fas fa-${newStatus}"></i>`;
         })
         .catch(error => {
-          const errorMessage = error.response?.data?.error || "Service unavailable";
+          const errorMessage = error.response?.data || "Service unavailable";
           alert(errorMessage);
         });
     }

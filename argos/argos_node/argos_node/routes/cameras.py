@@ -338,8 +338,9 @@ def update_camera(serial_number: str):
     try:
         jsonschema.validate(instance=new_config, schema=CAMERA_CONFIG_SCHEMA)
     except jsonschema.ValidationError as e:
+        error = str(e).split("\n", maxsplit=1)[0]
         return (
-            jsonify("Invalid configuration: %s.", str(e).split("\n", maxsplit=1)[0]),
+            jsonify(f"Invalid configuration: {error}."),
             HTTPStatus.BAD_REQUEST,
         )
 
@@ -368,38 +369,6 @@ def update_camera(serial_number: str):
     return jsonify("Camera updated."), HTTPStatus.OK
 
 
-@blueprint.route("/<string:serial_number>/launch", methods=["POST"])
-def launch_camera(serial_number: str):
-    """
-    Launch a camera.
-    """
-
-    if serial_number not in cameras:
-        return (
-            jsonify("Camera not connected."),
-            HTTPStatus.NOT_FOUND,
-        )
-
-    if cameras[serial_number] is not None and not cameras[serial_number].is_stopped:  # type: ignore
-        return (
-            jsonify("Camera already launched."),
-            HTTPStatus.OK,
-        )
-
-    if cameras[serial_number] is not None and cameras[serial_number].is_stopped:  # type: ignore
-        cameras[serial_number].cleanup()  # type: ignore
-        del cameras[serial_number]
-
-    cameras[serial_number] = _launch_camera(
-        serial_number, os.path.join(CAMERAS_DIR, f"{serial_number}.yaml")
-    )
-
-    if cameras[serial_number] is None:
-        return jsonify("Camera not launched."), HTTPStatus.INTERNAL_SERVER_ERROR
-
-    return jsonify("Camera launched."), HTTPStatus.OK
-
-
 @blueprint.route("/<string:serial_number>/stream", methods=["GET"])
 def get_camera(serial_number: str):
     """
@@ -417,7 +386,7 @@ def get_camera(serial_number: str):
     return jsonify(cameras[serial_number].is_streaming), HTTPStatus.OK  # type: ignore
 
 
-@blueprint.route("/<string:serial_number>/stream", methods=["POST"])
+@blueprint.route("/<string:serial_number>/stream", methods=["PUT"])
 def start_stream(serial_number: str):
     """
     Start the streaming of a camera.
@@ -448,3 +417,35 @@ def start_stream(serial_number: str):
         "Camera %s stream %s.", serial_number, "started" if action == "start" else "stopped"
     )
     return jsonify("Camera stream started."), HTTPStatus.OK
+
+
+@blueprint.route("/<string:serial_number>/launch", methods=["PUT"])
+def launch_camera(serial_number: str):
+    """
+    Launch a camera.
+    """
+
+    if serial_number not in cameras:
+        return (
+            jsonify("Camera not connected."),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    if cameras[serial_number] is not None and not cameras[serial_number].is_stopped:  # type: ignore
+        return (
+            jsonify("Camera already launched."),
+            HTTPStatus.OK,
+        )
+
+    if cameras[serial_number] is not None and cameras[serial_number].is_stopped:  # type: ignore
+        cameras[serial_number].cleanup()  # type: ignore
+        del cameras[serial_number]
+
+    cameras[serial_number] = _launch_camera(
+        serial_number, os.path.join(CAMERAS_DIR, f"{serial_number}.yaml")
+    )
+
+    if cameras[serial_number] is None:
+        return jsonify("Camera not launched."), HTTPStatus.INTERNAL_SERVER_ERROR
+
+    return jsonify("Camera launched."), HTTPStatus.OK

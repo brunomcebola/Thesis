@@ -39,7 +39,7 @@
       {% endif %}
       {% if content == 'modal_footer' %}
         <div class="col-12 d-flex justify-content-between align-items-center">
-          <span class="text-danger"></span>
+          <span class="text-danger ps-2"></span>
           <button class="btn btn-primary">Save</button>
         </div>
       {% endif %}
@@ -123,14 +123,15 @@
     window.addEventListener('pencil', async function (event) {
       axios.get(`/api/nodes/${node_id}/cameras/${event.detail.substring(1)}/config`)
         .then(response => {
-          // The response data is already parsed as JSON by axios
+          editModalForm.dataset.id = event.detail.substring(1)
+
           editModalTextarea.textContent = JSON.stringify(response.data, null, "\t");
           editModalTextarea.classList.remove('is-invalid')
           editModalInstance.show();
         })
         .catch(error => {
           // Handle errors from axios
-          const errorMessage = error.response?.data?.error || "Service unavailable";
+          const errorMessage = error.response?.data || "Service unavailable";
           alert(errorMessage);
         });
     }, false)
@@ -156,7 +157,17 @@
       event.stopPropagation()
 
       if (validateConfig()) {
-        alert("Nice")
+        json = JSON.parse(editModalTextarea.textContent.trim())
+        axios.put(`/api/nodes/${node_id}/cameras/${editModalForm.dataset.id}/config`, json)
+          .then(data => {
+            editModalInstance.hide();
+          })
+          .catch(error => {
+            console.log(error)
+
+            const errorMessage = error.response?.data || "Service unavailable";
+            editModalMsg.innerHTML = errorMessage
+          });
       }
 
     }, false)
