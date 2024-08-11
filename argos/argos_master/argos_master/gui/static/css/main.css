@@ -245,3 +245,11 @@
     color: #8a000a; }
     #grid .card .card-body .body-actions svg:active {
       color: #660005; }
+
+#edit-config-modal .textarea {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  line-height: 1.5;
+  white-space: pre-wrap; }
+  #edit-config-modal .textarea:active {
+    border: 1px solid #4a90e2; }

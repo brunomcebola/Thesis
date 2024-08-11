@@ -465,3 +465,18 @@ $navbar-active-item-underline: $main-color;
     }
   }
 }
+
+/* cameras.jinja */
+
+#edit-config-modal {
+  .textarea {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+
+    &:active {
+      border: 1px solid #4a90e2;
+    }
+  }
+}
