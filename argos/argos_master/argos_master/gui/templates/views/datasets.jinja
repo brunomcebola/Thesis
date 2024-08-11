@@ -52,10 +52,10 @@
                        onclick="redirectTo('{{ url_for("gui.datasets", subpath=request.path.split('/')[2:-1] |join('/') + '/' + entry.name) }}') ">
                     <div class="type-icon p-0 ps-1 d-flex align-items-center">
                       {% if entry.is_dir %}
-                        <i class="mdi mdi-folder">
+                        <i class="fas fa-folder">
                         </i>
                       {% else %}
-                        <i class="mdi mdi-file">
+                        <i class="fas fa-file">
                         </i>
                       {% endif %}
                     </div>
@@ -64,7 +64,7 @@
                     </div>
                     <div class="actions-container p-0 pe-1 d-flex align-items-center">
                       <button type="button" class="btn">
-                        <i class="mdi mdi-delete"></i>
+                        <i class="fas fa-trash"></i>
                       </button>
                     </div>
                   </div>

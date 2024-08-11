@@ -297,6 +297,7 @@ def create_node():
         HTTPStatus.CREATED,
     )
 
+
 @blueprint.route("/<int:node_id>", methods=["PUT"])
 def edit_node(node_id: int):
     """
@@ -453,6 +454,11 @@ def image(node_id: int):
     )
 
 
+#
+# Camera related route
+#
+
+
 @blueprint.route("/<int:node_id>/cameras")
 def cameras(node_id: int):
     """
@@ -467,18 +473,47 @@ def cameras(node_id: int):
             HTTPStatus.NOT_FOUND,
         )
 
-    # Try to connect node if it's not connected
-    if node["sio"] is None:
-        _connect_node(node)
-
-    if node["sio"] is None:
-        raise RuntimeError("Failed to connect to node.")
-
     # Make a GET request to retrieve the list of cameras
     response = requests.get(f"http://{node['address']}/cameras", timeout=5)
 
     return (
         jsonify(response.json() if response.status_code == HTTPStatus.OK else []),
+        HTTPStatus.OK,
+    )
+
+
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/config")
+def get_camera_config(node_id: int, camera_id: str):
+    """
+    Returns the configuration of a specific camera
+    """
+
+    # Get the node
+    node = next((node for node in nodes_list if node["id"] == node_id), None)
+    if node is None:
+        return (
+            jsonify({"error": "Node not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    # Check if camera exists
+    if camera_id not in node["cameras"]:
+        return (
+            jsonify({"error": "Camera not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    # Make a GET request to retrieve the configuration of the camera
+    response = requests.get(f"http://{node['address']}/cameras/{camera_id}/config", timeout=5)
+
+    if response.status_code != HTTPStatus.OK:
+        return (
+            jsonify({"error": "Failed to retrieve camera configuration."}),
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+        )
+
+    return (
+        jsonify(response.json()),
         HTTPStatus.OK,
     )
 
@@ -497,6 +532,13 @@ def get_camera_stream_status(node_id: int, camera_id: str):
             HTTPStatus.NOT_FOUND,
         )
 
+    # Check if camera exists
+    if camera_id not in node["cameras"]:
+        return (
+            jsonify({"error": "Camera not found."}),
+            HTTPStatus.NOT_FOUND,
+        )
+
     # Try to connect node if it's not connected
     if node["sio"] is None:
         _connect_node(node)
@@ -504,12 +546,6 @@ def get_camera_stream_status(node_id: int, camera_id: str):
     if node["sio"] is None:
         raise RuntimeError("Failed to connect to node.")
 
-    # Check if camera exists
-    if camera_id not in node["cameras"]:
-        return (
-            jsonify({"error": "Camera not found."}),
-            HTTPStatus.NOT_FOUND,
-        )
 
     # Make a GET request to retrieve the status of the camera stream
     response = requests.get(f"http://{node['address']}/cameras/{camera_id}/stream", timeout=5)

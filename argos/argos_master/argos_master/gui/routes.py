@@ -81,6 +81,7 @@ def node(node_id: int):
             }
             for entry in response.get_json()
         ]
+
         return render_template("views/cameras.jinja", content=content)
     elif response.status_code == HTTPStatus.NOT_FOUND:
         return render_template("views/404.jinja"), 404
