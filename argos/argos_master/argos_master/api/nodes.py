@@ -170,6 +170,7 @@ def _redirect_request_to_node(f):
             response = requests.request(
                 method=request.method,
                 url=target_url,
+                params=request.args,
                 json=request.json if "Content-Type" in dict(request.headers) else None,
                 timeout=5,
             )
@@ -509,6 +510,20 @@ def image(node: dict):
     )
 
 
+@blueprint.route("/<int:node_id>/logs")
+@_verify_node_existance
+@_redirect_request_to_node
+def logs(
+    response: tuple[Response, int],
+    node: dict,
+):  # pylint: disable=unused-argument
+    """
+    Returns a list with the cameras of the node
+    """
+
+    return response
+
+
 #
 # Camera related route
 #
@@ -543,7 +558,7 @@ def get_camera_config(
     return response
 
 
-@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/config",  methods=["PUT"])
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/config", methods=["PUT"])
 @_verify_node_existance
 @_redirect_request_to_node
 def edit_camera_config(
@@ -556,7 +571,6 @@ def edit_camera_config(
     """
 
     return response
-
 
 
 @blueprint.route("/<int:node_id>/cameras/<string:camera_id>/stream")

@@ -50,7 +50,7 @@ def nodes():
                 "cardId": f"n{entry['id']}",
                 "cardTitle": entry["name"],
                 "cardDescription": entry["address"],
-                "imgSrc": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else None,
+                "imgSrc": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else "",
                 "imgAlt": f"{entry['name']} node cover",
                 "redirectURL": f"/nodes/{entry['id']}",
             }
@@ -87,6 +87,14 @@ def node(node_id: int):
         return render_template("views/404.jinja"), 404
     else:
         return render_template("views/500.jinja"), 500
+
+
+@blueprint.route("/nodes/<int:node_id>/logs")
+def node_logs(node_id: int): # pylint: disable=unused-argument
+    """
+    The node logs view
+    """
+    return render_template("views/logs.jinja")
 
 
 @blueprint.route("/nodes/<int:node_id>/cameras/<camera_id>")

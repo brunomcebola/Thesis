@@ -13,9 +13,17 @@
 {% endblock body %}
 {% block script %}
   <script>
+    const target = {{ request.path.split("/")[1:-1] }}.join("/")
     const logs = document.getElementById('logs');
     const reloadBtn = document.getElementById('reload-btn');
     const indicator = document.getElementById('indicator');
+
+    const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}$/;
+    const timestampColor = "darkgreen"
+    const levelInfoColor = "lightgreen"
+    const levelErrorColor = "red"
+    const levelOtherColor = "violet"
+    const messageColor= "white"
 
     var lineCount = 1;
 
@@ -24,25 +32,27 @@
       const logsDivHeight = logs.clientHeight - parseInt(window.getComputedStyle(logs).paddingTop) - parseInt(window.getComputedStyle(logs).paddingBottom);
       const numLines = Math.floor(logsDivHeight / logsLineHeight);
 
-      fetch('/api/logs?start_line=' + lineCount + '&nb_lines=' + Math.floor((numLines * 1.5)))
-        .then(response => response.json())
-        .then(lines => {
+      axios.get(`/api/${target}/logs?start_line=${lineCount}&nb_lines=${Math.floor((numLines * 100))}`)
+        .then(response => {
           prevLineCount = lineCount
-          lines.forEach(line => {
+          response.data.forEach(line => {
             let [timestamp, level, message] = line.split(' - ', 3);
-            let timestamp_color = "darkgreen"
-            let level_color = (level === "INFO" ? "lightgreen" : level === "ERROR" ? "red" : "indigo")
-            let message_color= "white"
 
-            let logItem = `<span style="color: ${timestamp_color}">${timestamp}</span>  -  `
-            logItem += `<span style="color: ${level_color}">${level}</span>  -  `
-            logItem += `<span style="color: ${message_color}">${message}</span>`;
-            logs.innerHTML = logItem + logs.innerHTML;
+            if(timestampRegex.test(timestamp)) {
+              var logItem = `<span style="color: ${timestampColor}">${timestamp}</span>  -  `
+              logItem += `<span style="color: ${level === "INFO" ? levelInfoColor : level === "ERROR" ? levelErrorColor : levelOtherColor}">${level}</span>  -  `
+              logItem += `<span style="color: ${messageColor}">${message}</span>`;
+            } else {
+              var logItem = `<span style="color: ${messageColor}">${line}</span>`
+            }
+
+            logs.insertAdjacentHTML('afterbegin', logItem);
+
             lineCount++;
           });
           logs.scrollTop = logsLineHeight * (lineCount - prevLineCount);
         })
-
+        .catch(error => {})
     }
 
     logs.addEventListener('scroll', function() {

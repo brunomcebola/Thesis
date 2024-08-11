@@ -159,7 +159,7 @@
       if (validateConfig()) {
         json = JSON.parse(editModalTextarea.textContent.trim())
         axios.put(`/api/nodes/${node_id}/cameras/${editModalForm.dataset.id}/config`, json)
-          .then(data => {
+          .then(response => {
             editModalInstance.hide();
           })
           .catch(error => {
