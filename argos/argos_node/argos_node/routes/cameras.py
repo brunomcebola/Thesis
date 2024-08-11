@@ -268,6 +268,20 @@ _init()
 #
 
 
+@blueprint.errorhandler(Exception)
+def handle_exception(e):
+    """
+    Handles exceptions
+    """
+
+    _logger.warning(e)
+
+    return (
+        jsonify({"error": "Internal error."}),
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+    )
+
+
 @blueprint.route("/", methods=["GET"])
 def get_cameras():
     """
@@ -403,11 +417,13 @@ def get_camera(serial_number: str):
     return jsonify(cameras[serial_number].is_streaming), HTTPStatus.OK  # type: ignore
 
 
-@blueprint.route("/<string:serial_number>/stream/<string:action>", methods=["POST"])
-def start_stream(serial_number: str, action: str):
+@blueprint.route("/<string:serial_number>/stream", methods=["POST"])
+def start_stream(serial_number: str):
     """
     Start the streaming of a camera.
     """
+
+    action = request.get_json()["action"]
 
     if action not in ["start", "stop"]:
         return jsonify("Invalid action."), HTTPStatus.BAD_REQUEST
