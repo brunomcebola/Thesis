@@ -214,24 +214,14 @@
         formData.delete("host")
         formData.delete("port")
 
-        fetch(`/api/nodes/${editModalForm.dataset.id}`, {
-          method: 'PUT',
-          body: formData
-        })
-        .then(response => {
-          if (!response.ok) {
-            return response.json().then(errorData => {
-              throw new Error(errorData.error);
-            });
-          }
-          return response.json();
-        })
-        .then(data => {
-          window.location.reload()
-        })
-        .catch(error => {
-          editModalMsg.innerHTML = error.message
-        });
+        axios.put(`/api/nodes/${editModalForm.dataset.id}`, formData)
+          .then(data => {
+            window.location.reload()
+          })
+          .catch(error => {
+            const errorMessage = error.response?.data?.error || error.message;
+            editModalMsg.innerHTML = errorMessage
+          });
       }
       editModalForm.classList.add('was-validated')
     }, false)
@@ -254,24 +244,16 @@
       event.preventDefault()
       event.stopPropagation()
 
-      fetch(`/api/nodes/${delModalBtn.dataset.id}`, {
-        method: 'DELETE'
-      })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(errorData => {
-            throw new Error(errorData.error);
-          });
-        }
-        return response.json();
-      })
-      .then(data => {
-        window.location.reload()
-      })
-      .catch(error => {
-        delModalInstance.hide()
-        alert(error.message)
-      });
+
+      axios.delete(`/api/nodes/${delModalBtn.dataset.id}`)
+        .then(data => {
+          window.location.reload()
+        })
+        .catch(error => {
+          const errorMessage = error.response?.data?.error || error.message;
+          delModalInstance.hide()
+          alert(errorMessage)
+        });
     }, false)
   </script>
 {% endblock script %}
