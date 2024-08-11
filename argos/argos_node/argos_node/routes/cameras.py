@@ -332,17 +332,24 @@ def update_camera(serial_number: str):
     _logger.info("Updating camera %s configuration...", serial_number)
 
     # Stop camera if exists
+    camera_streaming_initially = False
     if cameras[serial_number] is not None:
+        camera_streaming_initially = cameras[serial_number].is_streaming  # type: ignore
         cameras[serial_number].cleanup()  # type: ignore
         _logger.info("Camera %s stopped.", serial_number)
     del cameras[serial_number]
 
     with open(os.path.join(CAMERAS_DIR, f"{serial_number}.yaml"), "w", encoding="utf-8") as f:
         yaml.safe_dump(new_config, f, sort_keys=False)
+        _logger.info("Camera %s configuration updated.", serial_number)
 
     cameras[serial_number] = _launch_camera(
         serial_number, os.path.join(CAMERAS_DIR, f"{serial_number}.yaml")
     )
+
+    if cameras[serial_number] is not None and camera_streaming_initially:
+        cameras[serial_number].start_stream()  # type: ignore
+        _logger.info("Camera %s stream started.", serial_number)
 
     return jsonify("Camera updated."), HTTPStatus.OK
 
