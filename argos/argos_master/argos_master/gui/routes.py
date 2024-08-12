@@ -3,8 +3,7 @@ This module contains the views for the GUI.
 """
 
 from http import HTTPStatus
-from flask import Blueprint, render_template, current_app
-from flask import redirect, url_for
+from flask import Blueprint, render_template, current_app, request, redirect, url_for
 
 blueprint = Blueprint(
     "gui",
@@ -20,6 +19,21 @@ def page_not_found(_):
     """
     The 404 view
     """
+    if request.path.endswith("/"):
+        new_url = request.path.rstrip("/")
+
+        # Create a MapAdapter for matching the new URL
+        map_adapter = current_app.url_map.bind("", url_scheme=request.scheme)
+
+        try:
+            # Try to match the new URL (without the trailing slash) to a route
+            map_adapter.match(new_url, method=request.method)
+            # If it matches, redirect to the new URL
+            return redirect(new_url, code=301)
+        except Exception: # pylint: disable=broad-exception-caught
+            # If no match, continue to handle as normal (possibly 404)
+            pass
+
     return render_template("views/404.jinja"), 404
 
 
@@ -52,7 +66,7 @@ def nodes():
                 "cardDescription": entry["address"],
                 "imgSrc": f"/api/nodes/{entry['id']}/image" if entry["has_image"] else "",
                 "imgAlt": f"{entry['name']} node cover",
-                "redirectURL": f"/nodes/{entry['id']}",
+                "redirectURL": f"/nodes/{entry['id']}/cameras",
             }
             for entry in response.get_json()
         ]
@@ -63,7 +77,8 @@ def nodes():
 
 
 @blueprint.route("/nodes/<int:node_id>")
-def node(node_id: int):
+@blueprint.route("/nodes/<int:node_id>/cameras")
+def node_cameras(node_id: int):
     """
     The node view
     """
@@ -90,7 +105,7 @@ def node(node_id: int):
 
 
 @blueprint.route("/nodes/<int:node_id>/logs")
-def node_logs(node_id: int): # pylint: disable=unused-argument
+def node_logs(node_id: int):  # pylint: disable=unused-argument
     """
     The node logs view
     """
