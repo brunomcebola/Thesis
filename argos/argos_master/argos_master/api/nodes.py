@@ -62,29 +62,31 @@ class NodeConfigurationException(Exception):
     """
 
 
+def _camera_callback(data, node, camera):
+    frame = pickle.loads(data)
+
+    # TODO: ensure sequential order of frames
+
+    print(frame["timestamp"])
+
+    if frame["color"] is not None:
+        # Convert BGR to RGB
+        rgb_image = frame["color"][:, :, ::-1]
+
+        pil_image = Image.fromarray(rgb_image)
+
+        buffer = io.BytesIO()
+        pil_image.save(buffer, format="JPEG")
+
+        img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+        _socketio.emit(f"{node}_{camera}", img_base64)
+
+
 def _connect_node(node: dict) -> None:
     """
     Connects to a node and sets the callbacks of the cameras
     """
-
-    def _camera_callback(data, node, camera):
-        frame = pickle.loads(data)
-
-        # TODO: ensure sequential order of frames
-
-        if frame[0] is not None:
-            # Convert BGR to RGB
-            rgb_image = frame[0][:, :, ::-1]
-            # rgb_image = frame[0]
-
-            pil_image = Image.fromarray(rgb_image)
-
-            buffer = io.BytesIO()
-            pil_image.save(buffer, format="JPEG")
-
-            img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-            _socketio.emit(f"{node}_{camera}", img_base64)
 
     def _disconnect_callback():
         _logger.info("Disconnected from node %s at %s.", node["id"], node["address"])
@@ -96,9 +98,9 @@ def _connect_node(node: dict) -> None:
 
         node["sio"].connect(f"http://{node['address']}")
 
-        node["sio"].on("disconnect", _disconnect_callback)
-
         _logger.info("Connected to node %s at %s.", node["id"], node["address"])
+
+        node["sio"].on("disconnect", _disconnect_callback)
 
     except socketio.exceptions.ConnectionError:
         _logger.info("Failed to connected to node %s at %s.", node["id"], node["address"])
@@ -109,7 +111,9 @@ def _connect_node(node: dict) -> None:
     if node["sio"] is not None:
         try:
             response = requests.get(f"http://{node['address']}/cameras", timeout=5)
+
             node["cameras"] = response.json() if response.status_code == HTTPStatus.OK else []
+
             for camera in node["cameras"]:
                 node["sio"].on(
                     camera,
@@ -121,75 +125,6 @@ def _connect_node(node: dict) -> None:
             node["cameras"] = []
     else:
         node["cameras"] = []
-
-
-def _verify_node_existance(f):
-    """
-    Decorator to verify if a node exists
-    """
-
-    @wraps(f)
-    def decorated_function(node_id, *args, **kwargs):
-        # Find the node in the global nodes_list
-        node = next((node for node in nodes_list if node["id"] == node_id), None)
-
-        # If the node is not found, return a 404 error
-        if node is None:
-            return (
-                jsonify({"error": "Node not found."}),
-                HTTPStatus.NOT_FOUND,
-            )
-
-        # If the node is found, pass it to the route function
-        return f(node=node, *args, **kwargs)
-
-    return decorated_function
-
-
-def _redirect_request_to_node(f):
-    """
-    Decorator to redirect the request to the node
-    """
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Construct the target URL for proxying
-
-        if "node" not in kwargs:
-            return (
-                jsonify({"error": "Internal error."}),
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-            )
-
-        route = request.path.split(f"/api/nodes/{kwargs['node']['id']}/")[1]
-        target_url = f"http://{kwargs['node']['address']}/{route}"
-
-        try:
-
-            # Forward the request to the target URL using requests
-            response = requests.request(
-                method=request.method,
-                url=target_url,
-                params=request.args,
-                json=request.json if "Content-Type" in dict(request.headers) else None,
-                timeout=5,
-            )
-            # Convert the proxied response to a Flask Response object
-            response = (
-                jsonify(response.json()),
-                response.status_code,
-            )
-
-            # Pass the response object to the wrapped function
-            return f(response, *args, **kwargs)
-
-        except requests.exceptions.RequestException:
-            return (
-                jsonify({"error": "Unable to connect to node."}),
-                HTTPStatus.SERVICE_UNAVAILABLE,
-            )
-
-    return decorated_function
 
 
 def _init() -> None:
@@ -258,12 +193,77 @@ def _init() -> None:
 _init()
 
 #
-#
-#
-
-#
 # Routes
 #
+
+
+def _verify_node_existance(f):
+    """
+    Decorator to verify if a node exists
+    """
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Find the node in the global nodes_list
+        node = next((node for node in nodes_list if node["id"] == kwargs["node_id"]), None)
+
+        # If the node is not found, return a 404 error
+        if node is None:
+            return (
+                jsonify({"error": "Node not found."}),
+                HTTPStatus.NOT_FOUND,
+            )
+
+        # If the node is found, pass it to the route function
+        return f(node=node, *args, **kwargs)
+
+    return decorated_function
+
+
+def _redirect_request_to_node(f):
+    """
+    Decorator to redirect the request to the node
+    """
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Construct the target URL for proxying
+
+        if "node" not in kwargs:
+            return (
+                jsonify({"error": "Internal error."}),
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+
+        route = request.path.split(f"/api/nodes/{kwargs['node']['id']}/")[1]
+        target_url = f"http://{kwargs['node']['address']}/{route}"
+
+        try:
+
+            # Forward the request to the target URL using requests
+            response = requests.request(
+                method=request.method,
+                url=target_url,
+                params=request.args.to_dict(flat=False) if request.args else None,
+                json=request.json if "Content-Type" in dict(request.headers) else None,
+                timeout=5,
+            )
+            # Convert the proxied response to a Flask Response object
+            response = (
+                jsonify(response.json()),
+                response.status_code,
+            )
+
+            # Pass the response object to the wrapped function
+            return f(response, *args, **kwargs)
+
+        except requests.exceptions.RequestException:
+            return (
+                jsonify({"error": "Unable to connect to node."}),
+                HTTPStatus.SERVICE_UNAVAILABLE,
+            )
+
+    return decorated_function
 
 
 @blueprint.errorhandler(Exception)
@@ -281,7 +281,7 @@ def handle_exception(e):
 
 
 @blueprint.route("/")
-def nodes():
+def nodes(*args, **kwargs):  # pylint: disable=unused-argument
     """
     Returns the nodes
     """
@@ -298,7 +298,7 @@ def nodes():
 
 
 @blueprint.route("/", methods=["POST"])
-def create_node():
+def create_node(*args, **kwargs):  # pylint: disable=unused-argument
     """
     Creates new node
     """
@@ -374,7 +374,7 @@ def create_node():
 
 @blueprint.route("/<int:node_id>", methods=["PUT"])
 @_verify_node_existance
-def edit_node(node: dict):
+def edit_node(node: dict, *args, **kwargs):  # pylint: disable=unused-argument
     """
     Edits node
     """
@@ -451,7 +451,7 @@ def edit_node(node: dict):
 
 @blueprint.route("/<int:node_id>", methods=["DELETE"])
 @_verify_node_existance
-def delete_node(node: dict):
+def delete_node(node: dict, *args, **kwargs):  # pylint: disable=unused-argument
     """
     Deletes a node
     """
@@ -494,7 +494,7 @@ def delete_node(node: dict):
 
 @blueprint.route("/<int:node_id>/image")
 @_verify_node_existance
-def image(node: dict):
+def image(node: dict, *args, **kwargs):  # pylint: disable=unused-argument
     """
     Returns the image of the node
     """
@@ -513,10 +513,7 @@ def image(node: dict):
 @blueprint.route("/<int:node_id>/logs")
 @_verify_node_existance
 @_redirect_request_to_node
-def logs(
-    response: tuple[Response, int],
-    node: dict,
-):  # pylint: disable=unused-argument
+def logs(response: tuple[Response, int], *args, **kwargs):  # pylint: disable=unused-argument
     """
     Returns a list with the cameras of the node
     """
@@ -532,10 +529,7 @@ def logs(
 @blueprint.route("/<int:node_id>/cameras")
 @_verify_node_existance
 @_redirect_request_to_node
-def cameras(
-    response: tuple[Response, int],
-    node: dict,
-):  # pylint: disable=unused-argument
+def cameras(response: tuple[Response, int], *args, **kwargs):  # pylint: disable=unused-argument
     """
     Returns a list with the cameras of the node
     """
@@ -547,9 +541,7 @@ def cameras(
 @_verify_node_existance
 @_redirect_request_to_node
 def get_camera_config(
-    response: tuple[Response, int],
-    node: dict,
-    camera_id: str,
+    response: tuple[Response, int], *args, **kwargs
 ):  # pylint: disable=unused-argument
     """
     Returns the configuration of a specific camera
@@ -562,9 +554,7 @@ def get_camera_config(
 @_verify_node_existance
 @_redirect_request_to_node
 def edit_camera_config(
-    response: tuple[Response, int],
-    node: dict,
-    camera_id: str,
+    response: tuple[Response, int], *args, **kwargs
 ):  # pylint: disable=unused-argument
     """
     Returns the configuration of a specific camera
@@ -577,9 +567,7 @@ def edit_camera_config(
 @_verify_node_existance
 @_redirect_request_to_node
 def get_camera_stream_status(
-    response: tuple[Response, int],
-    node: dict,
-    camera_id: str,
+    response: tuple[Response, int], *args, **kwargs
 ):  # pylint: disable=unused-argument
     """
     Returns the status of the camera stream for a specific node and camera
@@ -592,9 +580,7 @@ def get_camera_stream_status(
 @_verify_node_existance
 @_redirect_request_to_node
 def set_camera_stream_status(
-    response: tuple[Response, int],
-    node: dict,
-    camera_id: str,
+    response: tuple[Response, int], *args, **kwargs
 ):  # pylint: disable=unused-argument
     """
     Starts the camera stream for a specific node and camera

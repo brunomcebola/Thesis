@@ -384,7 +384,6 @@ $navbar-active-item-underline: $main-color;
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center;
-    cursor: pointer;
 
     #video {
       width: 100%;
@@ -410,6 +409,11 @@ $navbar-active-item-underline: $main-color;
         bottom: 6px;
         right: 6px;
         color: #fff;
+
+        &:focus,
+        &:active {
+          border: none;
+        }
       }
     }
 

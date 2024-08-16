@@ -11,10 +11,12 @@ blueprint = Blueprint("logs", __name__, url_prefix="/logs")
 
 
 @blueprint.errorhandler(Exception)
-def handle_exception(_):
+def handle_exception(e):
     """
     Handles exceptions
     """
+
+    _logger.warning(e)
 
     return (
         jsonify({"error": "Internal error."}),
