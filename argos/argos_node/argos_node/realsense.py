@@ -263,12 +263,14 @@ class Camera:
         - control_mechanisms: The signals/conditions used to control the stream.
         - is_stopped: Whether the camera is stopped.
         - is_streaming: The status of the camera stream.
+        - intrinsics: The intrinsic parameters of the camera.
 
     Instance Methods:
         - start_stream: Starts the camera stream.
         - stop_stream: Pauses the camera stream.
         - cleanup: Cleans up the camera resources.
         - next_frame: Returns the next frame in the queue.
+        - set_stream_callback: Sets the callback method to be called when a new frame is available.
     """
 
     # Class attributes
@@ -278,16 +280,17 @@ class Camera:
     _device: rs.device  # type: ignore
     _config: rs.config  # type: ignore
     _pipeline: rs.pipeline  # type: ignore
+    _profile: rs.pipeline_profile  # type: ignore
 
     _alignment_method: Callable
-    _frames_splitter: Callable[[Any], tuple]
-    _frames_queue: queue.Queue[tuple]
+    _frames_splitter: Callable[[Any], dict[str, np.ndarray | None]]
+    _frames_queue: queue.Queue[dict[str, np.ndarray | None]]
 
     _stream_signal: threading.Event
     _kill_signal: threading.Event
     _control_condition: threading.Condition
     _stream_thread: threading.Thread
-    _stream_callback: Callable[[tuple], None]
+    _stream_callback: Callable[[dict[str, np.ndarray | None]], None]
 
     # Instance constructor and destructor
 
@@ -298,7 +301,7 @@ class Camera:
         alignment: StreamType | None = None,
         stream_signal: threading.Event | None = None,
         control_condition: threading.Condition | None = None,
-        stream_callback: Callable[[tuple], None] | None = None,
+        stream_callback: Callable[[dict[str, np.ndarray | None]], None] | None = None,
     ) -> None:
         """
         Camera constructor.
@@ -397,14 +400,17 @@ class Camera:
             self._alignment_method = lambda x: rs.align(alignment.value).process(x)  # type: ignore
 
         # defines the frames_splitter method
-        self._frames_splitter = lambda x: tuple(
-            (
-                np.array(getattr(x, f"get_{str(s_type).lower()}_frame")().get_data())
-                if any(stream_config.type == s_type for stream_config in stream_configs)
-                else None
-            )
-            for s_type in StreamType
-        )
+        self._frames_splitter = lambda x: {
+            **{
+                s_type.name.lower(): (
+                    np.array(getattr(x, f"get_{str(s_type).lower()}_frame")().get_data())
+                    if any(stream_config.type == s_type for stream_config in stream_configs)
+                    else None
+                )
+                for s_type in StreamType
+            },
+            "timestamp": x.get_timestamp(),
+        }
 
         # initializes the frames queue
         self._frames_queue = queue.Queue()
@@ -417,9 +423,49 @@ class Camera:
 
         # starts the pipeline and allows for some auto exposure to happen
         self._pipeline = rs.pipeline()  # type: ignore
-        self._pipeline.start(self._config)
+        self._profile = self._pipeline.start(self._config)
         for _ in range(30):
             self._pipeline.wait_for_frames()
+
+        # Store the intrinsics of the camera
+        self._intrinsics = {
+            s_type.name.lower(): (
+                {
+                    attr: (
+                        getattr(
+                            self._profile.get_stream(s_type.value)
+                            .as_video_stream_profile()
+                            .get_intrinsics(),
+                            attr,
+                        )
+                        if attr != "model"
+                        else getattr(
+                            self._profile.get_stream(s_type.value)
+                            .as_video_stream_profile()
+                            .get_intrinsics(),
+                            attr,
+                        ).name
+                    )
+                    for attr in dir(
+                        self._profile.get_stream(s_type.value)
+                        .as_video_stream_profile()
+                        .get_intrinsics()
+                    )
+                    if not callable(
+                        getattr(
+                            self._profile.get_stream(s_type.value)
+                            .as_video_stream_profile()
+                            .get_intrinsics(),
+                            attr,
+                        )
+                    )
+                    and not attr.startswith("__")
+                }
+                if any(stream_config.type == s_type for stream_config in stream_configs)
+                else None
+            )
+            for s_type in StreamType
+        }
 
         # Launches the stream thread
         self._stream_thread = threading.Thread(target=self.__stream_thread_target)
@@ -463,6 +509,14 @@ class Camera:
 
         return self._stream_signal.is_set() and self._stream_thread.is_alive()
 
+    @property
+    def intrinsics(self) -> dict[str, dict[str, Any] | None]:
+        """
+        Returns the intrinsic parameters of the camera.
+        """
+
+        return self._intrinsics
+
     # Instance private methods
 
     def __stream_thread_target(self) -> None:
@@ -483,7 +537,9 @@ class Camera:
 
                 frames = self._alignment_method(frames)
 
-                self._stream_callback(self._frames_splitter(frames))
+                frames = self._frames_splitter(frames)
+
+                self._stream_callback(frames)
 
     # Instance public methods
 
@@ -532,7 +588,7 @@ class Camera:
         self._pipeline.stop()
         Camera._cameras.remove(self._device.get_info(rs.camera_info.serial_number))  # type: ignore # pylint: disable=line-too-long
 
-    def next_frame(self) -> tuple | None:
+    def next_frame(self) -> dict[str, np.ndarray | None]:
         """
         Returns the next frame in the queue.
 
@@ -543,9 +599,9 @@ class Camera:
             frame = self._frames_queue.get(block=False)
             return frame
         except queue.Empty:
-            return None
+            return {s_type.name.lower(): None for s_type in StreamType}
 
-    def set_stream_callback(self, callback: Callable[[tuple], None]) -> None:
+    def set_stream_callback(self, callback: Callable[[dict[str, np.ndarray | None]], None]) -> None:
         """
         Sets the callback method to be called when a new frame is available.
 

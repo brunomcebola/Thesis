@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import os
 import sys
-import signal
 
 from . import app as _app
 from . import socketio as _socketio

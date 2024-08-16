@@ -207,8 +207,7 @@
   background: linear-gradient(#333, #000);
   background-repeat: no-repeat;
   background-size: contain;
-  background-position: center;
-  cursor: pointer; }
+  background-position: center; }
   #camera-container #video-container #video {
     width: 100%;
     height: 100%;
@@ -226,6 +225,9 @@
       bottom: 6px;
       right: 6px;
       color: #fff; }
+      #camera-container #video-container #controls #fullscreen:focus,
+      #camera-container #video-container #controls #fullscreen:active {
+        border: none; }
   #camera-container #video-container:hover #central-controls #start-pause {
     display: flex; }
 
