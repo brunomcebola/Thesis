@@ -20,7 +20,13 @@ Expected parameters:
       ...
     ]
 
-- cardAction: Font Awesome icon to display in the cards action section
+- actions: List of two position slist with fontawesome icon and tooltip text
+
+    Ex: [
+      ["pencil", "Edit"],
+      ["trash", "Delete"],
+      ...
+    ]
 
 #}
 <div class="container">
@@ -50,7 +56,7 @@ Expected parameters:
 
   const data = {{ data|tojson }}
   const actions = {{ actions|default([])|safe }}
-  const actionsHTML = actions.map(action => `<i class="fas fa-${action} ms-3"></i>`).join('')
+  const actionsHTML = actions.map(action => `<i class="fas fa-${action[0]} ms-3" ${action[1] ? 'data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="' + action[1] + '"' : ''} ></i>`).join('')
 
   var data_index = 0
 
@@ -109,10 +115,13 @@ Expected parameters:
     });
 
     actions.forEach(action => {
-      const actionSvg = document.querySelector(`#${data.cardId} .body-actions .fa-${action}`);
+      const actionSvg = document.querySelector(`#${data.cardId} .body-actions .fa-${action[0]}`);
+
+      new bootstrap.Tooltip(actionSvg)
+
       actionSvg.addEventListener('click', (event) => {
         event.stopPropagation();
-        window.dispatchEvent(new CustomEvent(action, { detail: data.cardId }))
+        window.dispatchEvent(new CustomEvent(action[0], { detail: data.cardId }))
       });
     });
   }
