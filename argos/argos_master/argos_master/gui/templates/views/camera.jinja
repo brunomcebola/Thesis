@@ -7,13 +7,10 @@
     <h4>
       Camera {{ request.path.split("/")[-1] }} @ <a href="{{ url_for('gui.node_cameras', node_id=request.path.split('/')[-3] ) }}">node {{ request.path.split("/")[-3] }}</a>
     </h4>
-    <div id="video-container">
+    <div id="video-container" class="d-flex justify-content-center align-items-center">
       <canvas id="video">
       </canvas>
       <div id="controls">
-        <button class="btn" id="start-pause" data-status="play">
-          <i class="fas fa-play"></i>
-        </button>
         <button class="btn" id="fullscreen">
           <i class="fas fa-expand"></i>
         </button>
@@ -28,10 +25,11 @@
 
     const videoContainer = document.getElementById('video-container');
     const canvas = videoContainer.querySelector('canvas');
-    const startPauseButton = videoContainer.querySelector('#controls #start-pause');
     const bottomFullscreenButton = videoContainer.querySelector('#controls #fullscreen');
 
     const socket = io();  // Connect to the same origin
+
+    var status = false;
 
     function resizeCanvas() {
       // Get the computed size of the canvas
@@ -42,21 +40,6 @@
       // Set the canvas internal resolution to match the visual size
       canvas.width = visualWidth;
       canvas.height = visualHeight;
-    }
-
-    function toggleStream() {
-      action = startPauseButton.dataset.status == "play" ? "start" : "stop";
-
-      axios.put(`/api/nodes/${node}/cameras/${camera}/stream`, { action: action })
-        .then(response => {
-          var newStatus = startPauseButton.dataset.status == "play" ? "pause" : "play";
-          startPauseButton.dataset.status = newStatus;
-          startPauseButton.innerHTML = `<i class="fas fa-${newStatus}"></i>`;
-        })
-        .catch(error => {
-          const errorMessage = error.response?.data || "Service unavailable";
-          alert(errorMessage);
-        });
     }
 
     function toggleFullscreen() {
@@ -87,40 +70,39 @@
 
     window.dispatchEvent(new Event('resize'));
 
-    axios.get(`/api/nodes/${node}/cameras/${camera}/stream`)
-      .then(response => {
-        if (response.data) {
-          startPauseButton.dataset.status = "pause";
-          startPauseButton.innerHTML = `<i class="fas fa-pause"></i>`;
-        }
+    bottomFullscreenButton.onclick = toggleFullscreen;
+
+    axios.get(`/api/nodes/${node}/cameras/${camera}/status`)
+      .then(() => {
+        status = true;
+
+        socket.on(`${node}_${camera}`, function(data) {
+          var img = new Image();
+          img.onload = function() {
+            const aspectRatio = img.width / img.height;
+            const canvasAspectRatio = canvas.width / canvas.height;
+            let drawWidth, drawHeight, drawX, drawY;
+
+            if (aspectRatio > canvasAspectRatio) {
+              drawWidth = canvas.width;
+              drawHeight = canvas.width / aspectRatio;
+              drawX = 0;
+              drawY = (canvas.height - drawHeight) / 2;
+            } else {
+              drawWidth = canvas.height * aspectRatio;
+              drawHeight = canvas.height;
+              drawX = (canvas.width - drawWidth) / 2;
+              drawY = 0;
+            }
+
+            canvas.getContext('2d').drawImage(img, drawX, drawY, drawWidth, drawHeight);
+          };
+          img.src = 'data:image/jpeg;base64,' + data;
+        });
+      })
+      .catch(() => {
+        videoContainer.innerHTML = "Camera not operational...";
       });
 
-    socket.on(`${node}_${camera}`, function(data) {
-      var img = new Image();
-      img.onload = function() {
-        const aspectRatio = img.width / img.height;
-        const canvasAspectRatio = canvas.width / canvas.height;
-        let drawWidth, drawHeight, drawX, drawY;
-
-        if (aspectRatio > canvasAspectRatio) {
-          drawWidth = canvas.width;
-          drawHeight = canvas.width / aspectRatio;
-          drawX = 0;
-          drawY = (canvas.height - drawHeight) / 2;
-        } else {
-          drawWidth = canvas.height * aspectRatio;
-          drawHeight = canvas.height;
-          drawX = (canvas.width - drawWidth) / 2;
-          drawY = 0;
-        }
-
-        canvas.getContext('2d').drawImage(img, drawX, drawY, drawWidth, drawHeight);
-      };
-      img.src = 'data:image/jpeg;base64,' + data;
-    });
-
-    startPauseButton.onclick = toggleStream;
-
-    bottomFullscreenButton.onclick = toggleFullscreen;
   </script>
 {% endblock script %}

@@ -19,7 +19,7 @@
       <div class="col my-auto align-right pe-3"></div>
     </div>
     {% if content is defined %}
-      {% with data=content, actions=["pencil"] %}
+      {% with data=content, actions=["pencil", "rotate"] %}
         {% include "components/grid.jinja" %}
       {% endwith %}
     {% else %}
@@ -48,7 +48,7 @@
 {% endblock body %}
 {% block script %}
   <script>
-    const node_id = {{ request.path.split("/")[-1] }}
+    const node_id = {{ request.path.split("/")[2] }}
 
     // Edit config
 
@@ -125,7 +125,7 @@
         .then(response => {
           editModalForm.dataset.id = event.detail.substring(1)
 
-          editModalTextarea.textContent = JSON.stringify(response.data, null, "\t");
+          editModalTextarea.textContent = JSON.stringify(response.data || {}, null, "\t");
           editModalTextarea.classList.remove('is-invalid')
           editModalInstance.show();
         })
@@ -161,10 +161,9 @@
         axios.put(`/api/nodes/${node_id}/cameras/${editModalForm.dataset.id}/config`, json)
           .then(response => {
             editModalInstance.hide();
+            window.location.reload();
           })
           .catch(error => {
-            console.log(error)
-
             const errorMessage = error.response?.data || "Service unavailable";
             editModalMsg.innerHTML = errorMessage
           });
@@ -172,6 +171,12 @@
 
     }, false)
 
+    window.addEventListener('rotate', async function (event) {
+      axios.put(`/api/nodes/${node_id}/cameras/${event.detail.substring(1)}/restart`)
+        .finally(() => {
+          window.location.reload()
+        })
+    }, false)
 
   </script>
 {% endblock script %}

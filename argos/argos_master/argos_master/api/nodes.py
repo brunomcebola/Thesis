@@ -67,8 +67,6 @@ def _camera_callback(data, node, camera):
 
     # TODO: ensure sequential order of frames
 
-    print(frame["timestamp"])
-
     if frame["color"] is not None:
         # Convert BGR to RGB
         rgb_image = frame["color"][:, :, ::-1]
@@ -531,7 +529,7 @@ def logs(response: tuple[Response, int], *args, **kwargs):  # pylint: disable=un
 @_redirect_request_to_node
 def cameras(response: tuple[Response, int], *args, **kwargs):  # pylint: disable=unused-argument
     """
-    Returns a list with the cameras of the node
+    Returns a list with the cameras of a node
     """
 
     return response
@@ -544,7 +542,7 @@ def get_camera_config(
     response: tuple[Response, int], *args, **kwargs
 ):  # pylint: disable=unused-argument
     """
-    Returns the configuration of a specific camera
+    Returns the configuration of a camera
     """
 
     return response
@@ -557,33 +555,33 @@ def edit_camera_config(
     response: tuple[Response, int], *args, **kwargs
 ):  # pylint: disable=unused-argument
     """
-    Returns the configuration of a specific camera
+    Edits the configuration of a camera
     """
 
     return response
 
 
-@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/stream")
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/status")
 @_verify_node_existance
 @_redirect_request_to_node
 def get_camera_stream_status(
     response: tuple[Response, int], *args, **kwargs
 ):  # pylint: disable=unused-argument
     """
-    Returns the status of the camera stream for a specific node and camera
+    Returns the status of a camera
     """
 
     return response
 
 
-@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/stream", methods=["PUT"])
+@blueprint.route("/<int:node_id>/cameras/<string:camera_id>/restart", methods=["PUT"])
 @_verify_node_existance
 @_redirect_request_to_node
 def set_camera_stream_status(
     response: tuple[Response, int], *args, **kwargs
 ):  # pylint: disable=unused-argument
     """
-    Starts the camera stream for a specific node and camera
+    Restarts a camera
     """
 
     return response

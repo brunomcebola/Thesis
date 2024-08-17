@@ -152,7 +152,6 @@ def _launch_camera(camera_sn: str, config_file: str) -> _realsense.Camera | None
         Callback function to send the camera frames to the socket connection
         """
 
-
         try:
             _socketio.emit(camera_sn, pickle.dumps(frame))
         except Exception:  # pylint: disable=broad-except
@@ -210,6 +209,10 @@ def _launch_camera(camera_sn: str, config_file: str) -> _realsense.Camera | None
                         )
 
                         _logger.info("Camera %s launched.", camera_sn)
+
+                        camera.start_stream()
+
+                        _logger.info("Camera %s stream started.", camera_sn)
 
                         return camera
                     except _realsense.ConfigurationError as e:
@@ -294,7 +297,6 @@ def _verify_camera_existance(f):
                 HTTPStatus.NOT_FOUND,
             )
 
-        # If the node is found, pass it to the route function
         return f(*args, **kwargs)
 
     return decorated_function
@@ -367,9 +369,7 @@ def update_camera(serial_number: str):
     _logger.info("Updating camera %s configuration...", serial_number)
 
     # Stop camera if exists
-    camera_streaming_initially = False
     if cameras[serial_number]:
-        camera_streaming_initially = cameras[serial_number].is_streaming  # type: ignore
         cameras[serial_number].cleanup()  # type: ignore
         _logger.info("Camera %s stopped.", serial_number)
     del cameras[serial_number]
@@ -382,12 +382,8 @@ def update_camera(serial_number: str):
         serial_number, os.path.join(CAMERAS_DIR, f"{serial_number}.yaml")
     )
 
-    if cameras[serial_number] is not None and camera_streaming_initially:
-        cameras[serial_number].start_stream()  # type: ignore
-        _logger.info("Camera %s stream started.", serial_number)
-
     return (
-        jsonify("Camera updated."),
+        jsonify("Camera configuration updated."),
         HTTPStatus.OK,
     )
 
@@ -399,11 +395,9 @@ def get_camera_intrinsic(serial_number: str):
     Stop a camera.
     """
 
-    # check if camera exists
-
-    if cameras[serial_number] is None or cameras[serial_number].is_stopped:  # type: ignore
+    if cameras[serial_number] is None:
         return (
-            jsonify("Camera not operational."),
+            jsonify({"error": "Camera not operational"}),
             HTTPStatus.SERVICE_UNAVAILABLE,
         )
 
@@ -413,7 +407,7 @@ def get_camera_intrinsic(serial_number: str):
     )
 
 
-@blueprint.route("/<string:serial_number>/stream", methods=["GET"])
+@blueprint.route("/<string:serial_number>/status", methods=["GET"])
 @_verify_camera_existance
 def get_camera(serial_number: str):
     """
@@ -428,84 +422,31 @@ def get_camera(serial_number: str):
         )
 
     return (
-        jsonify(cameras[serial_number].is_streaming),  # type: ignore
+        jsonify("Camera working."),  # type: ignore
         HTTPStatus.OK,
     )
 
 
-@blueprint.route("/<string:serial_number>/stream", methods=["PUT"])
-@_verify_camera_existance
-def start_stream(serial_number: str):
-    """
-    Start the streaming of a camera.
-    """
-
-    action = request.get_json()["action"]
-
-    if action not in ["start", "stop"]:
-        return (
-            jsonify("Invalid action."),
-            HTTPStatus.BAD_REQUEST,
-        )
-
-    # check if camera is operational
-    if cameras[serial_number] is None or cameras[serial_number].is_stopped:  # type: ignore
-        return (
-            jsonify("Camera not operational."),
-            HTTPStatus.SERVICE_UNAVAILABLE,
-        )
-
-    # check if camera is already streaming
-    if action == "start" and cameras[serial_number].is_streaming:  # type: ignore
-        return (
-            jsonify("Camera stream already started."),
-            HTTPStatus.OK,
-        )
-    elif action == "stop" and not cameras[serial_number].is_streaming:  # type: ignore
-        return (
-            jsonify("Camera stream already stopped."),
-            HTTPStatus.OK,
-        )
-
-    getattr(cameras[serial_number], f"{action}_stream")()
-
-    _logger.info(
-        "Camera %s stream %s.", serial_number, "started" if action == "start" else "stopped"
-    )
-    return (
-        jsonify("Camera stream started."),
-        HTTPStatus.OK,
-    )
-
-
-@blueprint.route("/<string:serial_number>/launch", methods=["PUT"])
+@blueprint.route("/<string:serial_number>/restart", methods=["PUT"])
 @_verify_camera_existance
 def launch_camera(serial_number: str):
     """
     Launch a camera.
     """
 
-    if cameras[serial_number] is not None and not cameras[serial_number].is_stopped:  # type: ignore
-        return (
-            jsonify("Camera already launched."),
-            HTTPStatus.OK,
-        )
+    _logger.info("Restarting camera %s...", serial_number)
 
-    if cameras[serial_number] is not None and cameras[serial_number].is_stopped:  # type: ignore
+    # Stop camera if exists
+    if cameras[serial_number]:
         cameras[serial_number].cleanup()  # type: ignore
-        del cameras[serial_number]
+        _logger.info("Camera %s stopped.", serial_number)
+    del cameras[serial_number]
 
     cameras[serial_number] = _launch_camera(
         serial_number, os.path.join(CAMERAS_DIR, f"{serial_number}.yaml")
     )
 
-    if cameras[serial_number] is None:
-        return (
-            jsonify("Camera not launched."),
-            HTTPStatus.INTERNAL_SERVER_ERROR,
-        )
-
     return (
-        jsonify("Camera launched."),
+        jsonify("Camera restarted."),
         HTTPStatus.OK,
     )
