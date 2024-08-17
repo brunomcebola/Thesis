@@ -483,9 +483,13 @@ $navbar-active-item-underline: $main-color;
 
       .body-actions {
         svg {
+          border: none !important;
+          outline: none !important;
+
           &:hover {
             color: $main-color-hover;
           }
+
           &:active {
             color: $main-color-active;
           }

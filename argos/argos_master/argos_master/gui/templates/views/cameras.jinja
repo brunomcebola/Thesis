@@ -19,7 +19,7 @@
       <div class="col my-auto align-right pe-3"></div>
     </div>
     {% if content is defined %}
-      {% with data=content, actions=["pencil", "rotate"] %}
+      {% with data=content, actions=[["pencil", "Edit config"], ["rotate", "Restart camera"]] %}
         {% include "components/grid.jinja" %}
       {% endwith %}
     {% else %}

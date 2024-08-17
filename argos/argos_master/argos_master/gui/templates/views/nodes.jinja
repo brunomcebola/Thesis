@@ -24,7 +24,7 @@
       </div>
     </div>
     {% if content is defined %}
-      {% with data=content, actions=["pencil","circle-info", "trash"] %}
+      {% with data=content, actions=[["pencil", "Edit node"], ["circle-info", "Node logs"], ["trash", "Delete node"]] %}
         {% include "components/grid.jinja" %}
       {% endwith %}
     {% else %}

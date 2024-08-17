@@ -256,10 +256,13 @@
     margin-bottom: 0; }
   #grid .card .card-body[data-has-actions=""] .body-actions {
     display: none; }
-  #grid .card .card-body .body-actions svg:hover {
-    color: #8a000a; }
-    #grid .card .card-body .body-actions svg:active {
-      color: #660005; }
+  #grid .card .card-body .body-actions svg {
+    border: none !important;
+    outline: none !important; }
+    #grid .card .card-body .body-actions svg:hover {
+      color: #8a000a; }
+      #grid .card .card-body .body-actions svg:active {
+        color: #660005; }
 
 #edit-config-modal .textarea {
   border: 1px solid #dee2e6;
