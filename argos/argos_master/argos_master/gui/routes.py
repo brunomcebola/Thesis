@@ -77,25 +77,36 @@ def nodes():
 
 
 @blueprint.route("/nodes/<int:node_id>")
+def redirect_to_node_cameras(node_id: int):
+    """
+    Redirect to the nodo_cameras view
+    """
+    return redirect(url_for("gui.node_cameras", node_id=node_id))
+
 @blueprint.route("/nodes/<int:node_id>/cameras")
 def node_cameras(node_id: int):
     """
-    The node view
+    The cameras view
     """
 
     response = current_app.test_client().get(f"/api/nodes/{node_id}/cameras")
 
     if response.status_code == HTTPStatus.OK:
-        content = [
-            {
+        content = []
+        for entry in response.get_json():
+            if current_app.test_client().get(f"/api/nodes/{node_id}/cameras/{entry}/status").status_code == HTTPStatus.OK:
+                entry_status = "Operational"
+            else:
+                entry_status = "Not operational"
+
+            content.append({
                 "cardId": f"c{entry}",
                 "cardTitle": entry,
+                "cardDescription": entry_status,
                 "imgSrc": "/gui/static/images/realsense.png",
                 "imgAlt": f"Camera {entry} cover",
                 "redirectURL": f"/nodes/{node_id}/cameras/{entry}",
-            }
-            for entry in response.get_json()
-        ]
+            })
 
         return render_template("views/cameras.jinja", content=content)
     elif response.status_code == HTTPStatus.NOT_FOUND:
