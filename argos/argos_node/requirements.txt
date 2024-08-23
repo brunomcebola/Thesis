@@ -6,7 +6,3 @@ numpy==2.0.1
 python-dotenv==1.0.1
 PyYAML==6.0.1
 appdirs==1.4.4
-# Other for dev
-djlint
-setuptools
-wheel

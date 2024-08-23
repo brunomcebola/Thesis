@@ -138,7 +138,10 @@ def _set_server() -> None:
     app.config["WEBASSETS_CACHE"] = False
 
     # Register the signal handler
-    signal.signal(signal.SIGINT, lambda signum, frame: exit(0))
+    signal.signal(
+        signal.SIGINT,
+        lambda signum, frame: (logger.warning("Terminate signal received, exiting..."), exit(0)),
+    )
 
 
 # Initialization code

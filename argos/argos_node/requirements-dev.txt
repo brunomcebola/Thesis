@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# Development-only packages
+djlint
+setuptools
+wheel
