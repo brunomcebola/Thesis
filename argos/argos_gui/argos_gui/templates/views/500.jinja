@@ -6,16 +6,18 @@
   <div class="container">
     <div class="row">
       <div class="col-12 text-center mt-5">
-        <img src="{{ url_for('gui.static', filename='images/404.svg') }}"
-             alt="404"
-             class="img-fluid" />
+        <img src="{{ url_for('static', filename='images/500.svg') }}"
+             alt="500"
+             height="1"
+             width="1"
+             class="w-50 h-100" />
       </div>
     </div>
     <div class="row">
       <div class="col-12 text-center mt-5">
-        <a href="javascript:history.go(-1)">
+        <a href="#" onclick="window.location.reload(); return false;">
           <p>
-            <i class="fas fa-arrow-left"></i> Go back
+            <i class="fas fa-rotate-right"></i> Try again
           </p>
         </a>
       </div>

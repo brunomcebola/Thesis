@@ -11,7 +11,7 @@ from . import nodes as _nodes
 from . import logs as _logs
 
 
-blueprint = Blueprint("api", __name__, url_prefix="/api")
+blueprint = Blueprint("api", __name__)
 
 blueprint.register_blueprint(_datasets.blueprint)
 blueprint.register_blueprint(_nodes.blueprint)

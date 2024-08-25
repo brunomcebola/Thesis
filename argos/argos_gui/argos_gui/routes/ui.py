@@ -1,24 +1,19 @@
 """
-This module contains the views for the GUI.
+This module contains the views for the
 """
 
 from http import HTTPStatus
 from flask import Blueprint, render_template, current_app, request, redirect, url_for
 
-blueprint = Blueprint(
-    "gui",
-    __name__,
-    template_folder="templates",
-    static_folder="static",
-    static_url_path="/gui/static",
-)
+blueprint = Blueprint("ui", __name__)
 
 
-@blueprint.app_errorhandler(404)
-def page_not_found(_):
+@blueprint.route("/<path:subpath>")
+def page_not_found(subpath):  # pylint: disable=unused-argument
     """
     The 404 view
     """
+
     if request.path.endswith("/"):
         new_url = request.path.rstrip("/")
 
@@ -29,8 +24,8 @@ def page_not_found(_):
             # Try to match the new URL (without the trailing slash) to a route
             map_adapter.match(new_url, method=request.method)
             # If it matches, redirect to the new URL
-            return redirect(new_url, code=301)
-        except Exception: # pylint: disable=broad-exception-caught
+            return redirect(new_url, code=302)
+        except Exception:  # pylint: disable=broad-exception-caught
             # If no match, continue to handle as normal (possibly 404)
             pass
 
@@ -42,7 +37,7 @@ def index():
     """
     The index view
     """
-    return redirect(url_for("gui.nodes"))
+    return redirect(url_for("ui.nodes"))
 
 
 #
@@ -56,7 +51,7 @@ def nodes():
     The nodes view
     """
 
-    response = current_app.test_client().get("/api/nodes/")
+    response = current_app.test_client().get("/api/nodes")
 
     if response.status_code == HTTPStatus.OK:
         content = [
@@ -81,7 +76,8 @@ def redirect_to_node_cameras(node_id: int):
     """
     Redirect to the nodo_cameras view
     """
-    return redirect(url_for("gui.node_cameras", node_id=node_id))
+    return redirect(url_for("node_cameras", node_id=node_id))
+
 
 @blueprint.route("/nodes/<int:node_id>/cameras")
 def node_cameras(node_id: int):
@@ -94,19 +90,26 @@ def node_cameras(node_id: int):
     if response.status_code == HTTPStatus.OK:
         content = []
         for entry in response.get_json():
-            if current_app.test_client().get(f"/api/nodes/{node_id}/cameras/{entry}/status").status_code == HTTPStatus.OK:
+            if (
+                current_app.test_client()
+                .get(f"/api/nodes/{node_id}/cameras/{entry}/status")
+                .status_code
+                == HTTPStatus.OK
+            ):
                 entry_status = "Operational"
             else:
                 entry_status = "Not operational"
 
-            content.append({
-                "cardId": f"c{entry}",
-                "cardTitle": entry,
-                "cardDescription": entry_status,
-                "imgSrc": "/gui/static/images/realsense.png",
-                "imgAlt": f"Camera {entry} cover",
-                "redirectURL": f"/nodes/{node_id}/cameras/{entry}",
-            })
+            content.append(
+                {
+                    "cardId": f"c{entry}",
+                    "cardTitle": entry,
+                    "cardDescription": entry_status,
+                    "imgSrc": "/gui/static/images/realsense.png",
+                    "imgAlt": f"Camera {entry} cover",
+                    "redirectURL": f"/nodes/{node_id}/cameras/{entry}",
+                }
+            )
 
         return render_template("views/cameras.jinja", content=content)
     elif response.status_code == HTTPStatus.NOT_FOUND:

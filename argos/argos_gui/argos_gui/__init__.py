@@ -1,5 +1,5 @@
 """
-Init file for the argos_master
+Init file for the argos_gui
 """
 
 import os
@@ -21,11 +21,11 @@ socketio: SocketIO
 
 def _set_environment_variables() -> None:
     """
-    Load the environment variables from the nearest .env.argos_master file
+    Load the environment variables from the nearest .env.argos_gui file
     """
 
     # Find the .env file
-    env_path = find_dotenv(filename=".env.argos_master")
+    env_path = find_dotenv(filename=f".env.{__package__}")
 
     # Load the .env file
     if env_path:
@@ -49,11 +49,16 @@ def _set_environment_variables() -> None:
         or int(os.environ["PORT"]) > 65535
         or int(os.environ["PORT"]) < 1024
     ):
-        os.environ["PORT"] = "3000"
+        os.environ["PORT"] = "8080"
 
     # HOT_RELOAD validation
     if not os.getenv("HOT_RELOAD") or os.getenv("HOT_RELOAD") not in ["true", "false"]:
         os.environ["HOT_RELOAD"] = "false"
+
+    # MASTER_ADDRESS validation
+    address_regex = r"^(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]):\d{4}$"  # pylint: disable=line-too-long
+    if not os.getenv("MASTER_ADDRESS") or not re.match(address_regex, os.environ["MASTER_ADDRESS"]):
+        os.environ["MASTER_ADDRESS"] = "localhost:3000"
 
 
 def _set_logger() -> None:
@@ -91,7 +96,7 @@ def _set_logger() -> None:
     # Add file handler to logger
     logger.addHandler(file_handler)
 
-    logger.info("ARGOS master started!")
+    logger.info("ARGOS gui started!")
 
 
 def _set_atexit_handler() -> None:
@@ -101,7 +106,7 @@ def _set_atexit_handler() -> None:
 
     def _callback():
         os.environ["WERKZEUG_RUN_MAIN"] = "true"
-        logger.info("ARGOS master stopped!")
+        logger.info("ARGOS gui stopped!")
 
     atexit.register(_callback)
 
@@ -111,7 +116,7 @@ def _set_global_exception_hook() -> None:
     Global exception handler
     """
 
-    def _callback(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-argument
+    def _callback(exc_type, exc_value, _):
         logger.error("%s: %s", exc_type.__name__, exc_value)
 
     sys.excepthook = _callback
@@ -126,7 +131,7 @@ def _set_server() -> None:
     global socketio  # pylint: disable=global-statement
 
     # Create the Flask app
-    app = Flask(__name__, static_folder="gui/static", template_folder="gui/templates")
+    app = Flask(__name__)
 
     # Create the SocketIO app
     socketio = SocketIO(app)

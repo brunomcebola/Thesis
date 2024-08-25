@@ -7,6 +7,9 @@
       "path": "argos/argos_master"
     },
     {
+      "path": "argos/argos_gui"
+    },
+    {
       "path": "argos/argos_node"
     },
     // {

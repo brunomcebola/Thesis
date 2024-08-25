@@ -11,16 +11,16 @@
     {# External assets #}
     <link rel="stylesheet"
           type="text/css"
-          href="{{ url_for('gui.static', filename='css/bootstrap.min.css') }}" />
+          href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
     {# Internal assets #}
     <link rel="icon"
           type="image/vnd.microsoft.icon"
-          href="{{ url_for('gui.static', filename='images/favicon.ico') }}" />
-    {% assets "main" %}
+          href="{{ url_for('static', filename='images/favicon.ico') }}" />
+    {% assets "scss_all" %}
     {% endassets %}
     <link rel="stylesheet"
           type="text/css"
-          href="{{ url_for('gui.static', filename='css/main.css') }}" />
+          href="{{ url_for('static', filename='css/main.min.css') }}" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Central interface for the Argos system" />
     <meta name="keywords" content="Argos, Computer Vision, Analytics" />
@@ -37,13 +37,15 @@
       {% endblock body %}
     </div>
     {# External assets #}
-    <script src="{{ url_for('gui.static', filename='js/axios.min.js') }}"></script>
-    <script src="{{ url_for('gui.static', filename='js/popper.min.js') }}"></script>
-    <script src="{{ url_for('gui.static', filename='js/bootstrap.min.js') }}"></script>
-    <script src="{{ url_for('gui.static', filename='js/fontawesome.min.js') }}"></script>
-    <script src="{{ url_for('gui.static', filename='js/socket.io.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/axios.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/fontawesome.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
     {# Internal assets #}
-    <script src="{{ url_for('gui.static', filename='js/main.js') }}"></script>
+    {% assets "js_all" %}
+    {% endassets %}
+    <script src="{{ url_for('static', filename='js/main.min.js') }}"></script>
     <script>
       function checkViewportWidth() {
         const minWidth = 500; // Minimum width in pixels

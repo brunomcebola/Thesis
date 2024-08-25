@@ -3,18 +3,19 @@ This module contains the routes to interact with the nodes.
 """
 
 import os
-import pickle
 import io
-from http import HTTPStatus
+import pickle
 import base64
+from http import HTTPStatus
 from functools import wraps
-import yaml
 import requests
 import jsonschema
 import socketio
 import socketio.exceptions
 from PIL import Image
 from flask import Blueprint, jsonify, send_file, request, Response
+import yaml
+
 
 from .. import logger as _logger
 from .. import socketio as _socketio  # pylint: disable=reimported
