@@ -24,7 +24,7 @@ def main():
         host=os.environ["HOST"],
         port=int(os.environ["PORT"]),
         debug=False,
-        use_reloader=os.getenv("HOT_RELOAD") == "true",
+        use_reloader=False,
         log_output=False,
     )
 

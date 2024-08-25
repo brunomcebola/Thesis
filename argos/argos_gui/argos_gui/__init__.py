@@ -55,10 +55,6 @@ def _set_environment_variables() -> None:
     ):
         os.environ["PORT"] = "8080"
 
-    # HOT_RELOAD validation
-    if not os.getenv("HOT_RELOAD") or os.getenv("HOT_RELOAD") not in ["true", "false"]:
-        os.environ["HOT_RELOAD"] = "false"
-
     # MASTER_ADDRESS validation
     address_regex = r"^(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]):\d{4}$"  # pylint: disable=line-too-long
     if not os.getenv("MASTER_ADDRESS") or not re.match(address_regex, os.environ["MASTER_ADDRESS"]):
@@ -70,14 +66,6 @@ def _set_logger() -> None:
     Set up the logging for the application
     """
 
-    class _LogFilter(logging.Filter):
-        def filter(self, record):
-            # Custom validation logic here
-            # Return True to allow the log message, False to block it
-            if os.getenv("WERKZEUG_RUN_MAIN") == "true" or os.getenv("HOT_RELOAD") == "false":
-                return True
-            return False
-
     global logger  # pylint: disable=global-statement
 
     # Create logger
@@ -88,10 +76,6 @@ def _set_logger() -> None:
     log_file_path = os.path.join(os.environ["BASE_DIR"], f"{__package__}.log")
     os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
     file_handler = logging.FileHandler(log_file_path)
-
-    # Create filter
-    log_filter = _LogFilter()
-    file_handler.addFilter(log_filter)
 
     # Create formatter
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
@@ -109,7 +93,6 @@ def _set_atexit_handler() -> None:
     """
 
     def _callback():
-        os.environ["WERKZEUG_RUN_MAIN"] = "true"
         logger.info("ARGOS gui stopped!")
 
     atexit.register(_callback)
