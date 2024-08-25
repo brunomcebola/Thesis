@@ -5,9 +5,10 @@
 {% block body %}
   <div id="camera-container" class="container py-4">
     <h4>
-      Camera {{ request.path.split("/")[-1] }} @ <a href="{{ url_for('gui.node_cameras', node_id=request.path.split('/')[-3] ) }}">node {{ request.path.split("/")[-3] }}</a>
+      Camera {{ request.path.split("/")[-1] }} @ <a href="{{ url_for('node_cameras', node_id=request.path.split('/')[-3] ) }}">node {{ request.path.split("/")[-3] }}</a>
     </h4>
-    <div id="video-container" class="d-flex justify-content-center align-items-center">
+    <div id="video-container"
+         class="d-flex justify-content-center align-items-center">
       <canvas id="video">
       </canvas>
       <div id="controls">

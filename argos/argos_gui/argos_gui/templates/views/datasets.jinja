@@ -15,7 +15,7 @@
               {% for part in request.path.split("/")[1:-1] %}
                 {% if not loop.last %}
                   <li class="breadcrumb-item">
-                    <a href="{{ url_for('gui.datasets', subpath=request.path.split('/')[2:loop.index + 1] |join('/') if loop.index > 1 else '') }}">{{ part }}</a>
+                    <a href="{{ url_for('datasets', subpath=request.path.split('/')[2:loop.index + 1] |join('/') if loop.index > 1 else '') }}">{{ part }}</a>
                   </li>
                 {% else %}
                   <li class="breadcrumb-item active" aria-current="page">{{ part }}</li>
@@ -49,7 +49,7 @@
               <div class="list">
                 {% for entry in content %}
                   <div class="list-item d-flex mb-3 p-2"
-                       onclick="redirectTo('{{ url_for("gui.datasets", subpath=request.path.split('/')[2:-1] |join('/') + '/' + entry.name) }}') ">
+                       onclick="redirectTo('{{ url_for("datasets", subpath=request.path.split('/')[2:-1] |join('/') + '/' + entry.name) }}') ">
                     <div class="type-icon p-0 ps-1 d-flex align-items-center">
                       {% if entry.is_dir %}
                         <i class="fas fa-folder">

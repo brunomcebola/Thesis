@@ -1,5 +1,5 @@
 """
-This module is the entry point of ARGOS - master.
+This module is the entry point of ARGOS -
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ def main():
     Main function of the program
     """
 
+    from . import assets  # pylint: disable=import-outside-toplevel, unused-import
     from . import routes  # pylint: disable=import-outside-toplevel, unused-import
 
     _socketio.run(
@@ -31,6 +32,6 @@ def main():
 if __name__ == "__main__":
     if __package__ is None:
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        __package__ = str("argos_master")  # pylint: disable=redefined-builtin
+        __package__ = str("argos_gui")  # pylint: disable=redefined-builtin
 
     main()

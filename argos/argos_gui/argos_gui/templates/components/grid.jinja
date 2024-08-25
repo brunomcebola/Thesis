@@ -69,7 +69,7 @@ Expected parameters:
     data.cardId = data.cardId || "c" + Math.random().toString(36).substring(7);
     data.cardTitle = data.cardTitle || "";
     data.cardDescription = data.cardDescription || "";
-    data.imgSrc = data.imgSrc || "{{url_for('gui.static', filename='images/no_media.png')}}";
+    data.imgSrc = data.imgSrc || "{{url_for('static', filename='images/no_media.png')}}";
     data.imgAlt = data.imgAlt || "No media";
     data.redirectURL = data.redirectURL || "";
 
@@ -94,7 +94,7 @@ Expected parameters:
         resolve();
       };
       img.onerror = async () => {
-        img.src = "{{url_for('gui.static', filename='images/no_media.png')}}";
+        img.src = "{{url_for('static', filename='images/no_media.png')}}";
         img.alt = "No media";
 
         await new Promise(resolve => setTimeout(resolve, 10));
