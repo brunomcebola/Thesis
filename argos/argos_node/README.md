@@ -46,7 +46,6 @@
      - MacOS: `/Users/<username>/Library/Application Support/argos_node`
    - `HOST`: The host IP address where the server will run. If not set, the default is `0.0.0.0`.
    - `PORT`: The port number where the server will run. If not set, the default is `5000`.
-   - `HOT_RELOAD`: Controls if the server will automatically reload on code changes. If not set, the default is `false`.
 
 2. **Configuration of the cameras**
 

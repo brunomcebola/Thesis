@@ -54,23 +54,11 @@ def _set_environment_variables() -> None:
     ):
         os.environ["PORT"] = "5000"
 
-    # HOT_RELOAD validation
-    if not os.getenv("HOT_RELOAD") or os.getenv("HOT_RELOAD") not in ["true", "false"]:
-        os.environ["HOT_RELOAD"] = "false"
-
 
 def _set_logger() -> None:
     """
     Set up the logging for the application
     """
-
-    class _LogFilter(logging.Filter):
-        def filter(self, record):
-            # Custom validation logic here
-            # Return True to allow the log message, False to block it
-            if os.getenv("WERKZEUG_RUN_MAIN") == "true" or os.getenv("HOT_RELOAD") == "false":
-                return True
-            return False
 
     global logger  # pylint: disable=global-statement
 
@@ -82,10 +70,6 @@ def _set_logger() -> None:
     log_file_path = os.path.join(os.environ["BASE_DIR"], f"{__package__}.log")
     os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
     file_handler = logging.FileHandler(log_file_path)
-
-    # Create filter
-    log_filter = _LogFilter()
-    file_handler.addFilter(log_filter)
 
     # Create formatter
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
@@ -103,7 +87,6 @@ def _set_atexit_handler() -> None:
     """
 
     def _callback():
-        os.environ["WERKZEUG_RUN_MAIN"] = "true"
         logger.info("ARGOS node stopped!")
 
     atexit.register(_callback)

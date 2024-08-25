@@ -1,1 +1,1 @@
-recursive-include argos_master *
+recursive-include argos_gui *
