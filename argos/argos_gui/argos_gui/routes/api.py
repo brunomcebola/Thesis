@@ -8,7 +8,13 @@ import requests
 from flask import jsonify, request, Response
 from flask import Blueprint as _Blueprint
 
+from .. import socketio as _socketio
+from .. import master_sio as _master_sio
 from .. import logger as _logger
+
+#
+# HTTP Routes
+#
 
 
 class Blueprint(_Blueprint):
@@ -35,6 +41,7 @@ class Blueprint(_Blueprint):
 
 blueprint = Blueprint("api", __name__, url_prefix="/api")
 
+
 @blueprint.errorhandler(Exception)
 def handle_exception(e):
     """
@@ -47,35 +54,6 @@ def handle_exception(e):
         jsonify("Internal error."),
         HTTPStatus.INTERNAL_SERVER_ERROR,
     )
-
-
-@blueprint.route("/<path:subpath>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-def handle_undefined_routes(subpath):
-    """
-    Intercept requests that do not match any defined routes in the blueprint
-    and forward them to another server.
-    """
-
-    # Construct the URL for the target server
-    target_url = f"http://{os.getenv('MASTER_ADDRESS')}/{subpath}"
-
-    # Forward the request to the argos_master
-    response = requests.request(
-        method=request.method,
-        url=target_url,
-        params=request.args.to_dict(flat=False) if request.args else None,
-        json=request.json if "Content-Type" in dict(request.headers) else None,
-        timeout=5,
-    )
-
-    # Check if the response is JSON
-    return (
-        jsonify(response.json()),
-        response.status_code,
-    )
-
-
-# Logs
 
 
 @blueprint.route("/logs")
@@ -113,7 +91,56 @@ def logs():
         content = content[-nb_lines - start_line : -start_line + 1]
     content.reverse()
 
-    return (
-        jsonify(content),
-        HTTPStatus.OK,
+    return jsonify(content)
+
+
+@blueprint.route("/<path:subpath>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+def redirect_to_master(subpath: str):
+    """
+    Intercept requests that do not match any defined routes in the blueprint
+    and forward them to another server.
+    """
+
+    if not _master_sio.connected:
+        return (
+            jsonify("Unable to reach master. Please try again later."),
+            HTTPStatus.SERVICE_UNAVAILABLE,
+        )
+
+    # Construct the URL for the target server
+    target_url = f"http://{os.getenv('MASTER_ADDRESS')}/{subpath}"
+
+    # Forward the request to the argos_master
+    response = requests.request(
+        method=request.method,
+        url=target_url,
+        headers={key: value for key, value in request.headers if key != "Host"},
+        params=request.args.to_dict(flat=False) if request.args else None,
+        data=request.get_data(),
+        cookies=request.cookies,
+        timeout=5,
     )
+
+    headers = [(name, value) for name, value in response.raw.headers.items()]
+
+    # Create a Flask response object with the original status code and headers
+    flask_response = Response(response.content, status=response.status_code, headers=headers)
+
+    # Set cookies in the Flask response if present
+    for cookie in response.cookies:
+        if cookie.value is not None:
+            flask_response.set_cookie(cookie.name, cookie.value)
+
+    return flask_response
+
+
+#
+# Socket.IO Routes
+#
+@_master_sio.on("*")  # type: ignore
+def redirect_event(event, *args, **kwargs):
+    """
+    Redirects all events to the client
+    """
+
+    _socketio.emit(event, *args, **kwargs)

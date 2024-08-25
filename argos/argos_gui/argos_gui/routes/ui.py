@@ -76,7 +76,7 @@ def redirect_to_node_cameras(node_id: int):
     """
     Redirect to the nodo_cameras view
     """
-    return redirect(url_for("node_cameras", node_id=node_id))
+    return redirect(url_for("ui.node_cameras", node_id=node_id))
 
 
 @blueprint.route("/nodes/<int:node_id>/cameras")

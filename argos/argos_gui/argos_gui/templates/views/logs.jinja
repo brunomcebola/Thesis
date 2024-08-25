@@ -13,7 +13,9 @@
 {% endblock body %}
 {% block script %}
   <script>
-    const target = {{ request.path.split("/")[1:-1] }}.join("/")
+    let node_route = {{ request.path.split("/")[1:-1] }}.join("/")
+
+    const logs_route = node_route ? `/api/${node_route}/logs` : '/api/logs'
     const logs = document.getElementById('logs');
     const reloadBtn = document.getElementById('reload-btn');
     const indicator = document.getElementById('indicator');
@@ -32,7 +34,7 @@
       const logsDivHeight = logs.clientHeight - parseInt(window.getComputedStyle(logs).paddingTop) - parseInt(window.getComputedStyle(logs).paddingBottom);
       const numLines = Math.floor(logsDivHeight / logsLineHeight);
 
-      axios.get(`/api/${target}/logs?start_line=${lineCount}&nb_lines=${Math.floor((numLines * 100))}`)
+      axios.get(`${logs_route}?start_line=${lineCount}&nb_lines=${Math.floor((numLines * 100))}`)
         .then(response => {
           prevLineCount = lineCount
           response.data.forEach(line => {

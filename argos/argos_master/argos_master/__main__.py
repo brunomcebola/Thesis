@@ -16,6 +16,7 @@ def main():
     Main function of the program
     """
 
+    from . import handlers  # pylint: disable=import-outside-toplevel, unused-import
     from . import routes  # pylint: disable=import-outside-toplevel, unused-import
 
     _socketio.run(

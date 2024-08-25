@@ -5,18 +5,22 @@ Init file for the argos_gui
 import os
 import re
 import sys
+import time
 import atexit
 import signal
 import logging
+import threading
 
 from flask import Flask
 from appdirs import AppDirs
+from socketio import Client
 from flask_socketio import SocketIO
 from dotenv import find_dotenv, load_dotenv
 
 logger: logging.Logger
 app: Flask
 socketio: SocketIO
+master_sio: Client
 
 
 def _set_environment_variables() -> None:
@@ -122,6 +126,41 @@ def _set_global_exception_hook() -> None:
     sys.excepthook = _callback
 
 
+def _connect_to_master() -> None:
+    """
+    Connect to the master server
+    """
+
+    def _retry_connect():
+        while master_sio and not master_sio.connected:
+            try:
+                master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}")
+                break
+            except Exception:  # pylint: disable=broad-except
+                time.sleep(1)
+
+    global master_sio  # pylint: disable=global-statement
+
+    sio = Client(reconnection=True)
+
+    @sio.event
+    def connect():
+        logger.info("Connected to master")
+
+    @sio.event
+    def disconnect():
+        logger.warning("Disconnected from master")
+
+    master_sio = sio
+
+    # Connect to the node
+    try:
+        master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}")
+    except Exception:  # pylint: disable=broad-except
+        logger.warning("Unable to connect to master. Retrying in background...")
+
+    threading.Thread(target=_retry_connect, daemon=True).start()
+
 def _set_server() -> None:
     """
     Set up the Flask and SocketIO server
@@ -155,5 +194,7 @@ _set_logger()
 _set_atexit_handler()
 
 _set_global_exception_hook()
+
+_connect_to_master()
 
 _set_server()
