@@ -33,7 +33,7 @@ def _camera_callback(event, data) -> None:
     # Send image to GUI
     if frame["color"] is not None:
         # Convert BGR to RGB
-        rgb_image = frame["color"][:, :, ::-1]
+        rgb_image = frame["color"][..., ::-1]
 
         pil_image = Image.fromarray(rgb_image)
 
@@ -79,21 +79,28 @@ def update_events_list(data):
     Sends the list of events to the client
     """
 
+    # Remove unnecessary handlers
+    handlers_to_keep = ["connect", "disconnect"] + [
+        f"{data['node_id']}_{camera}" for camera in data["cameras"]
+    ]
+
     master_sio.handlers["/gui"] = {
-        k: v for k, v in master_sio.handlers["/gui"].items() if k in ["connect", "disconnect"]
+        k: v for k, v in master_sio.handlers["/gui"].items() if k in handlers_to_keep
     }
 
+    # Add missing handlers
     for camera in data["cameras"]:
-        master_sio.on(
-            f"{data['node_id']}_{camera}",
-            lambda x: _camera_callback(
-                f"{data['node_id']}_{camera}", x  # pylint: disable=cell-var-from-loop
-            ),
-            namespace="/gui",
-        )
+        if f"{data['node_id']}_{camera}" not in master_sio.handlers["/gui"]:
+            master_sio.on(
+                f"{data['node_id']}_{camera}",
+                lambda x: _camera_callback(
+                    f"{data['node_id']}_{camera}", x  # pylint: disable=cell-var-from-loop
+                ),
+                namespace="/gui",
+            )
 
 
-# Connect to the node
+# Connect to the master
 try:
     master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}", namespaces=["/", "/gui"])
 except Exception:  # pylint: disable=broad-except
