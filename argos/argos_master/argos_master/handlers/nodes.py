@@ -6,16 +6,12 @@ from __future__ import annotations
 
 
 import os
-import io
 import time
-import pickle
-import base64
 import threading
 import yaml
 import requests
 import socketio
 import jsonschema
-from PIL import Image
 from flask import Request, Response, jsonify
 from werkzeug.datastructures import FileStorage
 
@@ -90,8 +86,8 @@ class Node:
             if node_config["has_image"]
             else None
         )
-        self._sio = None
         self._cameras = []
+        self._sio = None
 
     # Instance properties
 
@@ -131,6 +127,14 @@ class Node:
         """
         return bool(self._image)
 
+    @property
+    def cameras(self) -> list[str]:
+        """
+        Returns the cameras of the node
+        """
+
+        return self._cameras
+
     # Instance private methods
 
     def _retry_connect(self):
@@ -143,23 +147,8 @@ class Node:
 
     @staticmethod
     def _camera_callback(data, node, camera):
+        _socketio.emit(f"{node}_{camera}", data, namespace="/gui")
         _socketio.emit(f"{node}_{camera}", data, namespace="/analytics")
-
-        frame = pickle.loads(data)
-
-        # Send image to GUI
-        if frame["color"] is not None:
-            # Convert BGR to RGB
-            rgb_image = frame["color"][:, :, ::-1]
-
-            pil_image = Image.fromarray(rgb_image)
-
-            buffer = io.BytesIO()
-            pil_image.save(buffer, format="JPEG")
-
-            img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-            _socketio.emit(f"{node}_{camera}", img_base64, namespace="/gui")
 
     # Instance public methods
 
@@ -192,16 +181,17 @@ class Node:
 
             self._cameras = cameras
 
-            # print(sio.handlers)
+            self.emit_update_events_list_event()
 
         @sio.event
         def disconnect():
             _logger.warning("Disconnected from node %s at %s.", self._id, self._address)
 
-            # # Remove callbacks of each camera
-            # for camera in self._cameras:
-            #     sio.handlers['/'].pop['handler_name_to_remove']
-            # sio.handlers
+            # Remove callbacks of each camera
+            for camera in self._cameras:
+                del sio.handlers["/"][camera]
+
+            self._cameras = []
 
         self._sio = sio
 
@@ -217,8 +207,6 @@ class Node:
 
             threading.Thread(target=self._retry_connect, daemon=True).start()
 
-        # print(sio.handlers)
-
     def disconnect(self) -> None:
         """
         Disconnects from the node
@@ -228,6 +216,13 @@ class Node:
             self._sio.disconnect()
 
         self._sio = None
+
+    def emit_update_events_list_event(self) -> None:
+        """
+        Emits the update_events_list event
+        """
+
+        _socketio.emit("update_events_list", {"node_id": self._id, "cameras": self._cameras})
 
 
 class NodesHandler:
@@ -496,6 +491,31 @@ class NodesHandler:
             raise ValueError(f"Node '{node_id}' not found.")
 
         return node.image
+
+    def get_node_cameras(self, node_id: int) -> list[str]:
+        """
+        Returns the cameras of a node
+
+        Args:
+            node_id (int): The id of the node
+
+        Returns:
+            list[str]: The cameras of the node
+        """
+
+        node = next((node for node in self._nodes if node.id == node_id), None)
+        if not node:
+            raise ValueError(f"Node '{node_id}' not found.")
+
+        return node.cameras
+
+    def emit_update_events_list_events(self) -> None:
+        """
+        Emits the update_events_list event for all nodes
+        """
+
+        for node in self._nodes:
+            node.emit_update_events_list_event()
 
     def redirect_request_to_node(
         self, node_id: int, route: str, request: Request

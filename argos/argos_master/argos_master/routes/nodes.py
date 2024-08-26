@@ -28,7 +28,7 @@ def handle_exception(e):
 
 
 @blueprint.route("/")
-def nodes():
+def get_nodes():
     """
     Returns the nodes
     """
@@ -62,6 +62,20 @@ def create_node():
     return (
         jsonify("Node created successfully"),
         HTTPStatus.CREATED,
+    )
+
+
+@blueprint.route("/emit_update_events_list_events", methods=["PUT"])
+def force_update_events_list():
+    """
+    Force update events list
+    """
+
+    nodes_handler.emit_update_events_list_events()
+
+    return (
+        jsonify("Emitted update events list events for all nodes"),
+        HTTPStatus.OK,
     )
 
 
@@ -114,7 +128,7 @@ def delete_node(node_id: int):
 
 
 @blueprint.route("/<int:node_id>/image")
-def image(node_id: int):
+def get_node_image(node_id: int):
     """
     Returns the image of the node
     """
@@ -134,6 +148,27 @@ def image(node_id: int):
     return (
         jsonify("Image not found."),
         HTTPStatus.NOT_FOUND,
+    )
+
+
+@blueprint.route("/<int:node_id>/cameras")
+def get_node_cameras(node_id: int):
+    """
+    Returns the image of the node
+    """
+
+    # Get the node image
+    try:
+        cameras = nodes_handler.get_node_cameras(node_id)
+    except Exception as e:  # pylint: disable=broad-except
+        return (
+            jsonify(str(e)),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    return (
+        jsonify(cameras),
+        HTTPStatus.OK,
     )
 
 

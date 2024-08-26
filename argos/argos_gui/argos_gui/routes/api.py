@@ -8,13 +8,9 @@ import requests
 from flask import jsonify, request, Response
 from flask import Blueprint as _Blueprint
 
-from .. import socketio as _socketio
-from .. import master_sio as _master_sio
 from .. import logger as _logger
 
-#
-# HTTP Routes
-#
+from .socket import master_sio as _master_sio
 
 
 class Blueprint(_Blueprint):
@@ -132,12 +128,3 @@ def redirect_to_master(subpath: str):
             flask_response.set_cookie(cookie.name, cookie.value)
 
     return flask_response
-
-
-@_master_sio.on("*", namespace="/gui")  # type: ignore
-def redirect_event(event, *args, **kwargs):
-    """
-    Redirects all events to the client
-    """
-
-    _socketio.emit(event, *args, **kwargs)
