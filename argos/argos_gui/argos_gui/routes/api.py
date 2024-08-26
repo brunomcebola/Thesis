@@ -134,10 +134,7 @@ def redirect_to_master(subpath: str):
     return flask_response
 
 
-#
-# Socket.IO Routes
-#
-@_master_sio.on("*")  # type: ignore
+@_master_sio.on("*", namespace="/gui")  # type: ignore
 def redirect_event(event, *args, **kwargs):
     """
     Redirects all events to the client

@@ -19,6 +19,10 @@ def main():
     from . import handlers  # pylint: disable=import-outside-toplevel, unused-import
     from . import routes  # pylint: disable=import-outside-toplevel, unused-import
 
+    # @_socketio.on('connect', namespace='/gui')
+    # def on_disconnect():
+    #     print('Client disconnected from /gui namespace')
+
     _socketio.run(
         _app,
         host=os.environ["HOST"],

@@ -145,6 +145,7 @@ class Node:
     def _camera_callback(data, node, camera):
         frame = pickle.loads(data)
 
+        # Send image to GUI
         if frame["color"] is not None:
             # Convert BGR to RGB
             rgb_image = frame["color"][:, :, ::-1]
@@ -156,7 +157,7 @@ class Node:
 
             img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-            _socketio.emit(f"{node}_{camera}", img_base64)
+            _socketio.emit(f"{node}_{camera}", img_base64, namespace="/gui")
 
     # Instance public methods
 

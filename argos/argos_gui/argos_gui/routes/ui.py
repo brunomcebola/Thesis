@@ -105,7 +105,7 @@ def node_cameras(node_id: int):
                     "cardId": f"c{entry}",
                     "cardTitle": entry,
                     "cardDescription": entry_status,
-                    "imgSrc": "/gui/static/images/realsense.png",
+                    "imgSrc": "/static/images/realsense.png",
                     "imgAlt": f"Camera {entry} cover",
                     "redirectURL": f"/nodes/{node_id}/cameras/{entry}",
                 }
