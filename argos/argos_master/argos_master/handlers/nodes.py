@@ -143,6 +143,8 @@ class Node:
 
     @staticmethod
     def _camera_callback(data, node, camera):
+        _socketio.emit(f"{node}_{camera}", data, namespace="/analytics")
+
         frame = pickle.loads(data)
 
         # Send image to GUI

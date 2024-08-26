@@ -13,14 +13,14 @@ import threading
 
 from flask import Flask
 from appdirs import AppDirs
-from socketio import Client
 from flask_socketio import SocketIO
 from dotenv import find_dotenv, load_dotenv
+from socketio import Client as SocketIO_Client
 
-logger: logging.Logger
 app: Flask
 socketio: SocketIO
-master_sio: Client
+logger: logging.Logger
+master_sio: SocketIO_Client
 
 
 def _set_environment_variables() -> None:
@@ -53,7 +53,7 @@ def _set_environment_variables() -> None:
         or int(os.environ["PORT"]) > 65535
         or int(os.environ["PORT"]) < 1024
     ):
-        os.environ["PORT"] = "8080"
+        os.environ["PORT"] = "4000"
 
     # MASTER_ADDRESS validation
     address_regex = r"^(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]):\d{4}$"  # pylint: disable=line-too-long
@@ -84,7 +84,7 @@ def _set_logger() -> None:
     # Add file handler to logger
     logger.addHandler(file_handler)
 
-    logger.info("ARGOS gui started!")
+    logger.info("ARGOS analytics started!")  # type: ignore
 
 
 def _set_atexit_handler() -> None:
@@ -93,7 +93,7 @@ def _set_atexit_handler() -> None:
     """
 
     def _callback():
-        logger.info("ARGOS gui stopped!")
+        logger.info("ARGOS analytics stopped!")  # type: ignore
 
     atexit.register(_callback)
 
@@ -117,20 +117,20 @@ def _connect_to_master() -> None:
     def _retry_connect():
         while master_sio and not master_sio.connected:
             try:
-                master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}", namespaces=["/gui"])
+                master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}", namespaces="/analytics")
                 break
             except Exception:  # pylint: disable=broad-except
                 time.sleep(1)
 
     global master_sio  # pylint: disable=global-statement
 
-    sio = Client(reconnection=True)
+    sio = SocketIO_Client(reconnection=True)
 
-    @sio.event(namespace="/gui")
+    @sio.event(namespace="/analytics")
     def connect():
         logger.info("Connected to master")
 
-    @sio.event(namespace="/gui")
+    @sio.event(namespace="/analytics")
     def disconnect():
         logger.warning("Disconnected from master")
 
@@ -138,7 +138,7 @@ def _connect_to_master() -> None:
 
     # Connect to the node
     try:
-        master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}", namespaces="/gui")
+        master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}", namespaces="/analytics")
     except Exception:  # pylint: disable=broad-except
         logger.warning("Unable to connect to master. Retrying in background...")
 
