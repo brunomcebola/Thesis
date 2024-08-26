@@ -117,7 +117,7 @@ def _connect_to_master() -> None:
     def _retry_connect():
         while master_sio and not master_sio.connected:
             try:
-                master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}")
+                master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}", namespaces=["/gui"])
                 break
             except Exception:  # pylint: disable=broad-except
                 time.sleep(1)
@@ -126,11 +126,11 @@ def _connect_to_master() -> None:
 
     sio = Client(reconnection=True)
 
-    @sio.event
+    @sio.event(namespace="/gui")
     def connect():
         logger.info("Connected to master")
 
-    @sio.event
+    @sio.event(namespace="/gui")
     def disconnect():
         logger.warning("Disconnected from master")
 
@@ -138,11 +138,12 @@ def _connect_to_master() -> None:
 
     # Connect to the node
     try:
-        master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}")
-    except Exception:  # pylint: disable=broad-except
+        master_sio.connect(f"http://{os.getenv('MASTER_ADDRESS')}", namespaces="/gui")
+    except Exception as e:  # pylint: disable=broad-except
         logger.warning("Unable to connect to master. Retrying in background...")
 
     threading.Thread(target=_retry_connect, daemon=True).start()
+
 
 def _set_server() -> None:
     """
@@ -178,6 +179,6 @@ _set_atexit_handler()
 
 _set_global_exception_hook()
 
-_connect_to_master()
-
 _set_server()
+
+_connect_to_master()

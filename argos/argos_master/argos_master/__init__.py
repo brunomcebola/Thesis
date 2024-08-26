@@ -12,6 +12,7 @@ import logging
 from flask import Flask
 from appdirs import AppDirs
 from flask_socketio import SocketIO
+from flask_socketio.namespace import Namespace
 from dotenv import find_dotenv, load_dotenv
 
 logger: logging.Logger
@@ -116,6 +117,10 @@ def _set_server() -> None:
 
     # Add app configs
     app.config["WEBASSETS_CACHE"] = False
+
+    # Register the namespaces
+    socketio.on_namespace(Namespace("/gui"))
+    socketio.on_namespace(Namespace("/analytics"))
 
     # Register the signal handler
     signal.signal(
