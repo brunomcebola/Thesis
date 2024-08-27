@@ -16,12 +16,12 @@
     {
       "path": "argos/argos_node"
     },
-    // {
-    //   "path": "kinetics/kinetics-i3d"
-    // },
-    // {
-    //   "path": "kinetics/preprocess"
-    // },
+    {
+      "path": "kinetics/kinetics-i3d"
+    },
+    {
+      "path": "kinetics/preprocess"
+    },
     // {
     //   "path": "skel-HAR/skeleton-based-action-recognition"
     // }

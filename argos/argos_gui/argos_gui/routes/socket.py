@@ -3,13 +3,12 @@ This file contains the socket handlers for the connection with master
 """
 
 import os
-import io
 import time
 import threading
 import pickle
 import base64
+import cv2
 import requests
-from PIL import Image
 from socketio import Client
 
 from .. import socketio as _socketio
@@ -33,14 +32,8 @@ def _camera_callback(event, data) -> None:
     # Send image to GUI
     if frame["color"] is not None:
         # Convert BGR to RGB
-        rgb_image = frame["color"][..., ::-1]
-
-        pil_image = Image.fromarray(rgb_image)
-
-        buffer = io.BytesIO()
-        pil_image.save(buffer, format="JPEG")
-
-        img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        _, buffer = cv2.imencode(".jpg", frame["color"])
+        img_base64 = base64.b64encode(buffer).decode("utf-8") # type: ignore
 
         _socketio.emit(event, img_base64)
 

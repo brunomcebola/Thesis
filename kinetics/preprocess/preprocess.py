@@ -71,15 +71,15 @@ def process_rgb(frames: np.ndarray, video_name: str) -> None:
 
     # Save as gif
     frames_for_gif = (((frames[0] + 1) / 2) * 256).astype(np.uint8)
-    frames_for_gif = [Image.fromarray(frame) for frame in frames_for_gif]
-    frames_for_gif[0].save(
-        os.path.join(OUTPUT_DIR, f"{video_name}_rgb.gif"),
-        format="GIF",
-        append_images=frames_for_gif[1:],
-        save_all=True,
-        duration=40,
-        loop=0,
-    )
+    # frames_for_gif = [Image.fromarray(frame) for frame in frames_for_gif]
+    # frames_for_gif[0].save(
+    #     os.path.join(OUTPUT_DIR, f"{video_name}_rgb.gif"),
+    #     format="GIF",
+    #     append_images=frames_for_gif[1:],
+    #     save_all=True,
+    #     duration=40,
+    #     loop=0,
+    # )
 
     print(f"RGB frames saved as {video_name}_rgb.npy and {video_name}_rgb.gif")
     print(f"Shape of RGB frames: {frames.shape}")
@@ -127,31 +127,31 @@ def process_flow(frames: np.ndarray, video_name: str) -> None:
     np.save(os.path.join(OUTPUT_DIR, f"{video_name}_flow.npy"), flows)
 
     # Save as gif
-    frames_for_gif = flows[0]
-    frames_for_gif = np.concatenate(
-        [
-            frames_for_gif,
-            np.zeros(
-                (frames_for_gif.shape[0], frames_for_gif.shape[1], frames_for_gif.shape[2], 1)
-            ),
-        ],
-        axis=-1,
-    )
-    frames_for_gif = frames_for_gif + 0.5
-    frames_for_gif = (
-        (frames_for_gif - np.min(frames_for_gif))
-        / (np.max(frames_for_gif) - np.min(frames_for_gif))
-        * 255
-    ).astype(np.uint8)
-    frames_for_gif = [Image.fromarray(frame) for frame in frames_for_gif]
-    frames_for_gif[0].save(
-        os.path.join(OUTPUT_DIR, f"{video_name}_flow.gif"),
-        format="GIF",
-        append_images=frames_for_gif[1:],
-        save_all=True,
-        duration=40,
-        loop=0,
-    )
+    # frames_for_gif = flows[0]
+    # frames_for_gif = np.concatenate(
+    #     [
+    #         frames_for_gif,
+    #         np.zeros(
+    #             (frames_for_gif.shape[0], frames_for_gif.shape[1], frames_for_gif.shape[2], 1)
+    #         ),
+    #     ],
+    #     axis=-1,
+    # )
+    # frames_for_gif = frames_for_gif + 0.5
+    # frames_for_gif = (
+    #     (frames_for_gif - np.min(frames_for_gif))
+    #     / (np.max(frames_for_gif) - np.min(frames_for_gif))
+    #     * 255
+    # ).astype(np.uint8)
+    # frames_for_gif = [Image.fromarray(frame) for frame in frames_for_gif]
+    # frames_for_gif[0].save(
+    #     os.path.join(OUTPUT_DIR, f"{video_name}_flow.gif"),
+    #     format="GIF",
+    #     append_images=frames_for_gif[1:],
+    #     save_all=True,
+    #     duration=40,
+    #     loop=0,
+    # )
     print(f"Flow frames saved as {video_name}_flow.npy and {video_name}_flow.gif")
     print(f"Shape of Flow frames: {flows.shape}")
 

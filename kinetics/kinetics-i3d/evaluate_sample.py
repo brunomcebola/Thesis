@@ -25,12 +25,12 @@ import i3d
 
 _IMAGE_SIZE_ROWS = 224
 _IMAGE_SIZE_COLS = 224
-_SAMPLE_VIDEO_FRAMES = 76
+_SAMPLE_VIDEO_FRAMES = 91
 
 
 _SAMPLE_PATHS = {
-     'rgb': 'data/javelin_short_rgb.npy',
-     'flow': 'data/javelin_short_flow.npy',
+     'rgb': 'data/basket_short.mp4_rgb.npy',
+     'flow': 'data/basket_short.mp4_flow.npy',
 }
 
 _CHECKPOINT_PATHS = {

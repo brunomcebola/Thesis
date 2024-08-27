@@ -27,3 +27,4 @@ wheel_contents/
 *.egg-info*
 
 RefiNet/
+opencv*/
