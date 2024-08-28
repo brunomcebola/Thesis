@@ -23,14 +23,12 @@ import tensorflow as tf
 
 import i3d
 
-_IMAGE_SIZE_ROWS = 224
-_IMAGE_SIZE_COLS = 224
-_SAMPLE_VIDEO_FRAMES = 91
+_IMAGE_SIZE = 224
 
-
+_SAMPLE_VIDEO_FRAMES = 79
 _SAMPLE_PATHS = {
-     'rgb': 'data/basket_short.mp4_rgb.npy',
-     'flow': 'data/basket_short.mp4_flow.npy',
+    'rgb': 'data/v_CricketShot_g04_c01_rgb.npy',
+    'flow': 'data/v_CricketShot_g04_c01_flow.npy',
 }
 
 _CHECKPOINT_PATHS = {
@@ -72,7 +70,7 @@ def main(unused_argv):
     # RGB input has 3 channels.
     rgb_input = tf.placeholder(
         tf.float32,
-        shape=(1, _SAMPLE_VIDEO_FRAMES, _IMAGE_SIZE_ROWS, _IMAGE_SIZE_COLS, 3))
+        shape=(1, _SAMPLE_VIDEO_FRAMES, _IMAGE_SIZE, _IMAGE_SIZE, 3))
 
 
     with tf.variable_scope('RGB'):
@@ -97,7 +95,7 @@ def main(unused_argv):
     # Flow input has only 2 channels.
     flow_input = tf.placeholder(
         tf.float32,
-        shape=(1, _SAMPLE_VIDEO_FRAMES, _IMAGE_SIZE_ROWS, _IMAGE_SIZE_COLS, 2))
+        shape=(1, _SAMPLE_VIDEO_FRAMES, _IMAGE_SIZE, _IMAGE_SIZE, 2))
     with tf.variable_scope('Flow'):
       flow_model = i3d.InceptionI3d(
           NUM_CLASSES, spatial_squeeze=True, final_endpoint='Logits')

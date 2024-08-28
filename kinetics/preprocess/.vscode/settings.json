@@ -1,3 +1,4 @@
 {
-    "python.defaultInterpreterPath": ".venv_preprocess/python-3.9.2/bin/python"
+    "python.defaultInterpreterPath": ".venv_preprocess/python-3.9.2/bin/python",
+    "cmake.configureOnOpen": false
   }
