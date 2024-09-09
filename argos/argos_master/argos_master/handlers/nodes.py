@@ -22,29 +22,6 @@ NODES_DIR = os.path.join(os.environ["BASE_DIR"], "nodes")
 NODES_FILE = os.path.join(NODES_DIR, "nodes.yaml")
 IMAGES_DIR = os.path.join(NODES_DIR, "images")
 
-NODE_CONFIG_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "id": {
-            "type": "integer",
-            "minimum": 1,
-        },
-        "name": {
-            "type": "string",
-            "pattern": "^[A-Za-zÀ-ÖØ-öø-ÿ0-9-_ ]+$",
-        },
-        "address": {
-            "type": "string",
-            "pattern": "^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]):(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)$",  # pylint: disable=line-too-long
-        },
-        "has_image": {
-            "type": "boolean",
-        },
-    },
-    "required": ["id", "name", "address", "has_image"],
-    "additionalProperties": False,
-}
-
 
 class Node:
     """
@@ -58,6 +35,29 @@ class Node:
     _sio: socketio.Client | None
     _cameras: list[str]
 
+    SCHEMA = {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "integer",
+                "minimum": 1,
+            },
+            "name": {
+                "type": "string",
+                "pattern": "^[A-Za-zÀ-ÖØ-öø-ÿ0-9-_ ]+$",
+            },
+            "address": {
+                "type": "string",
+                "pattern": "^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]).){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9]):(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}|0)$",  # pylint: disable=line-too-long
+            },
+            "has_image": {
+                "type": "boolean",
+            },
+        },
+        "required": ["id", "name", "address", "has_image"],
+        "additionalProperties": False,
+    }
+
     def __init__(
         self,
         node_config: dict,
@@ -66,10 +66,10 @@ class Node:
         Initializes the node
 
         Args:
-            node_config (dict): The configuration of the node. Must follow NODE_CONFIG_SCHEMA
+            node_config (dict): The configuration of the node. Must follow Node.SCHEMA
         """
 
-        jsonschema.validate(instance=node_config, schema=NODE_CONFIG_SCHEMA)
+        jsonschema.validate(instance=node_config, schema=Node.SCHEMA)
 
         self._id = node_config["id"]
         self._name = node_config["name"]
@@ -286,7 +286,7 @@ class NodesHandler:
             try:
                 nodes_configs = yaml.safe_load(f) or []
             except Exception as e:  # pylint: disable=broad-except
-                raise type(e)("Unable to initialize node - ") from e
+                raise type(e)("Unable to initialize nodes") from e
 
         success = 0
         fail = 0
@@ -318,13 +318,14 @@ class NodesHandler:
         Adds a new node to the list and connects to it
 
         Args:
-            node_config (dict): The configuration of the node. Must follow NODE_CONFIG_SCHEMA
+            node_config (dict): The configuration of the node. Must follow Node.SCHEMA
 
         Returns:
             Node: The created node
 
         Raises:
-            ValueError: If the configuration is invalid
+            ValueError: If the configuration is invalid or
+            the id, name or address are already registered
         """
 
         try:
@@ -336,6 +337,8 @@ class NodesHandler:
                 raise ValueError(
                     f"Invalid configuration ({e.message} for {e.path[0]}: {e.instance})."
                 ) from e
+        except Exception as e:  # pylint: disable=broad-except
+            raise ValueError(f"Unable to create node - {e}") from e
 
         # Ensure unique ids
         if node.id in [node.id for node in self._nodes]:
@@ -436,7 +439,8 @@ class NodesHandler:
             node_image (FileStorage | None): The image of the node
 
         Raises:
-            ValueError: If no name or address is provided
+            ValueError: If no name or address is provided or
+            if the node cannot be created for any reason
         """
 
         if not node_name:
