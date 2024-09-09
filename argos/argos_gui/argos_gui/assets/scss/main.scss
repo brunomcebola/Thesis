@@ -194,7 +194,7 @@ $navbar-active-item-underline: $main-color;
 
       .nav-link,
       .nav-link:hover {
-        color: #fff;
+        color: $main-color-lighter;
       }
 
       @include sm {
@@ -352,7 +352,7 @@ $navbar-active-item-underline: $main-color;
     border-bottom: none;
     box-shadow: inset 0 0 10px #000;
     white-space: pre-wrap;
-    color: #fff;
+    color: $main-color-lighter;
     // remove: navbar + container + controls + extra
     height: calc(100vh - 52px - 48px - 70px - 2px);
   }
@@ -374,6 +374,18 @@ $navbar-active-item-underline: $main-color;
 
 /* camera.jinja */
 
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 #camera-container {
   #video-container {
     width: 100%;
@@ -384,8 +396,38 @@ $navbar-active-item-underline: $main-color;
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center;
-    color: #fff;
+    color: $main-color-lighter;
     font-size: 30px;
+
+    #title {
+      text-shadow: 0 0 10px $main-color-darker;
+      position: absolute;
+      top: 5px;
+      left: 10px;
+      font-size: 20px;
+      color: $main-color-lighter;
+
+      a {
+        color: $main-color-lighter;
+      }
+    }
+
+    #rec {
+      text-shadow: 0 0 10px $main-color-darker;
+      color: $main-color;
+      animation: pulse 1.5s ease-in-out infinite;
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      font-size: 20px;
+      cursor: default;
+      user-select: none;
+      display: none !important;
+
+      &.recording {
+        display: block !important;
+      }
+    }
 
     #video {
       width: 100%;
@@ -394,27 +436,48 @@ $navbar-active-item-underline: $main-color;
     }
 
     #controls {
-      #start-pause {
+      #actions {
         position: absolute;
-        bottom: 6px;
-        left: 6px;
-        color: #fff;
+        bottom: 5px;
+        left: 5px;
 
-        &:focus,
-        &:active {
-          border: none;
+        button {
+          color: $main-color-lighter;
+          border: transparent !important;
+
+          &:hover {
+            color: $main-color-light;
+          }
+        }
+
+        ul {
+          margin-left: 6px !important;
+
+          a {
+            cursor: pointer;
+
+            &:hover {
+              background-color: $main-color-hover;
+              color: $main-color-lighter;
+            }
+
+            &:active {
+              background-color: $main-color-active;
+              color: $main-color-lighter;
+            }
+          }
         }
       }
 
       #fullscreen {
         position: absolute;
-        bottom: 6px;
-        right: 6px;
-        color: #fff;
+        bottom: 5px;
+        right: 5px;
+        color: $main-color-lighter;
+        border: transparent !important;
 
-        &:focus,
-        &:active {
-          border: none;
+        &:hover {
+          color: $main-color-light;
         }
       }
     }

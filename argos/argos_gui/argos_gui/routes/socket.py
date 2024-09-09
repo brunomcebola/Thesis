@@ -33,7 +33,7 @@ def _camera_callback(event, data) -> None:
     if frame["color"] is not None:
         # Convert BGR to RGB
         _, buffer = cv2.imencode(".jpg", frame["color"])
-        img_base64 = base64.b64encode(buffer).decode("utf-8") # type: ignore
+        img_base64 = base64.b64encode(buffer).decode("utf-8")  # type: ignore
 
         _socketio.emit(event, img_base64)
 
@@ -73,9 +73,11 @@ def update_events_list(data):
     """
 
     # Remove unnecessary handlers
-    handlers_to_keep = ["connect", "disconnect"] + [
-        f"{data['node_id']}_{camera}" for camera in data["cameras"]
-    ]
+    handlers_to_keep = (
+        ["connect", "disconnect"]
+        + [f"{data['node_id']}_{camera}" for camera in data["cameras"]]
+        + [f"{data['node_id']}_{camera}_recording" for camera in data["cameras"]]
+    )
 
     master_sio.handlers["/gui"] = {
         k: v for k, v in master_sio.handlers["/gui"].items() if k in handlers_to_keep
@@ -88,6 +90,15 @@ def update_events_list(data):
                 f"{data['node_id']}_{camera}",
                 lambda x: _camera_callback(
                     f"{data['node_id']}_{camera}", x  # pylint: disable=cell-var-from-loop
+                ),
+                namespace="/gui",
+            )
+
+        if f"{data['node_id']}_{camera}_recording" not in master_sio.handlers["/gui"]:
+            master_sio.on(
+                f"{data['node_id']}_{camera}_recording",
+                lambda x: _socketio.emit(
+                    f"{data['node_id']}_{camera}_recording", x  # pylint: disable=cell-var-from-loop
                 ),
                 namespace="/gui",
             )

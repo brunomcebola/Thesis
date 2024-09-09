@@ -172,6 +172,48 @@ def get_node_cameras(node_id: int):
     )
 
 
+@blueprint.route("/<int:node_id>/cameras/<int:camera_id>/recording")
+def get_camera_recording(node_id: int, camera_id: int):
+    """
+    Returns the camera recording
+    """
+
+    # Get the camera recording
+    try:
+        recording = nodes_handler.get_node_camera_recording(node_id, str(camera_id))
+    except Exception as e: # pylint: disable=broad-except
+        return (
+            jsonify(str(e)),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    return (
+        jsonify(recording),
+        HTTPStatus.OK,
+    )
+
+
+@blueprint.route("/<int:node_id>/cameras/<int:camera_id>/recording", methods=["PUT"])
+def toggle_camera_recording(node_id: int, camera_id: int):
+    """
+    Toggles the camera recording
+    """
+
+    # Toggle the camera recording
+    try:
+        nodes_handler.toggle_node_camera_recording(node_id, str(camera_id))
+    except Exception as e:  # pylint: disable=broad-except
+        return (
+            jsonify(str(e)),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    return (
+        jsonify("Camera recording toggled successfully."),
+        HTTPStatus.OK,
+    )
+
+
 @blueprint.route("/<int:node_id>/<path:subpath>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 def redirect_to_node(node_id: int, subpath: str):
     """

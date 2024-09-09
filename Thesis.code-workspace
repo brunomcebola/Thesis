@@ -3,25 +3,25 @@
     {
       "path": "."
     },
-    // {
-    //   "path": "argos/argos_master"
-    // },
-    // {
-    //   "path": "argos/argos_analytics"
-    // },
-    // {
-    //   "path": "argos/argos_gui"
-    // },
+    {
+      "path": "argos/argos_master"
+    },
+    {
+      "path": "argos/argos_analytics"
+    },
+    {
+      "path": "argos/argos_gui"
+    },
 
+    {
+      "path": "argos/argos_node"
+    },
     // {
-    //   "path": "argos/argos_node"
+    //   "path": "kinetics/kinetics-i3d"
     // },
-    {
-      "path": "kinetics/kinetics-i3d"
-    },
-    {
-      "path": "kinetics/preprocess"
-    },
+    // {
+    //   "path": "kinetics/preprocess"
+    // },
     // {
     //   "path": "skel-HAR/skeleton-based-action-recognition"
     // }

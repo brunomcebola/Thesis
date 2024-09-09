@@ -4,14 +4,28 @@
 {% endblock title %}
 {% block body %}
   <div id="camera-container" class="container py-4">
-    <h4>
-      Camera {{ request.path.split("/")[-1] }} @ <a href="{{ url_for('ui.node_cameras', node_id=request.path.split('/')[-3] ) }}">node {{ request.path.split("/")[-3] }}</a>
-    </h4>
     <div id="video-container"
          class="d-flex justify-content-center align-items-center">
+      <span id="title">
+        Camera {{ request.path.split("/")[-1] }} @ <a href="{{ url_for('ui.node_cameras', node_id=request.path.split('/')[-3] ) }}">node {{ request.path.split("/")[-3] }}</a>
+      </span>
+      <span id="rec" class="d-flex align-items-center">
+        <i class="fa-solid fa-circle me-1"></i> Rec
+      </span>
       <canvas id="video">
       </canvas>
       <div id="controls">
+        <div id="actions" class="dropup">
+          <button class="btn"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"><i class="fa-solid fa-gear"></i></button>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" id="toggle-recording">Toggle recording</a>
+            </li>
+          </ul>
+        </div>
         <button class="btn" id="fullscreen">
           <i class="fas fa-expand"></i>
         </button>
@@ -26,11 +40,12 @@
 
     const videoContainer = document.getElementById('video-container');
     const canvas = videoContainer.querySelector('canvas');
-    const bottomFullscreenButton = videoContainer.querySelector('#controls #fullscreen');
+    const fullscreenButton = videoContainer.querySelector('#controls #fullscreen');
+    const actions = videoContainer.querySelector('#controls #actions');
+    const toggleRecordingButton = videoContainer.querySelector('#controls #actions #toggle-recording');
+    const recIndicator = videoContainer.querySelector('#rec');
 
     const socket = io();  // Connect to the same origin
-
-    var status = false;
 
     function resizeCanvas() {
       // Get the computed size of the canvas
@@ -71,12 +86,32 @@
 
     window.dispatchEvent(new Event('resize'));
 
-    bottomFullscreenButton.onclick = toggleFullscreen;
+    window.addEventListener('keydown', function(event) {
+      if (event.key === 'f') {
+        toggleFullscreen();
+      }
+    });
+
+    fullscreenButton.addEventListener('click', toggleFullscreen);
+
+    videoContainer.addEventListener('dblclick', toggleFullscreen);
+
+    actions.addEventListener('dblclick', function(event) {
+      event.stopPropagation();
+    });
+
+    toggleRecordingButton.addEventListener('click', function() {
+      axios.put(`/api/nodes/${node}/cameras/${camera}/recording`)
+        .then(() => {
+          console.log('Recording toggled');
+        })
+        .catch(() => {
+          console.error('Failed to toggle recording');
+        });
+    });
 
     axios.get(`/api/nodes/${node}/cameras/${camera}/status`)
       .then(() => {
-        status = true;
-
         socket.on(`${node}_${camera}`, function(data) {
           var img = new Image();
           img.onload = function() {
@@ -99,6 +134,24 @@
             canvas.getContext('2d').drawImage(img, drawX, drawY, drawWidth, drawHeight);
           };
           img.src = 'data:image/jpeg;base64,' + data;
+        });
+
+        axios.get(`/api/nodes/${node}/cameras/${camera}/recording`)
+          .then((response) => {
+            if (response.data) {
+              recIndicator.classList.add('recording');
+            }
+          })
+          .catch(() => {
+            console.error('Failed to get recording status');
+          });
+
+        socket.on(`${node}_${camera}_recording`, function(data) {
+          if (data.status) {
+            recIndicator.classList.add('recording');
+          } else {
+            recIndicator.classList.remove('recording');
+          }
         });
       })
       .catch(() => {

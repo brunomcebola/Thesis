@@ -87,6 +87,7 @@ class Node:
             else None
         )
         self._cameras = []
+        self._recording = []
         self._sio = None
 
     # Instance properties
@@ -135,6 +136,14 @@ class Node:
 
         return self._cameras
 
+    @property
+    def recording(self) -> list[str]:
+        """
+        Returns the cameras being recorded
+        """
+
+        return self._recording
+
     # Instance private methods
 
     def _retry_connect(self):
@@ -149,6 +158,8 @@ class Node:
     def _camera_callback(data, node, camera):
         _socketio.emit(f"{node}_{camera}", data, namespace="/gui")
         _socketio.emit(f"{node}_{camera}", data, namespace="/analytics")
+
+        # TODO: Add recording mechanism
 
     # Instance public methods
 
@@ -222,7 +233,41 @@ class Node:
         Emits the update_events_list event
         """
 
+        # TODO: add selector for gui, analytics or both
+
         _socketio.emit("update_events_list", {"node_id": self._id, "cameras": self._cameras})
+
+    def toggle_camera_recording(self, camera_id: str) -> None:
+        """
+        Toggles the recording of a camera
+
+        Args:
+            camera_id (str): The id of the camera
+        """
+
+        if camera_id not in self._cameras:
+            raise ValueError(f"Camera '{camera_id}' not found.")
+
+        if camera_id in self._recording:
+            self._recording.remove(camera_id)
+        else:
+            self._recording.append(camera_id)
+
+        _logger.info(
+            "Toggled recording of camera %s from node %s at %s (recording: %s).",
+            camera_id,
+            self._id,
+            self._address,
+            camera_id in self._recording,
+        )
+
+        _socketio.emit(
+            f"{self._id}_{camera_id}_recording",
+            {
+                "status": camera_id in self._recording,
+            },
+            namespace="/gui",
+        )
 
 
 class NodesHandler:
@@ -516,6 +561,39 @@ class NodesHandler:
 
         for node in self._nodes:
             node.emit_update_events_list_event()
+
+    def get_node_camera_recording(self, node_id: int, camera_id: str) -> bool:
+        """
+        Returns if a camera is recording
+
+        Args:
+            node_id (int): The id of the node
+            camera_id (str): The id of the camera
+
+        Returns:
+            bool: If the camera is recording
+        """
+
+        node = next((node for node in self._nodes if node.id == node_id), None)
+        if not node:
+            raise ValueError(f"Node '{node_id}' not found.")
+
+        return camera_id in node.recording
+
+    def toggle_node_camera_recording(self, node_id: int, camera_id: str) -> None:
+        """
+        Toggles the recording of a camera
+
+        Args:
+            node_id (int): The id of the node
+            camera_id (str): The id of the camera
+        """
+
+        node = next((node for node in self._nodes if node.id == node_id), None)
+        if not node:
+            raise ValueError(f"Node '{node_id}' not found.")
+
+        node.toggle_camera_recording(camera_id)
 
     def redirect_request_to_node(
         self, node_id: int, route: str, request: Request
