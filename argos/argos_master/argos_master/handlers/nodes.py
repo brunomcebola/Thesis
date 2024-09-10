@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import os
 import time
+import pickle
 import threading
+import queue
 import yaml
 import requests
 import socketio
@@ -17,6 +19,7 @@ from werkzeug.datastructures import FileStorage
 
 from .. import socketio as _socketio  # pylint: disable=reimported
 from .. import logger as _logger
+from .datasets import datasets_handler as _datasets_handler
 
 NODES_DIR = os.path.join(os.environ["BASE_DIR"], "nodes")
 NODES_FILE = os.path.join(NODES_DIR, "nodes.yaml")
@@ -34,6 +37,7 @@ class Node:
     _image: str | None
     _sio: socketio.Client | None
     _cameras: list[str]
+    _recording: dict[str, dict]
 
     SCHEMA = {
         "type": "object",
@@ -87,7 +91,7 @@ class Node:
             else None
         )
         self._cameras = []
-        self._recording = []
+        self._recording = {}
         self._sio = None
 
     # Instance properties
@@ -142,7 +146,7 @@ class Node:
         Returns the cameras being recorded
         """
 
-        return self._recording
+        return [camera for camera in self._recording]
 
     # Instance private methods
 
@@ -154,12 +158,33 @@ class Node:
             except Exception:  # pylint: disable=broad-except
                 time.sleep(1)
 
-    @staticmethod
-    def _camera_callback(data, node, camera):
-        _socketio.emit(f"{node}_{camera}", data, namespace="/gui")
-        _socketio.emit(f"{node}_{camera}", data, namespace="/analytics")
+    def _camera_callback(self, data, camera):
+        _socketio.emit(f"{self._id}_{camera}", data, namespace="/gui")
+        _socketio.emit(f"{self._id}_{camera}", data, namespace="/analytics")
 
-        # TODO: Add recording mechanism
+        if camera in self._recording:
+            self._recording[camera]["queue"].put(data)
+
+    def _recording_target(self, camera):
+
+        while camera in self._recording or not self._recording[camera]["queue"].empty():
+            data = self._recording[camera]["queue"].get()
+
+            frame = pickle.loads(data)
+
+            # Save color
+            if frame["color"] is not None:
+                self._recording[camera]["dataset"].save_raw_data(
+                    frame["color"],
+                    f"{self._id}_{camera}_{frame['timestamp']}_color",
+                )
+
+            # Save depth
+            if frame["depth"] is not None:
+                self._recording[camera]["dataset"].save_raw_data(
+                    frame["depth"],
+                    f"{self._id}_{camera}_{frame['timestamp']}_depth",
+                )
 
     # Instance public methods
 
@@ -186,13 +211,16 @@ class Node:
                 sio.on(
                     camera,
                     lambda data: self._camera_callback(
-                        data, self._id, camera  # pylint: disable=cell-var-from-loop
+                        data, camera  # pylint: disable=cell-var-from-loop
                     ),
                 )
 
             self._cameras = cameras
 
             self.emit_update_events_list_event()
+
+            for camera in self._cameras:
+                self.emit_recording_event(camera)
 
         @sio.event
         def disconnect():
@@ -201,6 +229,10 @@ class Node:
             # Remove callbacks of each camera
             for camera in self._cameras:
                 del sio.handlers["/"][camera]
+
+            # If recording, stop recording
+            for camera in self._recording:
+                self.toggle_camera_recording(camera)
 
             self._cameras = []
 
@@ -228,16 +260,7 @@ class Node:
 
         self._sio = None
 
-    def emit_update_events_list_event(self) -> None:
-        """
-        Emits the update_events_list event
-        """
-
-        # TODO: add selector for gui, analytics or both
-
-        _socketio.emit("update_events_list", {"node_id": self._id, "cameras": self._cameras})
-
-    def toggle_camera_recording(self, camera_id: str) -> None:
+    def toggle_camera_recording(self, camera_id: str, destination: str = "") -> None:
         """
         Toggles the recording of a camera
 
@@ -249,9 +272,17 @@ class Node:
             raise ValueError(f"Camera '{camera_id}' not found.")
 
         if camera_id in self._recording:
-            self._recording.remove(camera_id)
+            del self._recording[camera_id]
         else:
-            self._recording.append(camera_id)
+            if not destination:
+                raise ValueError("No destination provided.")
+
+            self._recording[camera_id] = {
+                "dataset": _datasets_handler.get_dataset(destination),
+                "queue": queue.Queue(),
+            }
+
+            threading.Thread(target=self._recording_target, args=(camera_id,), daemon=True).start()
 
         _logger.info(
             "Toggled recording of camera %s from node %s at %s (recording: %s).",
@@ -260,6 +291,25 @@ class Node:
             self._address,
             camera_id in self._recording,
         )
+
+        self.emit_recording_event(camera_id)
+
+    def emit_update_events_list_event(self) -> None:
+        """
+        Emits the update_events_list event
+        """
+
+        # TODO: add selector for gui, analytics or both
+
+        _socketio.emit("update_events_list", {"node_id": self._id, "cameras": self._cameras})
+
+    def emit_recording_event(self, camera_id: str) -> None:
+        """
+        Emits the recording event
+
+        Args:
+            camera_id (str): The id of the camera
+        """
 
         _socketio.emit(
             f"{self._id}_{camera_id}_recording",
@@ -566,6 +616,9 @@ class NodesHandler:
         for node in self._nodes:
             node.emit_update_events_list_event()
 
+            for camera in node.cameras:
+                node.emit_recording_event(camera)
+
     def get_node_camera_recording(self, node_id: int, camera_id: str) -> bool:
         """
         Returns if a camera is recording
@@ -584,23 +637,27 @@ class NodesHandler:
 
         return camera_id in node.recording
 
-    def toggle_node_camera_recording(self, node_id: int, camera_id: str) -> None:
+    def toggle_node_camera_recording(self, node_id: int, camera_id: str, destination: str) -> None:
         """
         Toggles the recording of a camera
 
         Args:
             node_id (int): The id of the node
             camera_id (str): The id of the camera
+            destination (str): The destination of the recording
         """
 
         node = next((node for node in self._nodes if node.id == node_id), None)
         if not node:
             raise ValueError(f"Node '{node_id}' not found.")
 
-        node.toggle_camera_recording(camera_id)
+        node.toggle_camera_recording(camera_id, destination)
 
     def redirect_request_to_node(
-        self, node_id: int, route: str, request: Request
+        self,
+        node_id: int,
+        route: str,
+        request: Request,
     ) -> tuple[Response, int]:
         """
         Redirects a request to a node

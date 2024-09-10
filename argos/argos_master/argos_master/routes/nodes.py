@@ -181,7 +181,7 @@ def get_camera_recording(node_id: int, camera_id: int):
     # Get the camera recording
     try:
         recording = nodes_handler.get_node_camera_recording(node_id, str(camera_id))
-    except Exception as e: # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except
         return (
             jsonify(str(e)),
             HTTPStatus.BAD_REQUEST,
@@ -201,7 +201,9 @@ def toggle_camera_recording(node_id: int, camera_id: int):
 
     # Toggle the camera recording
     try:
-        nodes_handler.toggle_node_camera_recording(node_id, str(camera_id))
+        nodes_handler.toggle_node_camera_recording(
+            node_id, str(camera_id), request.form.get("destination", "")
+        )
     except Exception as e:  # pylint: disable=broad-except
         return (
             jsonify(str(e)),

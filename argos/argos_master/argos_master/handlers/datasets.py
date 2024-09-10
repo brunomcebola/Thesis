@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import numpy as np
 
 from .. import logger as _logger
 
@@ -52,7 +53,6 @@ class Dataset:
         if not name.isidentifier():
             raise ValueError("Invalid name provided.")
 
-
         path = Path(DATASETS_DIR).joinpath(name)
 
         # Ensure structure of dataset
@@ -83,6 +83,37 @@ class Dataset:
         """
 
         return self._path
+
+    # Instance public methods
+
+    def save_raw_data(
+        self,
+        data: np.ndarray,
+        filename: str,
+    ) -> None:
+        """
+        Saves raw data to the dataset
+
+        Args:
+            data (np.ndarray): The data to save
+            filename (str): The name of the file
+
+        Raises:
+            ValueError: If no data is provided or
+            if no filename is provided
+        """
+
+        if data is None:
+            raise ValueError("No data provided.")
+
+        if not filename:
+            raise ValueError("No filename provided.")
+
+        # Ensure .npy
+        if not filename.endswith(".npy"):
+            filename += ".npy"
+
+        np.save(self._path.joinpath("raw", filename), data)
 
 
 class DatasetsHandler:
@@ -161,6 +192,34 @@ class DatasetsHandler:
         """
 
         return [dataset.name for dataset in self._datasets]
+
+    def get_dataset(self, dataset_name: str) -> Dataset:
+        """
+        Returns a dataset
+
+        Args:
+            dataset_name (str): The name of the dataset
+
+        Returns:
+            Dataset: The dataset
+
+        Raises:
+            ValueError: If no name is provided or
+            if the dataset is not found
+        """
+
+        if not dataset_name:
+            raise ValueError("No name provided.")
+
+        dataset = next(
+            (dataset for dataset in self._datasets if dataset.name == dataset_name),
+            None,
+        )
+
+        if not dataset:
+            raise ValueError(f"Dataset '{dataset_name}' not found.")
+
+        return dataset
 
     def create_dataset(
         self,
