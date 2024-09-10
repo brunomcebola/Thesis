@@ -141,12 +141,12 @@ class Node:
         return self._cameras
 
     @property
-    def recording(self) -> list[str]:
+    def recording(self) -> dict[str, str]:
         """
-        Returns the cameras being recorded
+        Returns the cameras being recorded with their destinations
         """
 
-        return [camera for camera in self._recording]
+        return {camera: self._recording[camera]["dataset"].name for camera in self._recording}
 
     # Instance private methods
 
@@ -320,7 +320,7 @@ class Node:
         _socketio.emit(
             f"{self._id}_{camera_id}_recording",
             {
-                "status": camera_id in self._recording,
+                "destination": self.recording.get(camera_id, "")
             },
             namespace="/gui",
         )
@@ -625,7 +625,7 @@ class NodesHandler:
             for camera in node.cameras:
                 node.emit_recording_event(camera)
 
-    def get_node_camera_recording(self, node_id: int, camera_id: str) -> bool:
+    def get_node_camera_recording(self, node_id: int, camera_id: str) -> str:
         """
         Returns if a camera is recording
 
@@ -634,14 +634,14 @@ class NodesHandler:
             camera_id (str): The id of the camera
 
         Returns:
-            bool: If the camera is recording
+            str: The destination of the recording
         """
 
         node = next((node for node in self._nodes if node.id == node_id), None)
         if not node:
             raise ValueError(f"Node '{node_id}' not found.")
 
-        return camera_id in node.recording
+        return node.recording.get(camera_id, "")
 
     def toggle_node_camera_recording(self, node_id: int, camera_id: str, destination: str) -> None:
         """

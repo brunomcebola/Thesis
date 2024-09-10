@@ -11,7 +11,7 @@
         Camera {{ request.path.split("/")[-1] }} @ <a href="{{ url_for('ui.node_cameras', node_id=request.path.split('/')[-3] ) }}">node {{ request.path.split("/")[-3] }}</a>
       </span>
       <span id="rec" class="d-flex align-items-center">
-        <i class="fa-solid fa-circle me-1"></i> Rec
+        <i class="fa-solid fa-circle me-1"></i> Rec @ <a href="#" id="dataset"></a>
       </span>
       <canvas id="video">
       </canvas>
@@ -68,6 +68,7 @@
     const actions = videoContainer.querySelector('#controls #actions');
     const toggleRecordingButton = videoContainer.querySelector('#controls #actions #toggle-recording');
     const recIndicator = videoContainer.querySelector('#rec');
+    const datasetLink = videoContainer.querySelector('#dataset');
     const recordingModal = videoContainer.querySelector('#record-stream-modal');
     const recordingModalForm = recordingModal.querySelector('form');
     const recordingModalBtn = recordingModal.querySelector('.modal-footer button');
@@ -203,8 +204,11 @@
 
         axios.get(`/api/nodes/${node}/cameras/${camera}/recording`)
           .then((response) => {
+            console.log(response)
             if (response.data) {
               recIndicator.classList.add('recording');
+              datasetLink.textContent = response.data;
+              datasetLink.href = `/datasets/${response.data}`;
               toggleRecordingButton.textContent = 'Stop recording';
             } else {
               recIndicator.classList.remove('recording');
@@ -216,8 +220,10 @@
           });
 
         socket.on(`${node}_${camera}_recording`, function(data) {
-          if (data.status) {
+          if (data.destination) {
             recIndicator.classList.add('recording');
+            datasetLink.textContent = data.destination;
+            datasetLink.href = `/datasets/${data.destination}`;
             toggleRecordingButton.textContent = 'Stop recording';
           } else {
             recIndicator.classList.remove('recording');
