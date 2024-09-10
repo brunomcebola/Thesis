@@ -1,8 +1,11 @@
 {#
 
+Grid of cards with infinite scroll
+
 Expected parameters:
 
 - data: List of dictionaries containing the following keys:
+    - cardId: Unique identifier for the card
     - cardTitle: Title of the card
     - cardDescription: Description of the card
     - imgSrc: URL of the image to display in the card
@@ -11,6 +14,7 @@ Expected parameters:
 
     Ex: [
       {
+        "cardId": "1",
         "cardTitle": "Title",
         "cardDescription": "Description",
         "imgSrc": "/static/images/no_media.png",
@@ -20,7 +24,7 @@ Expected parameters:
       ...
     ]
 
-- actions: List of two position slist with fontawesome icon and tooltip text
+- actions: List of dual position lists with fontawesome icon and tooltip text
 
     Ex: [
       ["pencil", "Edit"],
@@ -39,7 +43,8 @@ Expected parameters:
         <div class="card-img flex-grow-1 d-flex justify-content-center align-items-center">
           <img src="{imgSrc}" alt="{imgAlt}">
         </div>
-        <div class="card-body flex-grow-0 d-flex align-items-end border-top border-secondary-subtle" data-title="{cardTitle}" data-description="{cardDescription}" data-has-actions="{cardHasActions}">
+        <div class="card-body flex-grow-0 d-flex align-items-end border-top border-secondary-subtle"
+             data-title="{cardTitle}" data-description="{cardDescription}" data-has-actions="{cardHasActions}">
           <div class="w-100 d-flex justify-content-between align-items-center">
             <div class="body-content">
               <h5 class="card-title">{cardTitle}</h5>
@@ -97,7 +102,7 @@ Expected parameters:
         img.src = "{{url_for('static', filename='images/no_media.png')}}";
         img.alt = "No media";
 
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise(resolve => setTimeout(resolve, 50));
       };
     });
 

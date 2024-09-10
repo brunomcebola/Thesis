@@ -7,23 +7,7 @@
   <div class="container py-4">
     <div class="row justify-content-center pb-3">
       <div class="col my-auto ps-3">
-        {% if request.path.split("/")[1:-1]|length == 1 %}
-          <h2 class="m-0">Datasets</h2>
-        {% else %}
-          <nav aria-label="breadcrumb">
-            <ol class="breadcrumb my-auto">
-              {% for part in request.path.split("/")[1:-1] %}
-                {% if not loop.last %}
-                  <li class="breadcrumb-item">
-                    <a href="{{ url_for('ui.datasets', subpath=request.path.split('/')[2:loop.index + 1] |join('/') if loop.index > 1 else '') }}">{{ part }}</a>
-                  </li>
-                {% else %}
-                  <li class="breadcrumb-item active" aria-current="page">{{ part }}</li>
-                {% endif %}
-              {% endfor %}
-            </ol>
-          </nav>
-        {% endif %}
+        <h2 class="m-0">Datasets</h2>
       </div>
       <div class="col my-auto">
         <div class="input-group">
@@ -32,50 +16,14 @@
                  placeholder="Search for a dataset" />
         </div>
       </div>
-      <div class="col my-auto pe-3 align-right">
-        <button type="button"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#add-dataset-modal">Add dataset</button>
-      </div>
+      <div class="col my-auto pe-3 align-right"></div>
     </div>
-    {% call(content) modal("add-dataset-modal", "Add dataset") %}
-    {% endcall %}
-    {% if content is defined and content|length %}
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-8">
-            <div class="data-list d-flex justify-content-center mt-2">
-              <div class="list">
-                {% for entry in content %}
-                  <div class="list-item d-flex mb-3 p-2"
-                       onclick="redirectTo('{{ url_for("ui.datasets", subpath=request.path.split('/')[2:-1] |join('/') + '/' + entry.name) }}') ">
-                    <div class="type-icon p-0 ps-1 d-flex align-items-center">
-                      {% if entry.is_dir %}
-                        <i class="fas fa-folder">
-                        </i>
-                      {% else %}
-                        <i class="fas fa-file">
-                        </i>
-                      {% endif %}
-                    </div>
-                    <div class="text-container p-0 mx-3 text-start">
-                      <p id="name" class="m-0">{{ entry.name }}</p>
-                    </div>
-                    <div class="actions-container p-0 pe-1 d-flex align-items-center">
-                      <button type="button" class="btn">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    {% if content is defined %}
+      {% with data=content, actions=[["pencil", "Edit dataset"], ["trash", "Delete dataset"]] %}
+        {% include "components/list.jinja" %}
+      {% endwith %}
     {% else %}
-      {% with message="This page seems to be empty!" %}
+      {% with message="There are no datasets defined!" %}
         {% include "components/empty.jinja" %}
       {% endwith %}
     {% endif %}

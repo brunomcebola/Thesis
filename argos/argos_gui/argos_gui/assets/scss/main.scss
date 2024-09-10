@@ -260,67 +260,6 @@ $navbar-active-item-underline: $main-color;
   }
 }
 
-/* Item list */
-
-.data-list {
-  .list {
-    width: 100%;
-
-    .list-item {
-      background-color: $main-color-dark;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      text-decoration: none;
-
-      .type-icon {
-        i {
-          font-size: 20px;
-          color: $main-color-light;
-        }
-      }
-
-      .text-container {
-        p {
-          line-height: 1.2;
-          overflow: hidden;
-          text-overflow: ellipsis;
-
-          &#name {
-            color: $main-color;
-            font-size: 1.2rem;
-            font-weight: bold;
-          }
-
-          &#description {
-            color: $main-color-light;
-            font-size: 1rem;
-            font-weight: 350;
-          }
-        }
-      }
-
-      .actions-container {
-        width: fit-content;
-        margin-left: auto;
-
-        .btn {
-          width: 32px;
-          height: 32px;
-          padding: 0;
-          border-radius: 2px;
-          border: none;
-
-          i {
-            font-size: 20px;
-            color: $main-color-light;
-          }
-        }
-      }
-    }
-  }
-}
-
 /* breadcrumbs */
 
 .breadcrumb {
@@ -556,6 +495,71 @@ $navbar-active-item-underline: $main-color;
           &:active {
             color: $main-color-active;
           }
+        }
+      }
+    }
+  }
+}
+
+/* list.jinja */
+#list {
+  .item {
+    background-color: $main-color-dark;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    color: $main-color-light !important;
+
+    &:not([data-redirect=""]) {
+      cursor: pointer;
+
+      &:hover {
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1125);
+      }
+    }
+
+    &[data-title=""][data-description=""] {
+      .item-body {
+        display: none !important;
+      }
+    }
+
+    &[data-description=""] {
+      .item-body {
+        .item-title {
+          margin-bottom: 0;
+        }
+      }
+    }
+
+    .item-body {
+      min-width: 0;
+
+      .item-title {
+        color: $main-color;
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+
+      .item-text {
+        color: $main-color-light;
+        font-size: 1rem;
+        font-weight: 350;
+        margin: 0;
+      }
+    }
+
+    .item-actions {
+      svg {
+        border: none !important;
+        outline: none !important;
+
+        &:hover {
+          color: $main-color-hover;
+        }
+
+        &:active {
+          color: $main-color-active;
         }
       }
     }

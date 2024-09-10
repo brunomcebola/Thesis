@@ -1,0 +1,139 @@
+{#
+
+List of items with infinte scroll
+
+Expected parameters:
+
+- data: List of dictionaries containing the following keys:
+    - itemId: Unique identifier for the item
+    - itemTitle: Title of the item
+    - itemDescription: Description of the item
+    - redirectURL: URL to redirect to when the item is clicked
+
+    Ex: [
+      {
+        "itemId": "1",
+        "itemTitle": "Title",
+        "itemDescription": "Description",
+        "itemRedirectURL": "/",
+      },
+      ...
+    ]
+
+- actions: List of dual position lists with fontawesome icon and tooltip text
+
+    Ex: [
+      ["pencil", "Edit"],
+      ["trash", "Delete"],
+      ...
+    ]
+
+#}
+<div class="container">
+  <div class="row justify-content-center" id="list"></div>
+</div>
+<script type="module">
+  const itemHTML = `
+    <div class="item-container col-12 col-xl-8 mb-3" id="{itemId}">
+      <div class="item d-flex justify-content-between p-2" data-title="{itemTitle}" data-description="{itemDescription}" data-redirect="{itemRedirectURL}">
+        <div class="item-icon p-0 ps-1 d-flex align-items-center">
+          <i class="fas fa-database"></i>
+        </div>
+        <div class="item-body p-0 ms-4 me-1 flex-grow-1 d-flex flex-column">
+          <h5 class="item-title text-truncate">{itemTitle}</h5>
+          <p class="item-text text-truncate">{itemDescription}</p>
+        </div>
+        <div class="item-actions p-0 pe-1 d-flex align-items-center">
+          {itemActions}
+        </div>
+      </div>
+    </div>
+  `
+
+  const data = {{ data|tojson }}
+  const actions = {{ actions|default([])|safe }}
+  const actionsHTML = actions.map(action => `<i class="fas fa-${action[0]} ms-3" ${action[1] ? 'data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="' + action[1] + '"' : ''} ></i>`).join('')
+
+  var data_index = 0
+
+  const heightIncrements = window.innerHeight
+  var targetHeight = window.innerHeight
+
+  const list = document.getElementById('list')
+
+  async function addItemToHTML(data) {
+    data.itemId = data.itemId || "c" + Math.random().toString(36).substring(7);
+    data.itemTitle = data.itemTitle || "";
+    data.itemDescription = data.itemDescription || "";
+    data.itemRedirectURL = data.itemRedirectURL || "";
+
+    var newItem = itemHTML
+      .replaceAll("{itemId}", data.itemId)
+      .replaceAll("{itemTitle}", data.itemTitle)
+      .replaceAll("{itemDescription}", data.itemDescription)
+      .replaceAll("{itemRedirectURL}", data.itemRedirectURL)
+      .replaceAll("{itemActions}", actionsHTML);
+
+    list.insertAdjacentHTML('beforeend', newItem);
+
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    const item = document.querySelector(`#${data.itemId} .item`);
+    item.addEventListener('click', () => {
+      const redirectURL = item.dataset.redirect;
+      alert(redirectURL)
+      if (redirectURL) {
+        window.location.href = redirectURL;
+      }
+    });
+
+    const itemActions = document.querySelector(`#${data.itemId} .item-actions`);
+    itemActions.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+
+    actions.forEach(action => {
+      const actionSvg = document.querySelector(`#${data.itemId} .item-actions .fa-${action[0]}`);
+
+      new bootstrap.Tooltip(actionSvg)
+
+      actionSvg.addEventListener('click', (event) => {
+        event.stopPropagation();
+        window.dispatchEvent(new CustomEvent(action[0], { detail: data.itemId }))
+      });
+    });
+  }
+
+  async function addItems() {
+    while (document.body.offsetHeight < targetHeight && data_index < data.length) {
+      await addItemToHTML(data[data_index]);
+      data_index++
+      if (document.body.offsetHeight > targetHeight && data_index < data.length) {
+        let initialHeight = document.body.offsetHeight
+        while (document.body.offsetHeight == initialHeight && data_index < data.length) {
+          await addItemToHTML(data[data_index]);
+          data_index++
+        }
+        if (document.body.offsetHeight > 1.25 * initialHeight) {
+          list.removeChild(document.querySelector('.item-container:last-of-type'))
+          data_index--
+        }
+      }
+    }
+    targetHeight += heightIncrements
+  }
+
+  await addItems()
+
+  window.onscroll = async () => {
+    if (window.innerHeight + window.scrollY >= 0.95 * document.body.offsetHeight) {
+      await addItems()
+    }
+  }
+
+  window.onresize = async () => {
+    targetHeight = window.innerHeight
+    await addItems()
+  }
+
+</script>
