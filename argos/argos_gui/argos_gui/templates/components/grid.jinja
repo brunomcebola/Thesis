@@ -78,6 +78,10 @@ Expected parameters:
     data.imgAlt = data.imgAlt || "No media";
     data.redirectURL = data.redirectURL || "";
 
+    if (document.querySelector(`#${data.cardId} .card`)) {
+      return
+    }
+
     var newCard = cardHTML
       .replaceAll("{cardId}", data.cardId)
       .replaceAll("{cardTitle}", data.cardTitle)
@@ -90,7 +94,7 @@ Expected parameters:
 
     grid.insertAdjacentHTML('beforeend', newCard);
 
-    const img = document.querySelector(`#${data.cardId} img`);
+    const img = document.querySelector(`#${data.cardId} .card img`);
 
     // Wait for the image to load
     await new Promise((resolve, _) => {
@@ -153,7 +157,7 @@ Expected parameters:
   await addCards()
 
   window.onscroll = async () => {
-    if (window.innerHeight + window.scrollY >= 0.9 * document.body.offsetHeight) {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
       await addCards()
     }
   }

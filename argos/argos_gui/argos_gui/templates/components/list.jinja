@@ -67,6 +67,10 @@ Expected parameters:
     data.itemDescription = data.itemDescription || "";
     data.itemRedirectURL = data.itemRedirectURL || "";
 
+    if (document.querySelector(`#${data.itemId} .item`)) {
+      return
+    }
+
     var newItem = itemHTML
       .replaceAll("{itemId}", data.itemId)
       .replaceAll("{itemTitle}", data.itemTitle)
@@ -81,7 +85,6 @@ Expected parameters:
     const item = document.querySelector(`#${data.itemId} .item`);
     item.addEventListener('click', () => {
       const redirectURL = item.dataset.redirect;
-      alert(redirectURL)
       if (redirectURL) {
         window.location.href = redirectURL;
       }
@@ -126,7 +129,7 @@ Expected parameters:
   await addItems()
 
   window.onscroll = async () => {
-    if (window.innerHeight + window.scrollY >= 0.95 * document.body.offsetHeight) {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
       await addItems()
     }
   }
