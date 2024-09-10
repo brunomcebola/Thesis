@@ -1,4 +1,5 @@
 {% extends "views/base.jinja" %}
+{% from "components/modal.jinja" import modal with context %}
 {% block title %}
   Camera {{ request.path.split("/")[-1] }}
 {% endblock title %}
@@ -19,10 +20,12 @@
           <button class="btn"
                   type="button"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"><i class="fa-solid fa-gear"></i></button>
+                  aria-expanded="false">
+            <i class="fa-solid fa-gear"></i>
+          </button>
           <ul class="dropdown-menu">
             <li>
-              <a class="dropdown-item" id="toggle-recording">Toggle recording</a>
+              <a class="dropdown-item" id="toggle-recording"></a>
             </li>
           </ul>
         </div>
@@ -30,6 +33,26 @@
           <i class="fas fa-expand"></i>
         </button>
       </div>
+      <!-- Edit config modal -->
+      {% call(content) modal("record-stream-modal", "Record camera stream") %}
+        {% if content == 'modal_body' %}
+          <form class="row g-3 mx-n4 needs-validation" novalidate>
+            <div class="col-12">
+              <label for="destination" class="form-label">Destination</label>
+              <select class="form-select"
+                      aria-label="Select destination"
+                      name="destination"></select>
+              <div class="invalid-feedback">Please select a destination.</div>
+            </div>
+          </form>
+        {% endif %}
+        {% if content == 'modal_footer' %}
+          <div class="col-12 d-flex justify-content-between align-items-center">
+            <span class="text-danger ps-2"></span>
+            <button class="btn btn-primary">Start recording</button>
+          </div>
+        {% endif %}
+      {% endcall %}
     </div>
   </div>
 {% endblock body %}
@@ -44,6 +67,11 @@
     const actions = videoContainer.querySelector('#controls #actions');
     const toggleRecordingButton = videoContainer.querySelector('#controls #actions #toggle-recording');
     const recIndicator = videoContainer.querySelector('#rec');
+    const recordingModal = videoContainer.querySelector('#record-stream-modal');
+    const recordingModalForm = recordingModal.querySelector('form');
+    const recordingModalBtn = recordingModal.querySelector('.modal-footer button');
+    const recordingModalMsg = recordingModal.querySelector('.modal-footer span')
+    const recordingModalInstance = new bootstrap.Modal(recordingModal);
 
     const socket = io();  // Connect to the same origin
 
@@ -101,14 +129,47 @@
     });
 
     toggleRecordingButton.addEventListener('click', function() {
-      axios.put(`/api/nodes/${node}/cameras/${camera}/recording`)
-        .then(() => {
-          console.log('Recording toggled');
-        })
-        .catch(() => {
-          console.error('Failed to toggle recording');
-        });
+      if (!recIndicator.classList.contains('recording')) {
+
+        axios.get("/api/datasets")
+          .then((response) => {
+            if (response.data) {
+              const select = recordingModal.querySelector('select');
+              select.innerHTML = '';
+              response.data.forEach((dataset) => {
+                const option = document.createElement('option');
+                option.value = dataset;
+                option.textContent = dataset;
+                select.appendChild(option);
+              });
+            }
+          })
+
+        recordingModalInstance.show()
+      } else {
+        axios.put(`/api/nodes/${node}/cameras/${camera}/recording`)
+      }
     });
+
+    recordingModalBtn.addEventListener('click', function (event) {
+      recordingModalForm.dispatchEvent(new Event('submit', { bubbles: true }));
+    }, false)
+
+    recordingModalForm.addEventListener('submit', function (event) {
+      event.preventDefault()
+      event.stopPropagation()
+
+      const formData = new FormData(recordingModalForm);
+
+      axios.put(`/api/nodes/${node}/cameras/${camera}/recording`, formData)
+        .then(response => {
+          recordingModalInstance.hide();
+        })
+        .catch(error => {
+          const errorMessage = error.response?.data || "Service unavailable";
+          recordingModalMsg.innerHTML = errorMessage
+        });
+    })
 
     axios.get(`/api/nodes/${node}/cameras/${camera}/status`)
       .then(() => {
@@ -140,6 +201,10 @@
           .then((response) => {
             if (response.data) {
               recIndicator.classList.add('recording');
+              toggleRecordingButton.textContent = 'Stop recording';
+            } else {
+              recIndicator.classList.remove('recording');
+              toggleRecordingButton.textContent = 'Start recording';
             }
           })
           .catch(() => {
@@ -149,8 +214,10 @@
         socket.on(`${node}_${camera}_recording`, function(data) {
           if (data.status) {
             recIndicator.classList.add('recording');
+            toggleRecordingButton.textContent = 'Stop recording';
           } else {
             recIndicator.classList.remove('recording');
+            toggleRecordingButton.textContent = 'Start recording';
           }
         });
       })

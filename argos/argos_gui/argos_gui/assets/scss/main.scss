@@ -101,6 +101,7 @@ body {
 }
 
 input,
+select,
 [contenteditable="true"] {
   &:focus {
     border: 1px solid $main-color !important;
@@ -341,8 +342,6 @@ VIEWS
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center;
-    color: $main-color-lighter;
-    font-size: 30px;
 
     #title {
       text-shadow: 0 0 10px $main-color-darker;
@@ -526,6 +525,7 @@ COMPONENTS
 }
 
 /* list.jinja */
+
 #list {
   .item {
     background-color: $main-color-dark;
