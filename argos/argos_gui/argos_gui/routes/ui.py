@@ -158,32 +158,84 @@ def areas():
 #
 
 
-@blueprint.route("/datasets/", defaults={"subpath": ""})
-@blueprint.route("/datasets/<path:subpath>/")
-def datasets(subpath):
+@blueprint.route("/datasets")
+def datasets():
     """
     The datasets view
     """
 
-    response = current_app.test_client().get(f"/api/datasets/{subpath + '/' if subpath else ''}")
+    response = current_app.test_client().get("/api/datasets")
 
     if response.status_code == HTTPStatus.OK:
-        content = response.get_json()
+        content = [
+            {
+                "itemId": f"{entry}",
+                "itemTitle": entry,
+                "itemRedirectURL": f"/datasets/{entry}",
+            }
+            for entry in response.get_json()
+        ]
     else:
         content = []
 
-    # dataset_data = {
-    #     "name": json["name"],
-    #     "images": [
-    #         {
-    #             "src": image,
-    #             "description": f"{i + 1}/{len(json['images'])} - {image.split('/')[-1]}",
-    #         }
-    #         for i, image in enumerate(json["images"])
-    #     ],
-    # }
+    print(content)
 
     return render_template("views/datasets.jinja", content=content)
+
+
+@blueprint.route("/datasets/<dataset_id>")
+def dataset(dataset_id):
+    """
+    The dataset view
+    """
+
+    # set data argument to raw if it is not set
+    if request.args.get("data") is None:
+        request.args = request.args.copy()  # type: ignore
+        request.args["data"] = "raw"
+
+    node_id = 1
+
+    # generate random list of content with size 40
+    content = [
+        {
+            "cardId": f"i{entry}",
+            "cardDescription": "Description",
+            "imgSrc": "/static/images/realsense.png",
+            "imgAlt": f"Image {entry} cover",
+        }
+        for entry in range(1, 40)
+    ]
+
+    return render_template("views/dataset.jinja", content=content)
+
+
+# @blueprint.route("/datasets/", defaults={"subpath": ""})
+# @blueprint.route("/datasets/<path:subpath>/")
+# def datasets(subpath):
+#     """
+#     The datasets view
+#     """
+
+#     response = current_app.test_client().get(f"/api/datasets/{subpath + '/' if subpath else ''}")
+
+#     if response.status_code == HTTPStatus.OK:
+#         content = response.get_json()
+#     else:
+#         content = []
+
+#     # dataset_data = {
+#     #     "name": json["name"],
+#     #     "images": [
+#     #         {
+#     #             "src": image,
+#     #             "description": f"{i + 1}/{len(json['images'])} - {image.split('/')[-1]}",
+#     #         }
+#     #         for i, image in enumerate(json["images"])
+#     #     ],
+#     # }
+
+#     return render_template("views/datasets.jinja", content=content)
 
 
 #

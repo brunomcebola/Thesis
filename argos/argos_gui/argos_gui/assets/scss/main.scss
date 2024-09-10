@@ -280,6 +280,12 @@ $navbar-active-item-underline: $main-color;
   }
 }
 
+/*
+
+VIEWS
+
+*/
+
 /* logs.jinja */
 
 #logs-container {
@@ -431,6 +437,23 @@ $navbar-active-item-underline: $main-color;
   }
 }
 
+/* cameras.jinja */
+
+#edit-config-modal {
+  .textarea {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+}
+
+/*
+
+COMPONENTS
+
+*/
+
 /* grid.jinja */
 
 #grid {
@@ -469,7 +492,8 @@ $navbar-active-item-underline: $main-color;
         }
       }
 
-      &[data-description=""] {
+      &[data-description=""],
+      &[data-title=""] {
         .body-content {
           .card-title {
             margin-bottom: 0;
@@ -524,7 +548,8 @@ $navbar-active-item-underline: $main-color;
       }
     }
 
-    &[data-description=""] {
+    &[data-description=""],
+    &[data-title=""] {
       .item-body {
         .item-title {
           margin-bottom: 0;
@@ -563,16 +588,5 @@ $navbar-active-item-underline: $main-color;
         }
       }
     }
-  }
-}
-
-/* cameras.jinja */
-
-#edit-config-modal {
-  .textarea {
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    line-height: 1.5;
-    white-space: pre-wrap;
   }
 }

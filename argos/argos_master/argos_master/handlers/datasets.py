@@ -38,7 +38,20 @@ class Dataset:
 
         Args:
             name (str): The name of the dataset
+
+        Raises:
+            ValueError: If no name is provided or
+            if the name is invalid
         """
+
+        # Ensure name is provided
+        if not name:
+            raise ValueError("No name provided.")
+
+        # Ensure name is valid
+        if not name.isidentifier():
+            raise ValueError("Invalid name provided.")
+
 
         path = Path(DATASETS_DIR).joinpath(name)
 

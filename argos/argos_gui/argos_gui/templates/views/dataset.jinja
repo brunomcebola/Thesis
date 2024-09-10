@@ -1,0 +1,38 @@
+{% extends "views/base.jinja" %}
+{% block title %}
+  Dataset {{ request.path.split("/")[-1] }}
+{% endblock title %}
+{% block body %}
+  <div id="dataset-container" class="container py-4">
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if request.args.get("data") == 'raw' else ''  }}"
+           aria-current="page"
+           href="{{ '?data=raw' if request.args.get("data") != 'raw' else '#' }}">Raw</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if request.args.get("data") == 'processed' else ''  }}"
+           href="{{ '?data=processed' if request.args.get("data") != 'processed' else '#' }}">Processed</a>
+      </li>
+    </ul>
+    <div class="tab-content mt-2">
+      <div class="tab-pane {{ 'active' if request.args.get("data") == 'raw' else ''  }}"
+           id="raw"
+           role="tabpanel"
+           aria-labelledby="raw-tab">
+        {% with data=content %}
+          {% include "components/grid.jinja" %}
+        {% endwith %}
+      </div>
+      <div class="tab-pane {{ 'active' if request.args.get("data") == 'processed' else ''  }}"
+           id="processed"
+           role="tabpanel"
+           aria-labelledby="processed-tab">
+        <p>processed</p>
+      </div>
+    </div>
+  </div>
+{% endblock body %}
+{% block script %}
+  <script></script>
+{% endblock script %}
