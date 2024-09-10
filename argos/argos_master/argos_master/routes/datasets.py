@@ -2,9 +2,8 @@
 This module contains the routes to interact with the datasets.
 """
 
-import os
 from http import HTTPStatus
-from flask import Blueprint, jsonify, send_file, request, send_from_directory
+from flask import Blueprint, jsonify, request
 
 
 from .. import logger as _logger
@@ -30,7 +29,7 @@ def handle_exception(e):
 @blueprint.route("/")
 def get_datasets():
     """
-    Returns the nodes
+    Returns the datasets
     """
 
     return (
@@ -39,25 +38,72 @@ def get_datasets():
     )
 
 
-# @blueprint.route("/")
-# @blueprint.route("/<path:subpath>/")
-# def navigate(subpath=""):
-#     """
-#     # TODO
-#     """
+@blueprint.route("/", methods=["POST"])
+def create_dataset():
+    """
+    Creates a new dataset
+    """
 
-#     full_path = os.path.join(os.environ["BASE_DIR"], "datasets", subpath)
+    # Create the dataset
+    try:
+        datasets_handler.create_dataset(
+            request.form.get("name", ""),
+        )
+    except Exception as e:  # pylint: disable=broad-except
+        return (
+            jsonify(str(e)),
+            HTTPStatus.BAD_REQUEST,
+        )
 
-#     if os.path.exists(full_path) and os.path.isdir(full_path):
-#         files = []
-#         for item in os.listdir(full_path):
-#             item_path = os.path.join(full_path, item)
-#             files.append(
-#                 {
-#                     "name": item,
-#                     "is_dir": os.path.isdir(item_path),
-#                 }
-#             )
-#         return jsonify(files), HTTPStatus.OK
-#     else:
-#         return jsonify({"error": "Path does not exist"}), 404
+    # Return a success message
+    return (
+        jsonify("Dataset created successfully"),
+        HTTPStatus.CREATED,
+    )
+
+
+@blueprint.route("/<string:dataset_name>", methods=["PUT"])
+def edit_dataset(dataset_name: str):
+    """
+    Edits dataset
+    """
+
+    # Edit the dataset
+    try:
+        datasets_handler.edit_dataset(
+            dataset_name,
+            request.form.get("name", ""),
+        )
+    except Exception as e:  # pylint: disable=broad-except
+        return (
+            jsonify(str(e)),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Return a success message with the newly created dataset
+    return (
+        jsonify("dataset edited successfully"),
+        HTTPStatus.CREATED,
+    )
+
+
+@blueprint.route("/<string:dataset_name>", methods=["DELETE"])
+def delete_dataset(dataset_name: str):
+    """
+    Deletes a dataset
+    """
+
+    # Delete the dataset
+    try:
+        datasets_handler.delete_dataset(dataset_name)
+    except Exception as e:  # pylint: disable=broad-except
+        return (
+            jsonify(str(e)),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    # Return a success message
+    return (
+        jsonify("dataset deleted successfully."),
+        HTTPStatus.OK,
+    )

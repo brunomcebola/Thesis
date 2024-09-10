@@ -16,9 +16,14 @@
                  placeholder="Search for a dataset" />
         </div>
       </div>
-      <div class="col my-auto pe-3 align-right"></div>
+      <div class="col my-auto pe-3 align-right">
+        <button type="button"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#add-dataset-modal">Create dataset</button>
+      </div>
     </div>
-    {% if content is defined %}
+    {% if content is defined and content %}
       {% with data=content, actions=[["pencil", "Edit dataset"], ["trash", "Delete dataset"]] %}
         {% include "components/list.jinja" %}
       {% endwith %}
@@ -27,10 +32,168 @@
         {% include "components/empty.jinja" %}
       {% endwith %}
     {% endif %}
+    <!-- Add dataset modal -->
+    {% call(content) modal("add-dataset-modal", "Create dataset") %}
+      {% if content == 'modal_body' %}
+        <form class="row g-3 mx-n4 needs-validation" novalidate>
+          <div class="col-12">
+            <label for="name" class="form-label">Name</label>
+            <input type="text"
+                   name="name"
+                   pattern="^[_a-zA-Z][_a-zA-Z0-9]+$"
+                   placeholder="ex: example_dataset_1"
+                   class="form-control"
+                   required>
+            <div class="invalid-feedback">
+              Please provide a valid name. Only letters (a-z), numbers (0-9), and underscores are allowed.
+              The name must start with a letter or an underscore.
+            </div>
+          </div>
+        </form>
+      {% endif %}
+      {% if content == 'modal_footer' %}
+        <div class="col-12 d-flex justify-content-between align-items-center">
+          <span class="text-danger ps-2"></span>
+          <button class="btn btn-primary">Create</button>
+        </div>
+      {% endif %}
+    {% endcall %}
+    <!-- Edit node modal -->
+    {% call(content) modal("edit-dataset-modal", "Edit dataset") %}
+      {% if content == 'modal_body' %}
+        <form class="row g-3 mx-n4 needs-validation" novalidate>
+          <div class="col-12">
+            <label for="name" class="form-label">Name</label>
+            <input type="text"
+                   name="name"
+                   pattern="^[_a-zA-Z][_a-zA-Z0-9]+$"
+                   placeholder="ex: example_dataset_1"
+                   class="form-control"
+                   required>
+            <div class="invalid-feedback">
+              Please provide a valid name. Only letters (a-z), numbers (0-9), and underscores are allowed.
+              The name must start with a letter or an underscore.
+            </div>
+          </div>
+        </form>
+      {% endif %}
+      {% if content == 'modal_footer' %}
+        <div class="col-12 d-flex justify-content-between align-items-center">
+          <span class="text-danger ps-2"></span>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      {% endif %}
+    {% endcall %}
+    <!-- Delete node modal -->
+    {% call(content) modal("del-dataset-modal", "Delete dataset") %}
+      {% if content == 'modal_footer' %}
+        <div class="col-12 d-flex justify-content-between align-items-center">
+          <span class="text-danger ps-2"></span>
+          <button class="btn btn-primary">Delete</button>
+        </div>
+      {% endif %}
+    {% endcall %}
   </div>
-  <script>
-    function redirectTo(url) {
-        window.location.href = url;
-    }
-  </script>
 {% endblock body %}
+{% block script %}
+  <script>
+    const data = {{ content|default([])|safe }}
+
+    // Add dataset modal
+    const addModal = document.getElementById('add-dataset-modal');
+    const addModalForm = addModal.querySelector('form')
+    const addModalMsg = addModal.querySelector('.modal-footer span')
+    const addModalBtn = addModal.querySelector('.modal-footer button')
+
+    addModalBtn.addEventListener('click', function (event) {
+      addModalForm.dispatchEvent(new Event('submit', { bubbles: true }));
+    }, false)
+
+    addModalForm.addEventListener('submit', function (event) {
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (addModalForm.checkValidity()) {
+        const formData = new FormData(addModalForm);
+
+        axios.post('/api/datasets', formData)
+          .then(response => {
+            window.location.reload()
+          })
+          .catch(error => {
+            const errorMessage = error.response?.data || "Service unavailable";
+            addModalMsg.innerHTML = errorMessage
+          });
+      }
+      addModalForm.classList.add('was-validated')
+    }, false)
+
+    // Edit dataset modal
+
+    const editModal = document.getElementById('edit-dataset-modal')
+    const editModalForm = editModal.querySelector('form')
+    const editModalMsg = editModal.querySelector('.modal-footer span')
+    const editModalBtn = editModal.querySelector('.modal-footer button')
+    const editModalInstance = new bootstrap.Modal(editModal)
+
+    window.addEventListener('pencil', function (event) {
+      const dataset = data.find(dict => dict.itemId == event.detail);
+      editModalForm.dataset.name = dataset.itemTitle
+      editModalForm.querySelector('input[name="name"]').value = dataset.itemTitle
+      editModalInstance.show()
+    }, false)
+
+    editModalBtn.addEventListener('click', function (event) {
+      editModalForm.dispatchEvent(new Event('submit', { bubbles: true }));
+    }, false)
+
+    editModalForm.addEventListener('submit', function (event) {
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (editModalForm.checkValidity()) {
+        const formData = new FormData(editModalForm);
+
+        axios.put(`/api/datasets/${editModalForm.dataset.name}`, formData)
+          .then(response => {
+            window.location.reload()
+          })
+          .catch(error => {
+            const errorMessage = error.response?.data || "Service unavailable";
+            editModalMsg.innerHTML = errorMessage
+          });
+      }
+      editModalForm.classList.add('was-validated')
+    }, false)
+
+    // Delete dataset modal
+
+    const delModal = document.getElementById('del-dataset-modal')
+    const delModalBody = delModal.querySelector('.modal-body')
+    const delModalMsg = delModal.querySelector('.modal-footer span')
+    const delModalBtn = delModal.querySelector('.modal-footer button')
+    const delModalInstance = new bootstrap.Modal(delModal)
+
+    window.addEventListener('trash', function (event) {
+      const dataset = data.find(dict => dict.itemId == event.detail);
+      delModalBody.innerHTML = `Are you sure you want to delete dataset <b>${dataset.itemTitle}</b>?`
+      delModalBtn.dataset.name = dataset.itemTitle
+      delModalInstance.show()
+    }, false)
+
+    delModalBtn.addEventListener('click', function (event) {
+      event.preventDefault()
+      event.stopPropagation()
+
+      axios.delete(`/api/datasets/${delModalBtn.dataset.name}`)
+        .then(response => {
+          window.location.reload()
+        })
+        .catch(error => {
+          const errorMessage = error.response?.data || "Service unavailable";
+          delModalMsg.innerHTML = errorMessage
+        });
+    }, false)
+
+  </script>
+{% endblock script %}

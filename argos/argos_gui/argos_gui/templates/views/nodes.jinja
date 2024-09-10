@@ -23,7 +23,7 @@
                 data-bs-target="#add-node-modal">Add node</button>
       </div>
     </div>
-    {% if content is defined %}
+    {% if content is defined and content %}
       {% with data=content, actions=[["pencil", "Edit node"], ["circle-info", "Node logs"], ["trash", "Delete node"]] %}
         {% include "components/grid.jinja" %}
       {% endwith %}
@@ -241,7 +241,6 @@
         .catch(error => {
           const errorMessage = error.response?.data || "Service unavailable";
           delModalInstance.hide()
-          alert(errorMessage)
         });
     }, false)
 

@@ -41,7 +41,8 @@
               <label for="destination" class="form-label">Destination</label>
               <select class="form-select"
                       aria-label="Select destination"
-                      name="destination"></select>
+                      name="destination"
+                      required></select>
               <div class="invalid-feedback">Please select a destination.</div>
             </div>
           </form>
@@ -158,6 +159,9 @@
     recordingModalForm.addEventListener('submit', function (event) {
       event.preventDefault()
       event.stopPropagation()
+
+      recordingModalForm.checkValidity()
+      recordingModalForm.classList.add('was-validated')
 
       const formData = new FormData(recordingModalForm);
 

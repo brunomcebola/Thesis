@@ -6,6 +6,7 @@ from __future__ import annotations
 
 
 import os
+import shutil
 from pathlib import Path
 import numpy as np
 
@@ -20,6 +21,7 @@ class Dataset:
     """
 
     _path: Path
+    _clients: int
 
     STRUCTURE: dict[str, dict] = {
         "raw": {},
@@ -65,6 +67,7 @@ class Dataset:
                     os.makedirs(path.joinpath(dir_name, subdir_name), exist_ok=True)
 
         self._path = path
+        self._clients = 0
 
     # Instance properties
 
@@ -83,6 +86,14 @@ class Dataset:
         """
 
         return self._path
+
+    @property
+    def clients(self) -> int:
+        """
+        Returns the number of clients using the dataset
+        """
+
+        return self._clients
 
     # Instance public methods
 
@@ -114,6 +125,23 @@ class Dataset:
             filename += ".npy"
 
         np.save(self._path.joinpath("raw", filename), data)
+
+    def register_client(self) -> None:
+        """
+        Registers a client to the dataset
+        """
+
+        self._clients += 1
+
+    def unregister_client(self) -> None:
+        """
+        Unregisters a client from the dataset
+        """
+
+        self._clients -= 1
+
+        if self._clients < 0:
+            self._clients = 0
 
 
 class DatasetsHandler:
@@ -184,6 +212,34 @@ class DatasetsHandler:
 
         return dataset
 
+    def __delete_dataset(self, dataset_name: str) -> Dataset:
+        """
+        Deletes a dataset
+
+        Args:
+            dataset_name (str): The name of the dataset
+
+        Raises:
+            ValueError: If the dataset is not found
+
+        Note: The actual deletion of the dataset is not done here
+        """
+
+        dataset = next(
+            (dataset for dataset in self._datasets if dataset.name == dataset_name),
+            None,
+        )
+
+        if not dataset:
+            raise ValueError(f"Dataset '{dataset_name}' not found.")
+
+        if dataset.clients:
+            raise ValueError("Dataset is in use.")
+
+        self._datasets.remove(dataset)
+
+        return dataset
+
     # Instance public methods
 
     def get_datasets(self) -> list[str]:
@@ -247,6 +303,71 @@ class DatasetsHandler:
             raise
 
         _logger.info("Created new dataset '%s' (%s).", dataset.name, dataset.path)
+
+    def edit_dataset(
+        self,
+        dataset_name: str,
+        new_name: str,
+    ) -> None:
+        """
+        Edits a dataset
+
+        Args:
+            dataset_name (str): The name of the dataset
+            new_name (str): The new name of the dataset
+
+        Raises:
+            ValueError: If no name is provided or
+            if the dataset is not found or
+            if the new name is invalid or
+            if the new name is already in use
+        """
+
+        if not new_name:
+            raise ValueError("No new name provided.")
+
+        _logger.info("Editing dataset...")
+
+        self.__delete_dataset(dataset_name)
+
+        try:
+            shutil.move(
+                os.path.join(DATASETS_DIR, dataset_name),
+                os.path.join(DATASETS_DIR, new_name),
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            _logger.warning("Unable to edit dataset - %s.", e)
+            self.__add_dataset(dataset_name)
+            raise
+
+        try:
+            self.__add_dataset(new_name)
+        except Exception as e:  # pylint: disable=broad-except
+            _logger.warning("Unable to edit dataset - %s.", e)
+            shutil.move(
+                os.path.join(DATASETS_DIR, new_name),
+                os.path.join(DATASETS_DIR, dataset_name),
+            )
+            self.__add_dataset(dataset_name)
+            raise
+
+        _logger.info("Edited dataset '%s' to '%s'.", dataset_name, new_name)
+
+    def delete_dataset(self, dataset_name: str) -> None:
+        """
+        Deletes a dataset
+
+        Args:
+            dataset_name (str): The name of the dataset
+        """
+
+        _logger.info("Deleting dataset...")
+
+        dataset = self.__delete_dataset(dataset_name)
+
+        shutil.rmtree(dataset.path)
+
+        _logger.info("Deleted dataset '%s'.", dataset.name)
 
 
 #  Create base folder if it doesn't exist

@@ -169,7 +169,7 @@ def datasets():
     if response.status_code == HTTPStatus.OK:
         content = [
             {
-                "itemId": f"{entry}",
+                "itemId": f"d{entry}",
                 "itemTitle": entry,
                 "itemRedirectURL": f"/datasets/{entry}",
             }

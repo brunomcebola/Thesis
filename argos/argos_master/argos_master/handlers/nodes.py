@@ -272,7 +272,11 @@ class Node:
             raise ValueError(f"Camera '{camera_id}' not found.")
 
         if camera_id in self._recording:
+            dataset = self._recording[camera_id]["dataset"]
+
             del self._recording[camera_id]
+
+            dataset.unregister_client()
         else:
             if not destination:
                 raise ValueError("No destination provided.")
@@ -281,6 +285,8 @@ class Node:
                 "dataset": _datasets_handler.get_dataset(destination),
                 "queue": queue.Queue(),
             }
+
+            self._recording[camera_id]["dataset"].register_client()
 
             threading.Thread(target=self._recording_target, args=(camera_id,), daemon=True).start()
 
@@ -556,7 +562,7 @@ class NodesHandler:
         except Exception as e:  # pylint: disable=broad-except
             _logger.warning("Unable to edit node - %s.", e)
             self.__add_node(old_node_config)
-            raise e
+            raise
 
         _logger.info("Edited node %s (%s @ %s)", node.id, node.name, node.address)
 

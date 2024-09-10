@@ -58,7 +58,7 @@ def create_node():
             HTTPStatus.BAD_REQUEST,
         )
 
-    # Return a success message with the newly created node
+    # Return a success message
     return (
         jsonify("Node created successfully"),
         HTTPStatus.CREATED,
