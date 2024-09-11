@@ -8,6 +8,8 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
+import io
+import cv2
 import numpy as np
 
 from .. import logger as _logger
@@ -95,7 +97,32 @@ class Dataset:
 
         return self._clients
 
+    @property
+    def raw_images(self) -> list[str]:
+        """
+        Returns the list of raw images in the dataset
+        """
+
+        return sorted(os.listdir(self._path.joinpath("raw")))
+
     # Instance public methods
+
+    def register_client(self) -> None:
+        """
+        Registers a client to the dataset
+        """
+
+        self._clients += 1
+
+    def unregister_client(self) -> None:
+        """
+        Unregisters a client from the dataset
+        """
+
+        self._clients -= 1
+
+        if self._clients < 0:
+            self._clients = 0
 
     def save_raw_data(
         self,
@@ -126,22 +153,46 @@ class Dataset:
 
         np.save(self._path.joinpath("raw", filename), data)
 
-    def register_client(self) -> None:
+    def get_raw_image(self, filename: str) -> bytes:
         """
-        Registers a client to the dataset
+        Returns a raw color image
+
+        Args:
+            filename (str): The name of the file
+
+        Returns:
+            bytes: The image as bytes
+
+        Raises:
+            ValueError: If no filename is provided or
+            if the filename is invalid
         """
 
-        self._clients += 1
+        if not filename:
+            raise ValueError("No filename provided.")
 
-    def unregister_client(self) -> None:
-        """
-        Unregisters a client from the dataset
-        """
+        if not filename.endswith(".npy"):
+            raise ValueError("Invalid filename provided.")
 
-        self._clients -= 1
+        image = np.load(self._path.joinpath("raw", filename))
 
-        if self._clients < 0:
-            self._clients = 0
+        if "color" in filename:
+            # Convert BGR to RGB
+            _, buffer = cv2.imencode(".png", image)
+            img = io.BytesIO(buffer.tobytes())
+
+        elif "depth" in filename:
+            # Normalize depth image
+            image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
+            image = np.uint8(image)
+            image = cv2.applyColorMap(image, cv2.COLORMAP_JET)
+            _, buffer = cv2.imencode(".png", image)
+            img = io.BytesIO(buffer.tobytes())
+
+        else:
+            raise ValueError("Invalid filename provided.")
+
+        return img.getvalue()
 
 
 class DatasetsHandler:
@@ -264,6 +315,8 @@ class DatasetsHandler:
             if the dataset is not found
         """
 
+        # TODO: remove this by passing list to dict
+
         if not dataset_name:
             raise ValueError("No name provided.")
 
@@ -368,6 +421,57 @@ class DatasetsHandler:
         shutil.rmtree(dataset.path)
 
         _logger.info("Deleted dataset '%s'.", dataset.name)
+
+    def get_dataset_raw_images(self, dataset_name: str) -> list[str]:
+        """
+        Returns the list of raw images in a dataset
+
+        Args:
+            dataset_name (str): The name of the dataset
+
+        Returns:
+            list[str]: The list of raw images
+
+        Raises:
+            ValueError: If no name is provided or
+            if the dataset is not found
+        """
+
+        dataset = next(
+            (dataset for dataset in self._datasets if dataset.name == dataset_name),
+            None,
+        )
+
+        if not dataset:
+            raise ValueError(f"Dataset '{dataset_name}' not found.")
+
+        return dataset.raw_images
+
+    def get_dataset_raw_image(self, dataset_name: str, filename: str) -> bytes:
+        """
+        Returns a raw image
+
+        Args:
+            dataset_name (str): The name of the dataset
+            filename (str): The name of the file
+
+        Returns:
+            bytes: The image as bytes
+
+        Raises:
+            ValueError: If no name is provided or
+            if the dataset is not found
+        """
+
+        dataset = next(
+            (dataset for dataset in self._datasets if dataset.name == dataset_name),
+            None,
+        )
+
+        if not dataset:
+            raise ValueError(f"Dataset '{dataset_name}' not found.")
+
+        return dataset.get_raw_image(filename)
 
 
 #  Create base folder if it doesn't exist

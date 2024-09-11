@@ -261,8 +261,6 @@ $navbar-active-item-underline: $main-color;
   }
 }
 
-/* breadcrumbs */
-
 .breadcrumb {
   --bs-breadcrumb-divider: ">";
 
@@ -281,11 +279,7 @@ $navbar-active-item-underline: $main-color;
   }
 }
 
-/*
-
-VIEWS
-
-*/
+/* VIEWS */
 
 /* logs.jinja */
 
@@ -454,11 +448,54 @@ VIEWS
   }
 }
 
-/*
+/* dataset.jinja */
 
-COMPONENTS
+#dataset-container {
+  .nav-tabs {
+    .nav-item {
+      .nav-link {
+        color: $main-color;
+      }
+    }
 
-*/
+    #actions {
+      svg {
+        color: $main-color;
+        cursor: pointer;
+        border: none !important;
+        outline: none !important;
+
+        &:hover {
+          color: $main-color-hover;
+        }
+
+        &:active {
+          color: $main-color-active;
+        }
+      }
+    }
+  }
+
+  .tab-content {
+    .nav-pills {
+      .nav-link {
+        &.active {
+          background-color: $main-color;
+        }
+
+        &:not(.active) {
+          color: $main-color;
+
+          &:hover {
+            outline: 1px solid $main-color;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* COMPONENTS */
 
 /* grid.jinja */
 

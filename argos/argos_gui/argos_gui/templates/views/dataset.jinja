@@ -4,6 +4,11 @@
 {% endblock title %}
 {% block body %}
   <div id="dataset-container" class="container py-4">
+    <p>
+      <a href="#" onclick="go_back()">
+        <i class="fas fa-arrow-left pe-2"></i>Go back
+      </a>
+    </p>
     <ul class="nav nav-tabs">
       <li class="nav-item">
         <a class="nav-link {{ 'active' if request.args.get("data") == 'raw' else ''  }}"
@@ -14,12 +19,33 @@
         <a class="nav-link {{ 'active' if request.args.get("data") == 'processed' else ''  }}"
            href="{{ '?data=processed' if request.args.get("data") != 'processed' else '#' }}">Processed</a>
       </li>
+      <li class="ms-auto d-flex align-items-center" id="actions">
+        <i class="fas fa-pencil"
+           data-bs-toggle="tooltip"
+           data-bs-placement="top"
+           data-bs-title="Edit dataset"></i>
+        <i class="fas fa-trash ms-3"
+           data-bs-toggle="tooltip"
+           data-bs-placement="top"
+           data-bs-title="Delete dataset"></i>
+      </li>
     </ul>
     <div class="tab-content mt-2">
       <div class="tab-pane {{ 'active' if request.args.get("data") == 'raw' else ''  }}"
            id="raw"
            role="tabpanel"
            aria-labelledby="raw-tab">
+        <ul class="nav nav-pills">
+          <li class="nav-item me-1">
+            <a class="nav-link {{ 'active' if request.args.get("type") == 'color' else ''  }}"
+               aria-current="page"
+               href="{{ '?data=raw&type=color' if request.args.get("type") != 'color' else '#' }}">Color</a>
+          </li>
+          <li class="nav-item me-1">
+            <a class="nav-link {{ 'active' if request.args.get("type") == 'depth' else ''  }}"
+               href="{{ '?data=raw&type=depth' if request.args.get("type") != 'depth' else '#' }}">Depth</a>
+          </li>
+        </ul>
         {% with data=content %}
           {% include "components/grid.jinja" %}
         {% endwith %}
@@ -34,5 +60,19 @@
   </div>
 {% endblock body %}
 {% block script %}
-  <script></script>
+  <script>
+    if ((new URL(document.referrer)).pathname != new URL(window.location.href).pathname) {
+      localStorage.setItem("prevPage", document.referrer);
+    }
+
+    function go_back() {
+      window.location.href = localStorage.getItem("prevPage");
+    }
+
+    window.addEventListener("load", () => {
+      new bootstrap.Tooltip(document.querySelector("#actions .fa-pencil"))
+      new bootstrap.Tooltip(document.querySelector("#actions .fa-trash"))
+    });
+
+  </script>
 {% endblock script %}

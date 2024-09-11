@@ -107,3 +107,42 @@ def delete_dataset(dataset_name: str):
         jsonify("dataset deleted successfully."),
         HTTPStatus.OK,
     )
+
+
+@blueprint.route("/<string:dataset_name>/raw_images")
+def get_dataset_raw_images(dataset_name: str):
+    """
+    Returns the raw images of the dataset
+    """
+
+    # Get the dataset raw images
+    try:
+        images = datasets_handler.get_dataset_raw_images(dataset_name)
+
+        if request.args.get("type") == "color":
+            images = [image for image in images if "color" in image]
+        elif request.args.get("type") == "depth":
+            images = [image for image in images if "depth" in image]
+
+        return images
+    except Exception as e:  # pylint: disable=broad-except
+        return (
+            jsonify(str(e)),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+
+@blueprint.route("/<string:dataset_name>/raw_images/<string:image_name>")
+def get_dataset_raw_image(dataset_name: str, image_name: str):
+    """
+    Returns the raw image of the dataset
+    """
+
+    # Get the dataset raw image
+    try:
+        return datasets_handler.get_dataset_raw_image(dataset_name, image_name)
+    except Exception as e: # pylint: disable=broad-except
+        return (
+            jsonify(str(e)),
+            HTTPStatus.BAD_REQUEST,
+        )

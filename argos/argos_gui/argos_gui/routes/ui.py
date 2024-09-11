@@ -183,8 +183,8 @@ def datasets():
     return render_template("views/datasets.jinja", content=content)
 
 
-@blueprint.route("/datasets/<dataset_id>")
-def dataset(dataset_id):
+@blueprint.route("/datasets/<string:dataset_name>")
+def dataset(dataset_name: str):
     """
     The dataset view
     """
@@ -194,18 +194,33 @@ def dataset(dataset_id):
         request.args = request.args.copy()  # type: ignore
         request.args["data"] = "raw"
 
-    node_id = 1
+    # set type argument to color if it is not set
+    if request.args.get("type") is None:
+        request.args = request.args.copy()  # type: ignore
+        request.args["type"] = "color"
 
-    # generate random list of content with size 40
-    content = [
-        {
-            "cardId": f"i{entry}",
-            "cardDescription": "Description",
-            "imgSrc": "/static/images/realsense.png",
-            "imgAlt": f"Image {entry} cover",
-        }
-        for entry in range(1, 40)
-    ]
+    response = current_app.test_client().get(
+        f"/api/datasets/{dataset_name}/{request.args['data']}_images?type={request.args['type']}"
+    )
+
+    if response.status_code == HTTPStatus.OK:
+        response = response.get_json()
+        total = len(response)
+
+        content = [
+            {
+                "cardId": f"iraw{i}",
+                "cardDescription": f"{i}/{total}: {entry}",
+                "imgSrc": f"/api/datasets/{dataset_name}/raw_images/{entry}",
+                "imgAlt": f"Image {entry} cover",
+            }
+            for i, entry in enumerate(response, 1)
+        ]
+
+    else:
+        content = []
+
+    print(content)
 
     return render_template("views/dataset.jinja", content=content)
 
