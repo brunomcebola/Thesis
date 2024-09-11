@@ -40,7 +40,7 @@
             <label for="name" class="form-label">Name</label>
             <input type="text"
                    name="name"
-                   pattern="^[a-zA-Z0-9]{1,15}$"
+                   pattern="^[A-Za-zÀ-ÖØ-öø-ÿ0-9-_ ]+$"
                    placeholder="ex: Algarve 1365"
                    class="form-control"
                    required>
@@ -88,7 +88,7 @@
             <label for="name" class="form-label">Name</label>
             <input type="text"
                    name="name"
-                   pattern="^[a-zA-Z0-9]{1,15}$"
+                   pattern="[A-Za-zÀ-ÖØ-öø-ÿ0-9-_ ]+$"
                    placeholder="ex: Algarve 1365"
                    class="form-control"
                    required>
@@ -150,8 +150,9 @@
     }, false)
 
     addModalForm.addEventListener('submit', function (event) {
-      event.preventDefault()
       event.stopPropagation()
+      event.preventDefault()
+
       if (addModalForm.checkValidity()) {
         const formData = new FormData(addModalForm);
 
@@ -240,7 +241,6 @@
         })
         .catch(error => {
           const errorMessage = error.response?.data || "Service unavailable";
-          delModalInstance.hide()
         });
     }, false)
 

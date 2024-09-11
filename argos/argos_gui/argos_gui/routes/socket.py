@@ -72,15 +72,10 @@ def update_events_list(data):
     Sends the list of events to the client
     """
 
-    # Remove unnecessary handlers
-    handlers_to_keep = (
-        ["connect", "disconnect"]
-        + [f"{data['node_id']}_{camera}" for camera in data["cameras"]]
-        + [f"{data['node_id']}_{camera}_recording" for camera in data["cameras"]]
-    )
+    _logger.info(f"Updating socket handlers for master connection of node {data['node_id']}")
 
     master_sio.handlers["/gui"] = {
-        k: v for k, v in master_sio.handlers["/gui"].items() if k in handlers_to_keep
+        k: v for k, v in master_sio.handlers["/gui"].items() if k.split("_")[0] != data["node_id"]
     }
 
     # Add missing handlers
@@ -102,6 +97,8 @@ def update_events_list(data):
                 ),
                 namespace="/gui",
             )
+
+    _logger.info(f"Socket handlers for master connection of node {data['node_id']} updated")
 
 
 # Connect to the master
