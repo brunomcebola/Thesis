@@ -4,22 +4,59 @@ This is the setup.py file for the argos_master package.
 
 import os
 import shutil
+import subprocess
 from setuptools import setup, find_packages
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
-packages = [
-    "pyScss==1.4.0",
-    "Flask==3.0.3",
-    "flask_assets==2.1.0",
-    "flask_socketio==5.3.6",
-    "jsonschema==4.22.0",
-    "python-dotenv==1.0.1",
-    "PyYAML==6.0.1",
-    "requests==2.32.3",
-    "appdirs==1.4.4",
-    "python-socketio[client]==5.11.3",
-    "pillow==10.4.0",
-    "numpy==2.0.1"
-]
+
+# Function to read requirements from a file
+def read_requirements(filename) -> list[str]:
+    """
+    Read requirements from a file.
+    """
+    with open(filename, "r", encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
+
+# Define the custom bdist_wheel command
+class bdist_wheel(_bdist_wheel):  # pylint: disable=invalid-name
+    """
+    Custom bdist_wheel command to download production dependencies.
+    """
+
+    def run(self):
+        # Ensure the dependencies directory exists
+
+        # Download production dependencies
+        subprocess.check_call(
+            [
+                "pip",
+                "download",
+                "-r",
+                "requirements.txt",
+                "-d",
+                "dist",
+            ]
+        )
+
+        # Convert any tar.gz to whl
+        for file in os.listdir("dist"):
+            if file.endswith(".tar.gz"):
+                subprocess.check_call(
+                    [
+                        "pip",
+                        "wheel",
+                        "--no-deps",
+                        "--wheel-dir",
+                        "dist",
+                        "==".join(file.split(".tar.gz")[0].split("-")),
+                    ]
+                )
+                os.remove(os.path.join("dist", file))
+
+        # Create the wheel as usual
+        super().run()
+
 
 setup(
     name="argos_master",
@@ -41,16 +78,21 @@ setup(
     python_requires=">=3.9.2",
     packages=find_packages(),
     include_package_data=True,
-    install_requires=packages,
+    install_requires=read_requirements("requirements.txt"),
     entry_points={
         "console_scripts": [
             "argos_master=argos_master.__main__:main",
         ],
     },
+    cmdclass={
+        "bdist_wheel": bdist_wheel,
+    },
 )
 
-# Remove the build directory
-shutil.rmtree("build")
+# Zip dist folder
+shutil.make_archive("argos_master.dist", "zip", "dist")
 
-# Remove the egg-info directory
-shutil.rmtree("argos_master.egg-info")
+# Clean up build artifacts
+shutil.rmtree("build", ignore_errors=True)
+shutil.rmtree("argos_master.egg-info", ignore_errors=True)
+shutil.rmtree("dist", ignore_errors=True)

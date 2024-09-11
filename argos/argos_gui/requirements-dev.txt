@@ -1,6 +1,6 @@
 -r requirements.txt
 
 # Development-only packages
+wheel
 djlint
 setuptools
-wheel

@@ -1,1 +1,1 @@
-recursive-include argos_mode *
+recursive-include argos_node *
