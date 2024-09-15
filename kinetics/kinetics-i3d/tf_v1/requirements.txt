@@ -1,4 +1,0 @@
-protobuf==3.19.6
-tensorflow==1.14
-dm-sonnet==1.36
-tensorflow-probability==0.7

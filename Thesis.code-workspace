@@ -12,13 +12,13 @@
 
     {
       "path": "argos/argos_node"
-    }
-    // {
-    //   "path": "argos/argos_analytics"
-    // },
-    // {
-    //   "path": "kinetics/kinetics-i3d"
-    // },
+    },
+    {
+      "path": "argos/argos_analytics"
+    },
+    {
+      "path": "kinetics"
+    },
     // {
     //   "path": "kinetics/preprocess"
     // },

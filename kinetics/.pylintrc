@@ -1,0 +1,26 @@
+[MASTER]
+# Specify a configuration file.
+rcfile=
+
+# Python code to execute, usually for sys.path manipulation such as
+# pygtk.require().
+init-hook='import sys; sys.path.append(".")'
+
+[MESSAGES CONTROL]
+# Enable the message, report, category or checker with the given id(s). You can
+# either give multiple identifiers separated by comma (,) or put this option
+# multiple times (only on the command line, not in the configuration file where
+# it should appear only once). See also the "--disable" option for examples.
+enable=
+
+# Disable the message, report, category or checker with the given id(s). You
+# can either give multiple identifiers separated by comma (,) or put this
+# option multiple times (only on the command line, not in the configuration
+# file where it should appear only once).
+disable=
+
+[TYPECHECK]
+# List of members which are set dynamically and missed by pylint inference
+# system, and so shouldn't trigger E1101 when accessed. Python regular
+# expressions are accepted.
+generated-members=cv2.*
