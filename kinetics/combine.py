@@ -2,48 +2,64 @@
 Script to combine npy files
 """
 
-import numpy as np
-from PIL import Image
-import imageio
 import os
+import numpy as np
+import cv2
+from tqdm import tqdm
 
-# Function to load and combine multiple npy files
-def combine_multiple_npy_files(npy_files, output_npy_path):
-    # Load the first npy file to initialize the combined array
-    combined_arr = np.load(npy_files[0])
+TYPES = ["color", "depth"]
+CLASSES = ["bag_on_floor", "conflict", "swipe_card"]
 
-    # Ensure the shape of the first array is as expected
-    assert combined_arr.shape[0] == 1, "Arrays must have the shape (1, X, 224, 224, 3)"
+TYPE = TYPES[1]
+CLASS = CLASSES[2]
 
-    # Iterate through the rest of the npy files and concatenate them
-    for npy_file in npy_files[1:]:
-        arr = np.load(npy_file)
-        assert arr.shape[0] == 1, "Arrays must have the shape (1, X, 224, 224, 3)"
-        combined_arr = np.concatenate((combined_arr, arr), axis=1)
+INPUT_FOLDER = "/home/brunomcebola/Desktop/Thesis/argos/argos_master/data/datasets/RPi_1/raw"
+OUTPUT_FOLDER = f"videos/{TYPE}/{CLASS}"
+FRAME_RATE = 30
 
-    # Save combined array as npy
-    np.save(output_npy_path, combined_arr)
+npy_files = sorted([f for f in os.listdir(INPUT_FOLDER) if f.endswith(".npy") and TYPE in f])
 
-    return combined_arr
+first_frame = np.load(os.path.join(INPUT_FOLDER, npy_files[0]))
 
-# Function to save combined npy as a GIF
-def save_as_gif(npy_data, output_gif_path):
-    # Remove the batch dimension (1) and convert to list of images
-    image_sequence = [Image.fromarray((frame.astype(np.uint8))) for frame in npy_data[0]]
+height, width = first_frame.shape[:2]  # type: ignore
 
-    # Save as GIF
-    imageio.mimsave(output_gif_path, image_sequence, format='GIF', duration=0.1)
+#
+#
+#
 
-# List of input npy file paths
-npy_files = ['input1.npy', 'input2.npy', 'input3.npy']  # Add as many npy files as needed
-output_npy_path = 'combined_output.npy'
-output_gif_path = 'output.gif'
+output_videos = [
+    npy_files[53:62],
+    npy_files[105:117],
+]
 
-# Combine the npy files and save the result
-combined_data = combine_multiple_npy_files(npy_files, output_npy_path)
+created_videos = []
 
-# Save the combined data as a GIF
-save_as_gif(combined_data, output_gif_path)
+for i, frames in tqdm(enumerate(output_videos, start=3), total=len(output_videos)):
 
-print(f"Combined .npy saved as: {output_npy_path}")
-print(f"GIF saved as: {output_gif_path}")
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+
+    output_file = os.path.join(OUTPUT_FOLDER, f"{i}.mp4")
+    created_videos.append(output_file)
+
+    video_writer = cv2.VideoWriter(output_file, fourcc, FRAME_RATE, (width, height))
+
+    # Loop through each .npy file and write the frames to the video
+    for frame in frames:  # Skip the first file since it was already written
+        frame = np.load(os.path.join(INPUT_FOLDER, frame))
+
+        if TYPE == "depth":
+            frame = cv2.normalize(frame, None, 0, 255, cv2.NORM_MINMAX)
+            frame = np.uint8(frame)
+            frame = cv2.applyColorMap(frame, cv2.COLORMAP_JET)
+
+        # Write the frame to the video
+        video_writer.write(frame.astype(np.uint8))
+
+    # Release the video writer
+    video_writer.release()
+print()
+
+print("Videos created:")
+for video in created_videos:
+    print(f"\t{video}")
