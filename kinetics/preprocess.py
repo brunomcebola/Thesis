@@ -7,8 +7,8 @@ import numpy as np
 import cv2
 from tqdm import tqdm
 
-INPUT_DIR = os.path.join(os.path.dirname(__file__), "input")
-BASE_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
+INPUT_DIR = os.path.join(os.path.dirname(__file__), "videos/depth/swipe_card")
+BASE_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "npy/depth/swipe_card")
 
 
 def preprocess_video(video_name: str) -> None:

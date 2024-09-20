@@ -30,7 +30,7 @@ import tensorflow as tf  # pylint: disable=wrong-import-position
 
 import i3d  # pylint: disable=wrong-import-position
 
-_SAMPLES_PATH = "npy"
+_SAMPLES_PATH = "npy/color/bag_on_floor"
 
 _LABEL_MAP_PATH = "label_map.txt"
 
@@ -48,7 +48,7 @@ def main():
     kinetics_classes = [x.strip() for x in open(_LABEL_MAP_PATH, encoding="utf-8")]
 
     # Instantiate the model for RGB
-    rgb_model = i3d.InceptionI3d(400, spatial_squeeze=True, final_endpoint="Logits")
+    rgb_model = i3d.InceptionI3d(400, spatial_squeeze=True, final_endpoint="Mixed_5c")
 
     # Restore the checkpoint
     tf.train.Checkpoint(model=rgb_model).restore(
@@ -56,7 +56,7 @@ def main():
     ).expect_partial()
 
     # Instantiate the model for flow
-    flow_model = i3d.InceptionI3d(400, spatial_squeeze=True, final_endpoint="Logits")
+    flow_model = i3d.InceptionI3d(400, spatial_squeeze=True, final_endpoint="Mixed_5c")
 
     # Restore the checkpoint
     tf.train.Checkpoint(model=flow_model).restore(
@@ -95,10 +95,12 @@ def main():
             for i, sample in enumerate(rgb_samples):
                 rgb_samples[i] = tf.transpose(sample, (0, 1, 3, 2, 4))
 
-        rgb_logits, _ = rgb_model(rgb_samples[0])
-        for sample in rgb_samples[1:]:
-            logits, _ = rgb_model(sample)
-            rgb_logits += logits
+        for sample in rgb_samples:
+            out, _ = rgb_model(sample)
+            print(sample.shape, out.shape)
+
+        continue
+        exit()
 
         rgb_predictions = tf.nn.softmax(rgb_logits)[0]
 
