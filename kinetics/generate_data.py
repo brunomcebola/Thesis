@@ -29,8 +29,8 @@ import tensorflow as tf  # pylint: disable=wrong-import-position
 
 import i3d  # pylint: disable=wrong-import-position
 
-_SAMPLES_PATH = "npy/rgb"
-_OUTPUT_PATH = "data/rgb"
+_SAMPLES_PATH = "npy/depth"
+_OUTPUT_PATH = "data/depth"
 
 _CHECKPOINTS_PATH = "checkpoints"
 
@@ -64,8 +64,6 @@ def main():
         for sample in tqdm.tqdm(samples):
 
             os.makedirs(os.path.join(_OUTPUT_PATH, cls, sample), exist_ok=True)
-
-            rgb_samples = []
 
             # RGB
             rgb_sample = tf.convert_to_tensor(

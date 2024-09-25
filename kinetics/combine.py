@@ -3,63 +3,60 @@ Script to combine npy files
 """
 
 import os
+import yaml
 import numpy as np
 import cv2
 from tqdm import tqdm
 
-TYPES = ["color", "depth"]
-CLASSES = ["bag_on_floor", "conflict", "swipe_card"]
-
-TYPE = TYPES[1]
-CLASS = CLASSES[2]
-
-INPUT_FOLDER = "/home/brunomcebola/Desktop/Thesis/argos/argos_master/data/datasets/RPi_1/raw"
-OUTPUT_FOLDER = f"videos/{TYPE}/{CLASS}"
 FRAME_RATE = 30
 
-npy_files = sorted([f for f in os.listdir(INPUT_FOLDER) if f.endswith(".npy") and TYPE in f])
+# Load the coombination file
+with open("combine.yaml", "r", encoding="utf-8") as file:
+    config = yaml.safe_load(file)
 
-first_frame = np.load(os.path.join(INPUT_FOLDER, npy_files[0]))
+for cfg in config:
+    cls = cfg["label"]
 
-height, width = first_frame.shape[:2]  # type: ignore
+    for tp in ("color", "depth"):
+        output_folder = f"videos/{tp}/{cls}"
 
-#
-#
-#
+        os.makedirs(output_folder, exist_ok=True)
 
-output_videos = [
-    npy_files[53:62],
-    npy_files[105:117],
-]
+        npy_files = sorted([f for f in os.listdir(cfg["path"]) if f.endswith(".npy") and tp in f])
 
-created_videos = []
+        tmp_frame = np.load(os.path.join(cfg["path"], npy_files[0]))
 
-for i, frames in tqdm(enumerate(output_videos, start=3), total=len(output_videos)):
+        height, width = tmp_frame.shape[:2]  # type: ignore
 
-    # Define the codec and create VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        created_videos = []
 
-    output_file = os.path.join(OUTPUT_FOLDER, f"{i}.mp4")
-    created_videos.append(output_file)
+        for i, group in tqdm(
+            enumerate(cfg["groups"]),
+            total=len(cfg["groups"]),
+            desc=f"Creating {cls} {tp} videos",
+        ):
 
-    video_writer = cv2.VideoWriter(output_file, fourcc, FRAME_RATE, (width, height))
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # type: ignore
 
-    # Loop through each .npy file and write the frames to the video
-    for frame in frames:  # Skip the first file since it was already written
-        frame = np.load(os.path.join(INPUT_FOLDER, frame))
+            output_file = os.path.join(output_folder, f"{i}.mp4")
 
-        if TYPE == "depth":
-            frame = cv2.normalize(frame, None, 0, 255, cv2.NORM_MINMAX)
-            frame = np.uint8(frame)
-            frame = cv2.applyColorMap(frame, cv2.COLORMAP_JET)
+            video_writer = cv2.VideoWriter(output_file, fourcc, FRAME_RATE, (width, height))
 
-        # Write the frame to the video
-        video_writer.write(frame.astype(np.uint8))
+            for frame in npy_files[group[0] : group[1]]:
+                frame = np.load(os.path.join(cfg["path"], frame))
 
-    # Release the video writer
-    video_writer.release()
-print()
+                if tp == "depth":
+                    frame = cv2.normalize(frame, None, 0, 255, cv2.NORM_MINMAX)  # type: ignore
+                    frame = np.uint8(frame)  # type: ignore
+                    frame = cv2.applyColorMap(frame, cv2.COLORMAP_JET)  # type: ignore
 
-print("Videos created:")
-for video in created_videos:
-    print(f"\t{video}")
+                video_writer.write(frame.astype(np.uint8))  # type: ignore
+
+            video_writer.release()
+
+            created_videos.append(output_file)
+
+        print("Videos created:")
+        for video in created_videos:
+            print(f"\t{video}")
+        print()

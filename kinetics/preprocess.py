@@ -7,11 +7,11 @@ import numpy as np
 import cv2
 from tqdm import tqdm
 
-INPUT_DIR = os.path.join(os.path.dirname(__file__), "videos/depth/swipe_card")
-BASE_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "npy/depth/swipe_card")
+INPUT_DIR = os.path.join(os.path.dirname(__file__), "videos/depth")
+BASE_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "npy/depth")
 
 
-def preprocess_video(video_name: str) -> None:
+def preprocess_video(video_path: str, output_dir: str) -> None:
     """
     Preprocess a video for kinetics-i3d
 
@@ -23,9 +23,7 @@ def preprocess_video(video_name: str) -> None:
     # Preprocess video
     #
 
-    print(f"Preprocessing video: {video_name}")
-
-    video = cv2.VideoCapture(os.path.join(INPUT_DIR, video_name))
+    video = cv2.VideoCapture(video_path)
 
     # Read video properties
     width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -69,13 +67,9 @@ def preprocess_video(video_name: str) -> None:
 
     video.release()
 
-    print("Video preprocessed")
-
     #
     # RGB analysis
     #
-
-    print("Processing RGB frames")
 
     rgb_frames = np.array([frame.download() for frame in rgb_frames])
 
@@ -88,13 +82,9 @@ def preprocess_video(video_name: str) -> None:
     # Add batch dimension
     rgb_frames = np.expand_dims(rgb_frames, axis=0)
 
-    print(f"RGB frames processed. Dims: {rgb_frames.shape}")
-
     #
     # Optical flow analysis
     #
-
-    print("Processing flow frames")
 
     optical_flow = cv2.cuda.OpticalFlowDual_TVL1.create(
         tau=0.25,
@@ -108,7 +98,7 @@ def preprocess_video(video_name: str) -> None:
     )
 
     tmp = []
-    for i in tqdm(range(1, len(flow_frames)), desc="Generating flow frames"):
+    for i in range(1, len(flow_frames)):
         # Calculate optical flow between frames on GPU
         flow = optical_flow.calc(flow_frames[i - 1], flow_frames[i], None)  # type: ignore
 
@@ -125,18 +115,28 @@ def preprocess_video(video_name: str) -> None:
     # Add batch dimension
     flow_frames = np.expand_dims(flow_frames, axis=0)
 
-    print(f"Flow frames processed. Dims: {flow_frames.shape}")
-
     # Save npy files
-    name = video_name.split(".")[0]
-    output_dir = os.path.join(BASE_OUTPUT_DIR, name)
+    name = os.path.splitext(os.path.basename(video_path))[0]
+    output_dir = os.path.join(output_dir, name)
     os.makedirs(output_dir, exist_ok=True)
 
     np.save(os.path.join(output_dir, f"{name}_rgb.npy"), rgb_frames)
     np.save(os.path.join(output_dir, f"{name}_flow.npy"), flow_frames)
 
 
-for file in os.listdir(INPUT_DIR):
-    if file.endswith(".mp4"):
-        preprocess_video(file)
-        print()
+# for file in os.listdir(INPUT_DIR):
+#     if file.endswith(".mp4"):
+#         preprocess_video(file)
+#         print()
+
+
+for cls in os.listdir(INPUT_DIR):
+    for video in tqdm(
+        [video for video in os.listdir(os.path.join(INPUT_DIR, cls)) if video.endswith(".mp4")],
+        desc=f"Processing {cls}",
+    ):
+        preprocess_video(
+            os.path.join(INPUT_DIR, cls, video),
+            os.path.join(BASE_OUTPUT_DIR, cls),
+        )
+    print()

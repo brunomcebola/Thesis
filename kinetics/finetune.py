@@ -162,6 +162,10 @@ def test_model(model, cls):
 
 
 def main():
+    """
+    Main function to train the model
+    """
+    
     # Set random seed
     tf.random.set_seed(42)
     np.random.seed(42)
