@@ -34,7 +34,6 @@ class Node:
     _id: int
     _name: str
     _address: str
-    _image: str | None
     _sio: socketio.Client | None
     _cameras: list[str]
     _recording: dict[str, dict]
@@ -78,18 +77,7 @@ class Node:
         self._id = node_config["id"]
         self._name = node_config["name"]
         self._address = node_config["address"]
-        self._image = (
-            next(
-                (
-                    os.path.join(IMAGES_DIR, file)
-                    for file in os.listdir(IMAGES_DIR)
-                    if file.startswith(str(self._id))
-                ),
-                None,
-            )
-            if node_config["has_image"]
-            else None
-        )
+        self._has_image = node_config["has_image"]
         self._cameras = []
         self._recording = {}
         self._sio = None
@@ -123,14 +111,27 @@ class Node:
         Returns the image of the node
         """
 
-        return self._image
+        image_path = (
+            next(
+                (
+                    os.path.join(IMAGES_DIR, file)
+                    for file in os.listdir(IMAGES_DIR)
+                    if file.startswith(str(self._id))
+                ),
+                None,
+            )
+            if self._has_image
+            else None
+        )
+
+        return image_path
 
     @property
     def has_image(self) -> bool:
         """
         Returns if the node has an image
         """
-        return bool(self._image)
+        return self._has_image
 
     @property
     def cameras(self) -> list[str]:
@@ -319,9 +320,7 @@ class Node:
 
         _socketio.emit(
             f"{self._id}_{camera_id}_recording",
-            {
-                "destination": self.recording.get(camera_id, "")
-            },
+            {"destination": self.recording.get(camera_id, "")},
             namespace="/gui",
         )
 

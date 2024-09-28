@@ -139,20 +139,6 @@ def camera(node_id, camera_id):
     else:
         return render_template("views/404.jinja"), 404
 
-
-#
-# Areas
-#
-
-
-@blueprint.route("/areas")
-def areas():
-    """
-    The areas view
-    """
-    return render_template("views/areas.jinja")
-
-
 #
 # Datasets
 #

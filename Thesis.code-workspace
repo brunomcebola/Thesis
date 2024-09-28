@@ -17,14 +17,8 @@
     //   "path": "argos/argos_analytics"
     // },
     {
-      "path": "kinetics"
-    },
-    // {
-    //   "path": "kinetics/preprocess"
-    // },
-    // {
-    //   "path": "skel-HAR/skeleton-based-action-recognition"
-    // }
+      "path": "scenic"
+    }
   ],
   "settings": {
     "workbench.colorCustomizations": {
