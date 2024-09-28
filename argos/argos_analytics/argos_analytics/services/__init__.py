@@ -44,7 +44,7 @@ def connect():
     try:
         requests.put(
             f"http://{os.getenv('MASTER_ADDRESS')}/nodes/emit_update_events_list_events",
-            timeout=5,
+            timeout=30,
         )
     except Exception as e:  # pylint
         raise RuntimeError(

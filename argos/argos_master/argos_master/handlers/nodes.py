@@ -204,7 +204,7 @@ class Node:
             _logger.info("Connected to node %s at %s.", self._id, self._address)
 
             # Get cameras
-            response = requests.get(f"http://{self._address}/cameras", timeout=5)
+            response = requests.get(f"http://{self._address}/cameras", timeout=30)
             cameras = response.json()
 
             # Set callback of each camera
@@ -691,7 +691,7 @@ class NodesHandler:
                 url=target_url,
                 params=request.args.to_dict(flat=False) if request.args else None,
                 json=request.json if "Content-Type" in dict(request.headers) else None,
-                timeout=5,
+                timeout=30,
             )
         except Exception as e:
             raise ConnectionError(f"Unable to connect to node '{node_id}' at {node.address}") from e

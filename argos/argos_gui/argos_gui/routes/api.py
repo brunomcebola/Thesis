@@ -114,7 +114,7 @@ def redirect_to_master(subpath: str):
         params=request.args.to_dict(flat=False) if request.args else None,
         data=request.get_data(),
         cookies=request.cookies,
-        timeout=5,
+        timeout=30,
     )
 
     headers = [(name, value) for name, value in response.raw.headers.items()]
