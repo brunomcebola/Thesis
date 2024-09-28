@@ -129,18 +129,18 @@ def _set_server() -> None:
 
 # Initialization code
 
-if "--realsense-types" in sys.argv:
-    print([s_type.name.lower() for s_type in _realsense.StreamType])
-    exit(0)
-elif "--realsense-formats" in sys.argv:
-    print([s_format.name.lower() for s_format in _realsense.StreamFormat])
-    exit(0)
-elif "--realsense-resolutions" in sys.argv:
-    print([s_res.name.lower() for s_res in _realsense.StreamResolution])
-    exit(0)
-elif "--realsense-fps" in sys.argv:
-    print([s_rate.name.lower() for s_rate in _realsense.StreamFPS])
-    exit(0)
+# if "--realsense-types" in sys.argv:
+#     print([s_type.name.lower() for s_type in _realsense.StreamType])
+#     exit(0)
+# elif "--realsense-formats" in sys.argv:
+#     print([s_format.name.lower() for s_format in _realsense.StreamFormat])
+#     exit(0)
+# elif "--realsense-resolutions" in sys.argv:
+#     print([s_res.name.lower() for s_res in _realsense.StreamResolution])
+#     exit(0)
+# elif "--realsense-fps" in sys.argv:
+#     print([s_rate.name.lower() for s_rate in _realsense.StreamFPS])
+#     exit(0)
 
 
 _set_environment_variables()

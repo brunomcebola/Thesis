@@ -72,8 +72,13 @@ CAMERA_CONFIG_SCHEMA = {
                 {"type": "null"},
             ]
         },
+        "rotate": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3,
+        },
     },
-    "required": ["stream_configs", "alignment"],
+    "required": ["stream_configs", "alignment", "rotate"],
     "additionalProperties": False,
 }
 
@@ -195,6 +200,8 @@ def _launch_camera(camera_sn: str, config_file: str) -> _realsense.Camera | None
                         else None
                     )
 
+                    rotate = configs["rotate"]
+
                     control_signal, control_condition = controls
 
                     # Creates the camera_sn instance
@@ -203,6 +210,7 @@ def _launch_camera(camera_sn: str, config_file: str) -> _realsense.Camera | None
                             camera_sn,
                             stream_configs,
                             alignment,
+                            rotate,
                             control_signal,
                             control_condition,
                             lambda x: _camera_callback(camera_sn, x),

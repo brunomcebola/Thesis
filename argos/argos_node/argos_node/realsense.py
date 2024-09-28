@@ -299,6 +299,7 @@ class Camera:
         serial_number: str,
         stream_configs: list[StreamConfig],
         alignment: StreamType | None = None,
+        rotate: int = 0,
         stream_signal: threading.Event | None = None,
         control_condition: threading.Condition | None = None,
         stream_callback: Callable[[dict[str, np.ndarray | None]], None] | None = None,
@@ -310,6 +311,7 @@ class Camera:
             - serial_number: The serial number of the camera.
             - stream_configs: The configuration of the streams.
             - alignment: The stream type to align the frames.
+            - rotate: The number of 90 degrees to rotate the frames.
             - control_signal: The signal to control the stream.
 
         Raises:
@@ -399,11 +401,18 @@ class Camera:
 
             self._alignment_method = lambda x: rs.align(alignment.value).process(x)  # type: ignore
 
+        # checks if the rotate parameter is valid
+        if rotate not in [0, 1, 2, 3]:
+            raise ConfigurationError("The rotate parameter must be one of [0, 1, 2, 3].")
+
         # defines the frames_splitter method
         self._frames_splitter = lambda x: {
             **{
                 s_type.name.lower(): (
-                    np.array(getattr(x, f"get_{str(s_type).lower()}_frame")().get_data())
+                    np.rot90(
+                        np.array(getattr(x, f"get_{str(s_type).lower()}_frame")().get_data()),
+                        k=rotate,
+                    )
                     if any(stream_config.type == s_type for stream_config in stream_configs)
                     else None
                 )
