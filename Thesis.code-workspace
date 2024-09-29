@@ -3,22 +3,9 @@
     {
       "path": "."
     },
-    // {
-    //   "path": "argos/argos_master"
-    // },
-    // {
-    //   "path": "argos/argos_gui"
-    // },
-
-    // {
-    //   "path": "argos/argos_node"
-    // },
-    // {
-    //   "path": "argos/argos_analytics"
-    // },
     {
-      "path": "scenic"
-    }
+      "path": "ViViT"
+    },
   ],
   "settings": {
     "workbench.colorCustomizations": {
