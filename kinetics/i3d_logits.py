@@ -1,3 +1,7 @@
+"""
+Isolates the I3D logits module from the rest of the I3D model.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -92,6 +96,7 @@ class InceptionI3dLogits(snt.Module):
             name="Logits",
         )
 
+    @tf.function
     def __call__(self, net):
 
         endpoints = {}

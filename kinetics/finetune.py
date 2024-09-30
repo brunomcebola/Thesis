@@ -9,21 +9,26 @@ import glob
 import numpy as np
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import tensorflow as tf  # pylint: disable=wrong-import-position
 import i3d_logits  # pylint: disable=wrong-import-position
+import i3d  # pylint: disable=wrong-import-position
 
+DATA_PATH = "data/color"
+TYPE = "flow"
 
-DATA_PATH = "data/rgb"
+LOGITS_I3D_CHECKPOINT = f"checkpoints/{TYPE}_400_logits/model.ckpt"
+MIXED_5C_CHECKPOINT = f"checkpoints/{TYPE}_400_mixed_5c/model.ckpt"
+TUNED_I3D_CHECKPOINT = f"checkpoints/{TYPE}_CLS_logits/model.ckpt"
 
 # Loss function and optimizer
 CROSS_ENTROPY_LOSS = tf.losses.SparseCategoricalCrossentropy(from_logits=True)
 OPTIMIZER = tf.optimizers.Adam()
 
 
-# Create a generator that loads each sample from the disk as needed
 def numpy_data_generator(file_paths, labels):
     """
     Generator function to load numpy arrays from disk
@@ -34,7 +39,6 @@ def numpy_data_generator(file_paths, labels):
         yield sample_data.astype(np.float32), label.astype(np.int64)
 
 
-# Use TensorFlow's Dataset API to create a dataset that loads data dynamically
 def create_tf_dataset(file_paths, labels, batch_size=64):
     """
     Creates a TensorFlow dataset that loads data dynamically from disk and pads sequences
@@ -59,7 +63,6 @@ def create_tf_dataset(file_paths, labels, batch_size=64):
     return dataset
 
 
-# Training step function
 @tf.function
 def train_step(model, inputs, labels):
     """
@@ -74,7 +77,6 @@ def train_step(model, inputs, labels):
     return loss_value
 
 
-# Validation step function
 @tf.function
 def val_step(model, inputs, labels):
     """
@@ -94,9 +96,7 @@ def train_model(model, train_dataset, val_dataset, epochs):
     train_losses, val_losses = [], []
     train_accuracies, val_accuracies = [], []
 
-    for epoch in range(epochs):
-        print(f"Starting epoch {epoch+1}")
-
+    for _ in tqdm(range(epochs), desc="Training epochs"):
         # Training loop
 
         epoch_loss_avg = tf.keras.metrics.Mean()
@@ -130,75 +130,45 @@ def train_model(model, train_dataset, val_dataset, epochs):
         val_losses.append(val_loss_avg.result().numpy())  # type: ignore
         val_accuracies.append(val_accuracy.result().numpy())  # type: ignore
 
-        print(
-            f"Training Loss: {train_losses[-1]}, Validation Loss: {val_losses[-1]}\n"
-            f"Training Accuracy: {train_accuracies[-1]}, Validation Accuracy: {val_accuracies[-1]}\n"
-        )
-
     return train_losses, val_losses, train_accuracies, val_accuracies
 
 
-def test_model(model, cls):
-    # Load a single sample
-    sample_data = np.load(os.path.join(DATA_PATH, "conflict", "0", "0_0_rgb.npy"))
-
-    # Get the predicted logits
-    logits, _ = model(sample_data)
-
-    # Get the predicted probabilities
-    predictions = tf.nn.softmax(logits)[0]
-
-    # Get the predicted class index
-    predicted_class_index = np.argsort(predictions)[::-1][0]
-
-    # Get the predicted class name
-    predicted_class_name = [k for k, v in cls.items() if v == predicted_class_index][0]
-
-    # Get the predicted class probability
-    predicted_class_probability = predictions[predicted_class_index]
-
-    # Print the predicted class name and probabilities
-    print(f"Predicted Class: {predicted_class_name} with probability {predicted_class_probability}")
+def ensure_mixed_5c_checkpoint():
+    model = i3d.InceptionI3d(num_classes=3, spatial_squeeze=True, final_endpoint="Mixed_5c")
+    tf.train.Checkpoint(model=model).restore(LOGITS_I3D_CHECKPOINT).expect_partial()
+    model(tf.convert_to_tensor(np.random.rand(1, 64, 224, 224, 3 if TYPE == "rgb" else 2), dtype=tf.float32))
+    tf.train.Checkpoint(model=model).write(MIXED_5C_CHECKPOINT)
 
 
-def main():
+def save_model(model, cls, train_accuracies, val_accuracies, train_losses, val_losses):
     """
-    Main function to train the model
+    Save the model
     """
-    
-    # Set random seed
-    tf.random.set_seed(42)
-    np.random.seed(42)
+    model_variables = {var.name: var for var in model.trainable_variables}
 
-    # Load the data
-    file_paths = sorted(glob.glob(f"{DATA_PATH}/*/*/*_rgb.npy"))  # Path to multiple samples
+    variables_to_replace_map = {
+        "inception_i3d/Logits/Conv3d_0c_1x1/conv_3d/b:0": "inception_i3d_logits/Logits/Conv3d_0c_1x1/conv_3d/b:0",
+        "inception_i3d/Logits/Conv3d_0c_1x1/conv_3d/w:0": "inception_i3d_logits/Logits/Conv3d_0c_1x1/conv_3d/w:0",
+    }
 
-    cls = sorted({file_path.split("/")[2] for file_path in file_paths})
-    cls = {c: i for i, c in enumerate(cls)}
-    num_classes = len(cls)
-
-    labels = np.array([cls[file_path.split("/")[2]] for file_path in file_paths])
-
-    # Split into training and validation sets
-    train_files, val_files, train_labels, val_labels = train_test_split(
-        file_paths, labels, test_size=0.2, random_state=42, stratify=labels
+    i3d_model = i3d.InceptionI3d(
+        num_classes=len(cls), spatial_squeeze=True, final_endpoint="Logits"
     )
+    i3d_model(tf.convert_to_tensor(np.random.rand(1, 64, 224, 224, 3 if TYPE == "rgb" else 2), dtype=tf.float32))
+    tf.train.Checkpoint(model=i3d_model).restore(MIXED_5C_CHECKPOINT).expect_partial()
 
-    # Create TensorFlow datasets for training and validation
-    train_dataset = create_tf_dataset(train_files, train_labels, batch_size=64)
-    val_dataset = create_tf_dataset(val_files, val_labels, batch_size=64)
+    for i, var in enumerate(i3d_model.trainable_variables):
+        if var.name in variables_to_replace_map:  # type: ignore
+            i3d_model.trainable_variables[i].assign(  # type: ignore
+                model_variables[variables_to_replace_map[var.name]]  # type: ignore
+            )
 
-    # Instantiate the model
-    model = i3d_logits.InceptionI3dLogits(num_classes=num_classes)
+    destination = TUNED_I3D_CHECKPOINT.replace("CLS", str(len(cls)))
 
-    # Test model before train
-    test_model(model, cls)
-    print()
+    tf.train.Checkpoint(model=i3d_model).write(destination)
 
-    # Train the model for 10 epochs
-    train_losses, val_losses, train_accuracies, val_accuracies = train_model(
-        model, train_dataset, val_dataset, epochs=100
-    )
+    with open(destination.replace(".ckpt", ".txt"), "w") as f:
+        f.write("\n".join(cls.keys()))
 
     # Plotting accuracy and loss over epochs side by side
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
@@ -222,10 +192,47 @@ def main():
     axs[1].grid(True)
 
     plt.tight_layout()  # Adjust layout for better fit
-    plt.show()
+    plt.savefig(destination.replace(".ckpt", ".png"))
 
-    # Test the model after train
-    test_model(model, cls)
+
+def main():
+    """
+    Main function to train the model
+    """
+
+    # Set random seed
+    tf.random.set_seed(42)
+    np.random.seed(42)
+
+    # Ensure the checkpoint for Mixed_5c is created
+    ensure_mixed_5c_checkpoint()
+
+    # Load the data
+
+    cls = {c: i for i, c in enumerate(sorted(os.listdir(f"{DATA_PATH}")))}
+
+    samples = sorted(glob.glob(f"{DATA_PATH}/*/*/*_{TYPE}.npy"))  # Path to multiple samples
+    labels = np.array([cls[sample.split("/")[2]] for sample in samples])
+
+    # Split into training and validation sets
+    train_files, val_files, train_labels, val_labels = train_test_split(
+        samples, labels, test_size=0.2, random_state=42, stratify=labels
+    )
+
+    # Create TensorFlow datasets for training and validation
+    train_dataset = create_tf_dataset(train_files, train_labels, batch_size=64)
+    val_dataset = create_tf_dataset(val_files, val_labels, batch_size=64)
+
+    # Instantiate the model
+    model = i3d_logits.InceptionI3dLogits(num_classes=len(cls))
+
+    # Train the model for 10 epochs
+    train_losses, val_losses, train_accuracies, val_accuracies = train_model(
+        model, train_dataset, val_dataset, epochs=100
+    )
+
+    # Save the model
+    save_model(model, cls, train_accuracies, val_accuracies, train_losses, val_losses)
 
 
 main()
