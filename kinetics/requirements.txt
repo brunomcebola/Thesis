@@ -7,3 +7,5 @@ tensorboard==2.5.0
 moviepy==1.0.3
 Pillow==10.4.0
 tqdm==4.66.5
+scikit-learn==1.5.2
+seaborn==0.12.2
