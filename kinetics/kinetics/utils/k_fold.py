@@ -272,7 +272,7 @@ def finetune(
             # Save best model
             if validation_metric > best_validation_metric:
                 best_validation_metric = validation_metric
-                best_epoch = epoch
+                best_epoch = epoch + 1
                 best_kfold = kfold + 1
 
                 shutil.rmtree(os.path.dirname(best_model_dest), ignore_errors=True)

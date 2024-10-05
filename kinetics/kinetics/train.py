@@ -26,10 +26,11 @@ import i3d
 import i3d_logits
 from utils import k_fold_finetune
 
+###
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-INPUT_CHECKPOINTS = os.path.join(BASE_DIR, "test")
+INPUT_CHECKPOINTS = os.path.join(BASE_DIR, "checkpoints")
 OUTPUT_CHECKPOINTS = os.path.join(BASE_DIR, "finetuned_checkpoints")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 TMP_DIR = os.path.join(BASE_DIR, "tmp")
@@ -53,13 +54,8 @@ class CustomScore(tf.keras.metrics.Metric):
 
         assert len(betas) > 0
 
-        self.num_classes = len(betas)
-
-        # check betas
-        for i in range(self.num_classes):
-            assert i in betas
-
         self.betas = betas
+        self.num_classes = len(betas)
 
         self.precision = [tf.keras.metrics.Precision() for _ in range(self.num_classes)]
         self.recall = [tf.keras.metrics.Recall() for _ in range(self.num_classes)]
@@ -101,6 +97,7 @@ class CustomScore(tf.keras.metrics.Metric):
 
             f_scores.append(_f_beta_score(precision, recall, beta=self.betas[i]))
 
+        # TODO: make weighted mean on number of samples per class
         f_score = sum(f_scores) / self.num_classes
 
         f_score = tf.constant(f_score, dtype=tf.float32)
@@ -121,7 +118,7 @@ def generate_train_data(source_data_path: str, train_data_path: str, checkpoint_
         checkpoint_path: Path to the checkpoint
     """
 
-    stream, _, _ = os.path.basename(os.path.dirname(checkpoint_path)).split(".")
+    _, stream = os.path.basename(os.path.dirname(checkpoint_path)).split(".")
 
     # Delete previous data if any
     if os.path.exists(train_data_path):
@@ -367,6 +364,18 @@ def main():
         action="store_false",
         help="Do not cleanup the temporary data",
     )
+    parser.add_argument(
+        "--k-folds",
+        type=int,
+        default=5,
+        help="Number of folds for k-fold cross validation",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=5,
+        help="Number of epochs to train the model",
+    )
     args = parser.parse_args()
 
     for checkpoint in os.listdir(INPUT_CHECKPOINTS):
@@ -386,17 +395,17 @@ def main():
                 lambda: i3d_logits.InceptionI3dLogits(num_classes=len(classes)),
                 samples,
                 labels,
-                5,
+                args.k_folds,
                 lambda: tf.optimizers.Adam(learning_rate=0.001),
                 lambda: tf.losses.SparseCategoricalCrossentropy(from_logits=True),
-                lambda: CustomScore(betas={0: 1, 1: 1}),
+                lambda: CustomScore(betas={0: 2, 1: 2, 2: 0.5}),
                 TMP_DIR,
-                batch_size=1,
-                epochs=5,
+                1,
+                args.epochs,
             )
 
         if args.save:
-            _, base, _ = os.path.basename(
+            base, _ = os.path.basename(
                 os.path.dirname(os.path.join(INPUT_CHECKPOINTS, checkpoint, "model.ckpt"))
             ).split(".")
 
@@ -405,7 +414,7 @@ def main():
                 os.path.join(INPUT_CHECKPOINTS, checkpoint, "model.ckpt"),
                 os.path.join(
                     OUTPUT_CHECKPOINTS,
-                    checkpoint.replace(base, f"{len(classes)}_{base}"),
+                    checkpoint.replace(base, f"{args.data}{len(classes)}_{base}"),
                     "model.ckpt",
                 ),
                 classes,

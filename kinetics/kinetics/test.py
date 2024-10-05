@@ -1,53 +1,50 @@
-# Copyright 2017 Google Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ============================================================================
-"""Loads a sample video and classifies using a trained Kinetics checkpoint."""
+"""
+Scrip to test the I3D model on specific data
+"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+# pylint: disable=wrong-import-position
+# pylint: disable=wrong-import-order
+
+from __future__ import annotations
 
 import gc
 import os
 import math
+import shutil
+import argparse
 import numpy as np
-import tqdm
-import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
+from tqdm import tqdm
+from sklearn.metrics import (
+    confusion_matrix,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    fbeta_score,
+)
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-import tensorflow as tf  # pylint: disable=wrong-import-position
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-import i3d  # pylint: disable=wrong-import-position
+import tensorflow as tf
+
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+import i3d
 
 ###
 
-DATA = "color"
-CHECKPOINT = "3_color_logits"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+CHECKPOINTS = os.path.join(BASE_DIR, "finetuned_checkpoints")
+DATA_DIR = os.path.join(BASE_DIR, "data")
+OUTPUT_DIR = os.path.join(BASE_DIR, "tests")
 
 ###
 
-SAMPLES_PATH = f"npy/{DATA}"
-# RGB_CHECKPOINT_PATH = f"checkpoints/rgb_{CHECKPOINT}/model.ckpt"
-# FLOW_CHECKPOINT_PATH = f"checkpoints/flow_{CHECKPOINT}/model.ckpt"
-RGB_CHECKPOINT_PATH = "fined_tuned_checkpoints/rgb_XXX/model.ckpt"
-FLOW_CHECKPOINT_PATH = "fined_tuned_checkpoints/flow_XXX/model.ckpt"
 
-
-def sub_sample(sample: tf.Tensor) -> list[tf.Tensor]:
+def generate_sub_samples(sample: tf.Tensor) -> list[tf.Tensor]:
     """
     Sub-sample the video into smaller clips of 224 frames
     """
@@ -74,164 +71,185 @@ def main():
     """
     Main function to evaluate I3D on Kinetics.
     """
+
+    parser = argparse.ArgumentParser(description="Fine tune I3D model on custom data")
+    parser.add_argument(
+        "--data",
+        type=str,
+        choices=["color", "depth"],
+        default="color",
+        help="Data type to preprocess",
+    )
+    args = parser.parse_args()
+
     print("Testing Google Inception-v1 Inflated 3D ConvNet\n")
 
-    # Ensure both checkpoints exist and have the same classes
-    assert os.path.exists(f"{RGB_CHECKPOINT_PATH}.index")
-    assert os.path.exists(f"{RGB_CHECKPOINT_PATH}.data-00000-of-00001")
-    assert os.path.exists(f"{FLOW_CHECKPOINT_PATH}.index")
-    assert os.path.exists(f"{FLOW_CHECKPOINT_PATH}.data-00000-of-00001")
+    # Get combination of checkpoints
+    checkpoints_groups: dict[str, dict[str, str]] = {}
+    for checkpoint in os.listdir(CHECKPOINTS):
+        base, stream = checkpoint.split(".")
+        if args.data in base:
+            checkpoint_path = os.path.join(CHECKPOINTS, checkpoint)
 
-    with open(RGB_CHECKPOINT_PATH.replace(".ckpt", ".txt"), encoding="utf-8") as file:
-        rgb_classes = [x.strip() for x in file]
+            checkpoints_groups[base] = checkpoints_groups.get(base, {})
+            checkpoints_groups[base][stream] = os.path.join(checkpoint_path, "model.ckpt")
 
-    with open(FLOW_CHECKPOINT_PATH.replace(".ckpt", ".txt"), encoding="utf-8") as file:
-        flow_classes = [x.strip() for x in file]
+    # Get the test data
+    test_data_dir = os.path.join(DATA_DIR, args.data)
 
-    assert rgb_classes == flow_classes
+    classes = {dir: i for i, dir in enumerate(sorted(os.listdir(test_data_dir)))}
 
-    classes = rgb_classes
+    samples_dirs = []
+    labels = []
+    for dirpath, _, filenames in os.walk(test_data_dir):
+        if filenames:
+            samples_dirs.append(dirpath)
 
-    print(f"Classes: {len(classes)} {classes}")
+            for cls in classes:
+                if cls in dirpath:
+                    labels.append(classes[cls])
+                    break
 
-    # Ensure the samples path exists for all classes
-    # and that each class has at least one sample
-    # of type 'rgb' and 'flow'
-    rgb_samples_infos = []
-    flow_samples_infos = []
+    # Print number of samples per class
+    class_counts = []
+    for cls, count in zip(classes, np.bincount(labels)):
+        class_counts.append(count)
+        print(f"Class '{cls}': {count} samples")
+    print()
 
-    for i, cls in enumerate(classes):
-        assert os.path.exists(os.path.join(SAMPLES_PATH, cls))
-        assert os.path.isdir(os.path.join(SAMPLES_PATH, cls))
-        assert len(os.listdir(os.path.join(SAMPLES_PATH, cls))) > 0
+    # Perform the inferences for each combination of checkpoints
+    for group, checkpoints in checkpoints_groups.items():
+        print(f"Evaluating checkpoints group '{group}'")
 
-        for sample in os.listdir(os.path.join(SAMPLES_PATH, cls)):
-            assert os.path.isdir(os.path.join(SAMPLES_PATH, cls, sample))
-            assert os.path.exists(os.path.join(SAMPLES_PATH, cls, sample, f"{sample}_rgb.npy"))
-            assert os.path.exists(os.path.join(SAMPLES_PATH, cls, sample, f"{sample}_flow.npy"))
+        models = {}
+        predictions = {}
 
-            rgb_samples_infos.append(
-                (os.path.join(SAMPLES_PATH, cls, sample, f"{sample}_rgb.npy"), i)
-            )
-            flow_samples_infos.append(
-                (os.path.join(SAMPLES_PATH, cls, sample, f"{sample}_flow.npy"), i)
-            )
+        # Create models
+        for stream, checkpoint in checkpoints.items():
+            model = i3d.InceptionI3d(len(classes), final_endpoint="Logits")
+            tf.train.Checkpoint(model=model).restore(checkpoint).expect_partial()
 
-    assert len(rgb_samples_infos) == len(flow_samples_infos)
+            models[stream] = model
 
-    print(f"Samples: {len(rgb_samples_infos)}\n")
+        # Perform inferences
+        for sample_dir in tqdm(samples_dirs):
+            sample_logits = {}
 
-    # Load models
-    rgb_model = i3d.InceptionI3d(3, spatial_squeeze=True, final_endpoint="Logits")
-    tf.train.Checkpoint(model=rgb_model).restore(RGB_CHECKPOINT_PATH).expect_partial()
+            for stream, model in models.items():
+                sample = tf.convert_to_tensor(
+                    np.load(os.path.join(sample_dir, f"{stream}.npy")), dtype=tf.float32
+                )
+                sub_samples = generate_sub_samples(sample)
 
-    flow_model = i3d.InceptionI3d(3, spatial_squeeze=True, final_endpoint="Logits")
-    tf.train.Checkpoint(model=flow_model).restore(FLOW_CHECKPOINT_PATH).expect_partial()
+                logits, _ = model(sub_samples[0])
+                if len(sub_samples) > 1:
+                    for sub_sample in sub_samples[1:]:
+                        logits += model(sub_sample)[0]
 
-    print("Models loaded successfully\n")
+                sample_logits[stream] = logits
 
-    # Perform the inferences
-    inferences = []
+                del sample, sub_samples
+                gc.collect()
 
-    for rgb_sample_info, flow_sample_info in tqdm.tqdm(
-        zip(rgb_samples_infos, flow_samples_infos), total=len(rgb_samples_infos), desc="Testing"
-    ):
-        # rgb inference
-        rgb_sample = tf.convert_to_tensor(np.load(rgb_sample_info[0]), dtype=tf.float32)
-        rgb_sub_samples = sub_sample(rgb_sample)
+            if len(sample_logits) > 1:
+                sample_logits["joint"] = sum(sample_logits.values())
 
-        rgb_logits, _ = rgb_model(rgb_sub_samples[0])
-        if len(rgb_sub_samples) > 1:
-            for sample in rgb_sub_samples[1:]:
-                logits, _ = rgb_model(sample)
-                rgb_logits += logits
+            for stream, logits in sample_logits.items():
+                probabilities = tf.nn.softmax(logits)[0]
+                prediction = np.argsort(probabilities)[::-1][0]
+                probability = probabilities[prediction]
 
-        del rgb_sample, rgb_sub_samples
-        gc.collect()
+                predictions[stream] = predictions.get(stream, [])
+                predictions[stream].append((prediction, probability.numpy()))  # type: ignore
+
+            del sample_logits
+            gc.collect()
+
         tf.keras.backend.clear_session()
-
-        rgb_predictions = tf.nn.softmax(rgb_logits)[0]
-        rgb_index = np.argsort(rgb_predictions)[::-1][0]
-        rgb_prediction = rgb_predictions[rgb_index]
-
-        # flow inference
-        flow_sample = tf.convert_to_tensor(np.load(flow_sample_info[0]), dtype=tf.float32)
-        flow_sub_samples = sub_sample(flow_sample)
-
-        flow_logits, _ = flow_model(flow_sub_samples[0])
-        if len(flow_sub_samples) > 1:
-            for sample in flow_sub_samples[1:]:
-                logits, _ = flow_model(sample)
-                flow_logits += logits
-
-        del flow_sample, flow_sub_samples
         gc.collect()
-        tf.keras.backend.clear_session()
 
-        flow_predictions = tf.nn.softmax(flow_logits)[0]
-        flow_index = np.argsort(flow_predictions)[::-1][0]
-        flow_prediction = flow_predictions[flow_index]
+        true_labels = np.array(labels)
 
-        # joint inference
+        # Ensure empty output directory
+        output_dir = os.path.join(OUTPUT_DIR, group)
+        shutil.rmtree(output_dir, ignore_errors=True)
+        os.makedirs(output_dir, exist_ok=True)
 
-        joint_logits = rgb_logits + flow_logits
+        print(f"Saving results to '{output_dir}'\n")
 
-        del rgb_logits, flow_logits
-        gc.collect()
-        tf.keras.backend.clear_session()
+        # Save confusion matrix
+        for stream, stream_predictions in predictions.items():
+            # Generate confusion matrix
+            cm = confusion_matrix(true_labels, np.array([i[0] for i in stream_predictions]))
 
-        joint_predictions = tf.nn.softmax(joint_logits)[0]
-        joint_index = np.argsort(joint_predictions)[::-1][0]
-        joint_prediction = joint_predictions[joint_index]
+            fig, ax = plt.subplots(figsize=(10, 10))
+            sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax, cbar=False)
+            ax.set_title(f"Confusion matrix for '{group}' ({stream})")
+            ax.set_xlabel("Predicted")
+            ax.set_ylabel("True")
 
-        del joint_logits
-        gc.collect()
-        tf.keras.backend.clear_session()
+            plt.savefig(os.path.join(output_dir, f"{stream}.png"))
 
-        inferences.append(
-            (
-                rgb_sample_info,
-                (rgb_index, rgb_prediction),
-                (flow_index, flow_prediction),
-                (joint_index, joint_prediction),
-            )
-        )
+        # Save predictions
+        with open(os.path.join(output_dir, "predictions.txt"), "w") as file:
+            for i, (sample_dir, label) in enumerate(zip(samples_dirs, labels)):
+                file.write(f"Sample '{sample_dir}'\n")
+                file.write(f"True: {label}\n")
+                file.write("------\n")
 
-    for inference in inferences:
-        print(f"\nPrediction for {inference[0][0]}:")
-        print(f"\tReal: '{inference[0][1]}'")
-        print(f"\tRGB: '{inference[1][0]}' ({inference[1][1]})")
-        print(f"\tFlow: '{inference[2][0]}' ({inference[2][1]})")
-        print(f"\tJoint: '{inference[3][0]}' ({inference[3][1]})")
+                for stream, stream_predictions in predictions.items():
+                    file.write(f"{stream}: {stream_predictions[i]}\n")
 
-    # Generate confusion matrix
-    true_labels = np.array([i[1] for i, _, _, _ in inferences])
-    rgb_predicted_labels = np.array([i[0] for _, i, _, _ in inferences])
-    flow_predicted_labels = np.array([i[0] for _, _, i, _ in inferences])
-    joint_predicted_labels = np.array([i[0] for _, _, _, i in inferences])
+                file.write("\n")
 
-    cm_rgb = confusion_matrix(true_labels, rgb_predicted_labels)
-    cm_flow = confusion_matrix(true_labels, flow_predicted_labels)
-    cm_joint = confusion_matrix(true_labels, joint_predicted_labels)
+        # Save statistics
+        betas = [2, 2, 0.5]
+        class_weights = np.array(class_counts) / len(labels)
 
-    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+        with open(os.path.join(output_dir, "statistics.txt"), "w") as file:
+            for stream, stream_predictions in predictions.items():
+                pred_labels = np.array([i[0] for i in stream_predictions])
 
-    sns.heatmap(cm_rgb, annot=True, fmt="d", cmap="Blues", ax=axs[0], cbar=False)
-    axs[0].set_title("RGB")
-    axs[0].set_xlabel("Predicted")
-    axs[0].set_ylabel("True")
+                class_accuracies = []
+                class_precisions = []
+                class_recalls = []
+                class_fscores = []
 
-    sns.heatmap(cm_flow, annot=True, fmt="d", cmap="Blues", ax=axs[1], cbar=False)
-    axs[1].set_title("Flow")
-    axs[1].set_xlabel("Predicted")
-    axs[1].set_ylabel("True")
+                # Compute metrics for each class
+                for i in range(len(classes)):
+                    true_labels_class = tf.cast(tf.equal(true_labels, i), tf.int32)
+                    pred_labels_class = tf.cast(tf.equal(pred_labels, i), tf.int32)
+                    class_accuracies.append(accuracy_score(true_labels_class, pred_labels_class))
+                    class_precisions.append(precision_score(true_labels_class, pred_labels_class))
+                    class_recalls.append(recall_score(true_labels_class, pred_labels_class))
+                    class_fscores.append(
+                        fbeta_score(true_labels_class, pred_labels_class, beta=betas[i])
+                    )
 
-    sns.heatmap(cm_joint, annot=True, fmt="d", cmap="Blues", ax=axs[2], cbar=False)
-    axs[2].set_title("Joint")
-    axs[2].set_xlabel("Predicted")
-    axs[2].set_ylabel("True")
+                # Compute overall metrics
+                overall_accuracy = np.average(class_accuracies, weights=class_weights)
+                overall_precision = np.average(class_precisions, weights=class_weights)
+                overall_recall = np.average(class_recalls, weights=class_weights)
+                overall_fscore = np.average(class_fscores, weights=class_weights)
 
-    plt.show()
+                # Write to file
+                file.write(f"Stream '{stream}'\n")
+                file.write("------\n")
+                file.write(f"Overall Accuracy: {overall_accuracy:.2f}\n")
+                file.write(f"Overall Precision: {overall_precision:.2f}\n")
+                file.write(f"Overall Recall: {overall_recall:.2f}\n")
+                file.write(f"Overall F-Score: {overall_fscore:.2f}\n")
+
+                for i, cls in enumerate(classes):
+                    file.write("------\n")
+                    file.write(f"Class '{list(classes.keys())[i]}'\n")
+                    file.write(f"Accuracy: {class_accuracies[i]:.2f}\n")
+                    file.write(f"Precision: {class_precisions[i]:.2f}\n")
+                    file.write(f"Recall: {class_recalls[i]:.2f}\n")
+                    file.write(f"F-Score: {class_fscores[i]:.2f}\n")
+
+                file.write("\n")
+
 
 if __name__ == "__main__":
     main()
