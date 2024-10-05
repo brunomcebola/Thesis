@@ -1,0 +1,700 @@
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/9'
+True: 1
+------
+rgb: (1, 0.9959812)
+flow: (1, 0.8712752)
+joint: (1, 0.99992657)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/12'
+True: 1
+------
+rgb: (0, 0.74713546)
+flow: (1, 0.9752001)
+joint: (1, 0.98907053)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/5'
+True: 1
+------
+rgb: (1, 0.99837035)
+flow: (1, 0.9206479)
+joint: (1, 0.99990106)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/23'
+True: 1
+------
+rgb: (1, 0.9965268)
+flow: (1, 0.93583983)
+joint: (1, 0.9997849)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/7'
+True: 1
+------
+rgb: (1, 0.99992514)
+flow: (1, 0.9843998)
+joint: (1, 0.9999995)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/4'
+True: 1
+------
+rgb: (1, 0.9999968)
+flow: (1, 0.9913442)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/14'
+True: 1
+------
+rgb: (1, 0.95056903)
+flow: (1, 0.89116764)
+joint: (1, 0.9940414)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/10'
+True: 1
+------
+rgb: (1, 0.8657593)
+flow: (1, 0.9528888)
+joint: (1, 0.995906)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/0'
+True: 1
+------
+rgb: (1, 0.93937033)
+flow: (1, 0.9663174)
+joint: (1, 0.998618)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/18'
+True: 1
+------
+rgb: (1, 0.92426777)
+flow: (1, 0.9747906)
+joint: (1, 0.9979359)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/24'
+True: 1
+------
+rgb: (1, 0.99940777)
+flow: (1, 0.90437824)
+joint: (1, 0.99994206)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/19'
+True: 1
+------
+rgb: (1, 0.6521692)
+flow: (1, 0.8520373)
+joint: (1, 0.92100364)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/13'
+True: 1
+------
+rgb: (1, 0.8278881)
+flow: (1, 0.98631567)
+joint: (1, 0.997632)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/8'
+True: 1
+------
+rgb: (1, 1.0)
+flow: (1, 0.9726026)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/2'
+True: 1
+------
+rgb: (1, 0.99999964)
+flow: (1, 0.92889845)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/6'
+True: 1
+------
+rgb: (1, 1.0)
+flow: (1, 0.99202174)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/20'
+True: 1
+------
+rgb: (1, 0.57407683)
+flow: (1, 0.975106)
+joint: (1, 0.98498154)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/17'
+True: 1
+------
+rgb: (1, 0.99994123)
+flow: (1, 0.9988387)
+joint: (1, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/21'
+True: 1
+------
+rgb: (1, 1.0)
+flow: (1, 0.983208)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/1'
+True: 1
+------
+rgb: (1, 0.9999912)
+flow: (1, 0.96799046)
+joint: (1, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/22'
+True: 1
+------
+rgb: (1, 0.9820196)
+flow: (1, 0.7663)
+joint: (1, 0.9955844)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/3'
+True: 1
+------
+rgb: (1, 0.9999962)
+flow: (1, 0.98549473)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/11'
+True: 1
+------
+rgb: (0, 0.9669471)
+flow: (1, 0.97572076)
+joint: (1, 0.67722124)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/16'
+True: 1
+------
+rgb: (1, 1.0)
+flow: (1, 0.99942493)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/conflict/15'
+True: 1
+------
+rgb: (1, 0.97019815)
+flow: (1, 0.98972976)
+joint: (1, 0.9997036)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/9'
+True: 2
+------
+rgb: (2, 0.98815376)
+flow: (1, 0.5534086)
+joint: (2, 0.9988372)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/28'
+True: 2
+------
+rgb: (2, nan)
+flow: (2, nan)
+joint: (2, nan)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/12'
+True: 2
+------
+rgb: (2, 0.97150034)
+flow: (2, 0.95949197)
+joint: (2, 0.99883693)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/5'
+True: 2
+------
+rgb: (2, 0.98334277)
+flow: (2, 0.99013305)
+joint: (2, 0.999941)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/23'
+True: 2
+------
+rgb: (2, 0.98265356)
+flow: (2, 0.8494159)
+joint: (2, 0.9971277)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/7'
+True: 2
+------
+rgb: (2, 0.9999721)
+flow: (2, 0.97134596)
+joint: (2, 0.9999995)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/29'
+True: 2
+------
+rgb: (2, nan)
+flow: (2, nan)
+joint: (2, nan)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/4'
+True: 2
+------
+rgb: (2, 0.99999344)
+flow: (2, 0.93783283)
+joint: (2, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/14'
+True: 2
+------
+rgb: (2, 0.61710924)
+flow: (2, 0.74189854)
+joint: (2, 0.8289903)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/10'
+True: 2
+------
+rgb: (2, 0.9993862)
+flow: (2, 0.99719656)
+joint: (2, 0.99999845)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/31'
+True: 2
+------
+rgb: (2, 0.9100355)
+flow: (2, 0.9740636)
+joint: (2, 0.9981232)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/0'
+True: 2
+------
+rgb: (2, 0.99838376)
+flow: (2, 0.97741073)
+joint: (2, 0.9999702)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/18'
+True: 2
+------
+rgb: (2, 0.92943406)
+flow: (2, 0.8953611)
+joint: (2, 0.9913566)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/24'
+True: 2
+------
+rgb: (2, 0.9983246)
+flow: (2, 0.79240465)
+joint: (2, 0.99964297)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/19'
+True: 2
+------
+rgb: (2, 0.969056)
+flow: (2, 0.77412647)
+joint: (2, 0.9910858)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/13'
+True: 2
+------
+rgb: (2, 0.99997604)
+flow: (2, 0.989134)
+joint: (2, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/26'
+True: 2
+------
+rgb: (2, 0.98912793)
+flow: (2, 0.9194586)
+joint: (2, 0.9991547)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/8'
+True: 2
+------
+rgb: (2, 0.99961)
+flow: (2, 0.9746941)
+joint: (2, 0.9999943)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/2'
+True: 2
+------
+rgb: (2, 0.9959586)
+flow: (2, 0.9886973)
+joint: (2, 0.99997985)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/6'
+True: 2
+------
+rgb: (2, 0.8806655)
+flow: (2, 0.97766054)
+joint: (2, 0.9981823)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/20'
+True: 2
+------
+rgb: (2, 0.9986442)
+flow: (2, 0.902469)
+joint: (2, 0.99985695)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/17'
+True: 2
+------
+rgb: (2, 0.9876753)
+flow: (2, 0.9084184)
+joint: (2, 0.9987722)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/21'
+True: 2
+------
+rgb: (0, 0.84771365)
+flow: (2, 0.7261388)
+joint: (0, 0.6735002)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/1'
+True: 2
+------
+rgb: (2, 0.99997175)
+flow: (2, 0.984053)
+joint: (2, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/22'
+True: 2
+------
+rgb: (2, 0.9415316)
+flow: (2, 0.92571354)
+joint: (2, 0.995362)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/3'
+True: 2
+------
+rgb: (2, 0.97350717)
+flow: (2, 0.9760134)
+joint: (2, 0.9997551)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/27'
+True: 2
+------
+rgb: (2, nan)
+flow: (2, nan)
+joint: (2, nan)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/11'
+True: 2
+------
+rgb: (2, 0.8585842)
+flow: (2, 0.9897289)
+joint: (2, 0.9986731)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/30'
+True: 2
+------
+rgb: (2, nan)
+flow: (2, nan)
+joint: (2, nan)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/16'
+True: 2
+------
+rgb: (2, 0.9742061)
+flow: (2, 0.89215493)
+joint: (2, 0.9970974)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/25'
+True: 2
+------
+rgb: (2, 0.98676085)
+flow: (2, 0.9092607)
+joint: (2, 0.9989127)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/swipe_card/15'
+True: 2
+------
+rgb: (2, 0.9967085)
+flow: (2, 0.9551473)
+joint: (2, 0.9998791)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/9'
+True: 0
+------
+rgb: (0, 0.99523664)
+flow: (0, 0.6792591)
+joint: (0, 0.99925596)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/28'
+True: 0
+------
+rgb: (0, 0.9897076)
+flow: (0, 0.93631303)
+joint: (0, 0.9993155)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/12'
+True: 0
+------
+rgb: (0, 1.0)
+flow: (0, 0.8375424)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/34'
+True: 0
+------
+rgb: (0, 0.9571842)
+flow: (0, 0.86636513)
+joint: (0, 0.993515)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/5'
+True: 0
+------
+rgb: (0, 0.9986344)
+flow: (0, 0.8943894)
+joint: (0, 0.9998671)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/23'
+True: 0
+------
+rgb: (0, 0.96442235)
+flow: (0, 0.9033379)
+joint: (0, 0.9984281)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/32'
+True: 0
+------
+rgb: (0, 0.99987507)
+flow: (0, 0.9994603)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/7'
+True: 0
+------
+rgb: (0, 0.9999938)
+flow: (0, 0.9908035)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/39'
+True: 0
+------
+rgb: (0, 0.9969062)
+flow: (0, 0.93519056)
+joint: (0, 0.9999273)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/29'
+True: 0
+------
+rgb: (0, 0.9927884)
+flow: (1, 0.545482)
+joint: (0, 0.99103534)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/4'
+True: 0
+------
+rgb: (0, 0.99999905)
+flow: (0, 0.99928755)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/14'
+True: 0
+------
+rgb: (0, 0.9999063)
+flow: (0, 0.89700377)
+joint: (0, 0.99999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/10'
+True: 0
+------
+rgb: (0, 0.9993284)
+flow: (0, 0.72972286)
+joint: (0, 0.9999242)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/35'
+True: 0
+------
+rgb: (0, 0.94779634)
+flow: (0, 0.99478793)
+joint: (0, 0.9998355)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/42'
+True: 0
+------
+rgb: (0, 0.9998425)
+flow: (0, 0.9951873)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/31'
+True: 0
+------
+rgb: (0, 0.9999745)
+flow: (0, 0.9983925)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/38'
+True: 0
+------
+rgb: (0, 0.9993124)
+flow: (0, 0.9473396)
+joint: (0, 0.9999869)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/0'
+True: 0
+------
+rgb: (0, 0.9982316)
+flow: (0, 0.7170412)
+joint: (0, 0.99935573)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/18'
+True: 0
+------
+rgb: (0, 0.9996518)
+flow: (0, 0.997692)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/24'
+True: 0
+------
+rgb: (0, 0.99994636)
+flow: (0, 0.9928496)
+joint: (0, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/19'
+True: 0
+------
+rgb: (0, 0.99981517)
+flow: (0, 0.99713194)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/13'
+True: 0
+------
+rgb: (0, 0.998447)
+flow: (0, 0.8522415)
+joint: (0, 0.9998474)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/26'
+True: 0
+------
+rgb: (0, 0.9999926)
+flow: (0, 0.9597484)
+joint: (0, 0.99999976)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/8'
+True: 0
+------
+rgb: (0, 0.9999913)
+flow: (0, 0.6311976)
+joint: (0, 0.999995)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/2'
+True: 0
+------
+rgb: (0, 0.9981571)
+flow: (0, 0.79328686)
+joint: (0, 0.9995902)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/33'
+True: 0
+------
+rgb: (0, 0.99991)
+flow: (0, 0.99945575)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/37'
+True: 0
+------
+rgb: (0, 0.99846447)
+flow: (0, 0.97784835)
+joint: (0, 0.9999883)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/40'
+True: 0
+------
+rgb: (0, 0.99950683)
+flow: (0, 0.969041)
+joint: (0, 0.9999925)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/6'
+True: 0
+------
+rgb: (0, 0.9893657)
+flow: (0, 0.9782581)
+joint: (0, 0.99977916)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/20'
+True: 0
+------
+rgb: (0, 0.9968708)
+flow: (0, 0.8534629)
+joint: (0, 0.9995278)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/17'
+True: 0
+------
+rgb: (0, 0.99990535)
+flow: (0, 0.9903808)
+joint: (0, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/21'
+True: 0
+------
+rgb: (0, 0.99983025)
+flow: (0, 0.9880585)
+joint: (0, 0.99999964)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/1'
+True: 0
+------
+rgb: (0, 0.99508864)
+flow: (0, 0.83959585)
+joint: (0, 0.9991104)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/22'
+True: 0
+------
+rgb: (0, 0.9998017)
+flow: (0, 0.97521293)
+joint: (0, 0.99999654)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/3'
+True: 0
+------
+rgb: (0, 0.99999833)
+flow: (0, 0.95340073)
+joint: (0, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/27'
+True: 0
+------
+rgb: (0, 0.9901271)
+flow: (0, 0.956588)
+joint: (0, 0.99975973)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/11'
+True: 0
+------
+rgb: (0, 0.9992236)
+flow: (0, 0.84623915)
+joint: (0, 0.9999144)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/30'
+True: 0
+------
+rgb: (0, 0.9965166)
+flow: (0, 0.83309305)
+joint: (0, 0.9995641)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/16'
+True: 0
+------
+rgb: (0, 0.99999595)
+flow: (0, 0.9997068)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/25'
+True: 0
+------
+rgb: (0, 0.9923159)
+flow: (0, 0.7238146)
+joint: (0, 0.99709046)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/36'
+True: 0
+------
+rgb: (0, 0.9981926)
+flow: (0, 0.9260462)
+joint: (0, 0.99994016)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/41'
+True: 0
+------
+rgb: (0, 0.9745025)
+flow: (0, 0.9694829)
+joint: (0, 0.9997031)
+
+Sample '/home/brunomcebola/Desktop/Thesis/kinetics/kinetics/data/color/bag_on_floor/15'
+True: 0
+------
+rgb: (0, 0.9909156)
+flow: (0, 0.5103698)
+joint: (0, 0.99254143)
+

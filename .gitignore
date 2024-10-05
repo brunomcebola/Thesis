@@ -33,3 +33,5 @@ RefiNet/
 opencv*/
 scenic/
 videos/
+
+!kinetics/kinetics/tests/

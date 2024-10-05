@@ -81,13 +81,22 @@ class Logits(snt.Module):
 
 
 class InceptionI3dLogits(snt.Module):
-    """InceptionI3DLogits module"""
+    """
+    InceptionI3DLogits module
+    """
 
     def __init__(
         self,
         num_classes,
         dropout_keep_prob=1.0,
     ):
+        """
+        Initializes the InceptionI3DLogits module
+
+        Args:
+            num_classes: Number of classes
+            dropout_keep_prob: Dropout keep probability
+        """
         super(InceptionI3dLogits, self).__init__(name="inception_i3d_logits")
 
         self.Logits = Logits(  # pylint: disable=invalid-name

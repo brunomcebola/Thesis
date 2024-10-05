@@ -118,6 +118,7 @@ def main():
     print()
 
     # Perform the inferences for each combination of checkpoints
+    shutil.rmtree(OUTPUT_DIR, ignore_errors=True)
     for group, checkpoints in checkpoints_groups.items():
         print(f"Evaluating checkpoints group '{group}'")
 
@@ -172,7 +173,6 @@ def main():
 
         # Ensure empty output directory
         output_dir = os.path.join(OUTPUT_DIR, group)
-        shutil.rmtree(output_dir, ignore_errors=True)
         os.makedirs(output_dir, exist_ok=True)
 
         print(f"Saving results to '{output_dir}'\n")
@@ -182,7 +182,7 @@ def main():
             # Generate confusion matrix
             cm = confusion_matrix(true_labels, np.array([i[0] for i in stream_predictions]))
 
-            fig, ax = plt.subplots(figsize=(10, 10))
+            _, ax = plt.subplots(figsize=(10, 10))
             sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax, cbar=False)
             ax.set_title(f"Confusion matrix for '{group}' ({stream})")
             ax.set_xlabel("Predicted")
@@ -191,7 +191,7 @@ def main():
             plt.savefig(os.path.join(output_dir, f"{stream}.png"))
 
         # Save predictions
-        with open(os.path.join(output_dir, "predictions.txt"), "w") as file:
+        with open(os.path.join(output_dir, "predictions.txt"), "w", encoding="utf-8") as file:
             for i, (sample_dir, label) in enumerate(zip(samples_dirs, labels)):
                 file.write(f"Sample '{sample_dir}'\n")
                 file.write(f"True: {label}\n")
@@ -206,7 +206,7 @@ def main():
         betas = [2, 2, 0.5]
         class_weights = np.array(class_counts) / len(labels)
 
-        with open(os.path.join(output_dir, "statistics.txt"), "w") as file:
+        with open(os.path.join(output_dir, "statistics.txt"), "w", encoding="utf-8") as file:
             for stream, stream_predictions in predictions.items():
                 pred_labels = np.array([i[0] for i in stream_predictions])
 
@@ -235,18 +235,18 @@ def main():
                 # Write to file
                 file.write(f"Stream '{stream}'\n")
                 file.write("------\n")
-                file.write(f"Overall Accuracy: {overall_accuracy:.2f}\n")
-                file.write(f"Overall Precision: {overall_precision:.2f}\n")
-                file.write(f"Overall Recall: {overall_recall:.2f}\n")
-                file.write(f"Overall F-Score: {overall_fscore:.2f}\n")
+                file.write(f"Overall Accuracy: {overall_accuracy}\n")
+                file.write(f"Overall Precision: {overall_precision}\n")
+                file.write(f"Overall Recall: {overall_recall}\n")
+                file.write(f"Overall F-Score: {overall_fscore}\n")
 
                 for i, cls in enumerate(classes):
                     file.write("------\n")
                     file.write(f"Class '{list(classes.keys())[i]}'\n")
-                    file.write(f"Accuracy: {class_accuracies[i]:.2f}\n")
-                    file.write(f"Precision: {class_precisions[i]:.2f}\n")
-                    file.write(f"Recall: {class_recalls[i]:.2f}\n")
-                    file.write(f"F-Score: {class_fscores[i]:.2f}\n")
+                    file.write(f"Accuracy: {class_accuracies[i]}\n")
+                    file.write(f"Precision: {class_precisions[i]}\n")
+                    file.write(f"Recall: {class_recalls[i]}\n")
+                    file.write(f"F-Score: {class_fscores[i]}\n")
 
                 file.write("\n")
 
