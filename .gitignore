@@ -16,15 +16,18 @@ wheel_contents/
 *.venv*
 *.direnv*
 *.npy*
-*.log*
-*.so*
-*.db*
-*.tar*
+*.log
+*.so
+*.db
+*.tar
+*.tar.gz
+*.tar.xz
 *.env
-*.env.*
+*.env.argos_*
 *.yaml*
 *.zip*
 *.egg-info*
+*.mp4
 
 RefiNet/
 opencv*/

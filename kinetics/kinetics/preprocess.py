@@ -12,7 +12,7 @@ from tqdm import tqdm
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 BASE_INPUT_DIR = os.path.join(BASE_DIR, "videos")
-BASE_OUTPUT_DIR = os.path.join(BASE_DIR, "npy")
+BASE_OUTPUT_DIR = os.path.join(BASE_DIR, "data")
 
 
 def preprocess(video) -> tuple[list[cv2.cuda.GpuMat], list[cv2.cuda.GpuMat]]:
