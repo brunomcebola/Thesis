@@ -1,0 +1,4 @@
+bag_on_floor
+conflict
+none
+swipe_card

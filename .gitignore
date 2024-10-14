@@ -3,7 +3,6 @@
 node_modules/
 configs/
 random/
-models/
 pose/
 build/
 wheel_contents/
