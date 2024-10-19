@@ -1,0 +1,93 @@
+Stream 'flow'
+------
+Overall Accuracy: 0.7333333333333334
+Overall Precision: 0.636188087275044
+Overall Recall: 0.5666666666666668
+Overall F-Score: 0.6086104805037512
+------
+Class 'bag_on_floor'
+Accuracy: 0.7777777777777778
+Precision: 0.391304347826087
+Recall: 0.6
+F-Score: 0.5421686746987951
+------
+Class 'conflict'
+Accuracy: 0.9111111111111111
+Precision: 0.7692307692307693
+Recall: 0.6666666666666666
+F-Score: 0.684931506849315
+------
+Class 'none'
+Accuracy: 0.6333333333333333
+Precision: 0.7307692307692307
+Recall: 0.4222222222222222
+F-Score: 0.6375838926174496
+------
+Class 'swipe_card'
+Accuracy: 0.8111111111111111
+Precision: 0.4642857142857143
+Recall: 0.8666666666666667
+F-Score: 0.5118110236220472
+
+Stream 'rgb'
+------
+Overall Accuracy: 0.6629629629629631
+Overall Precision: 0.5234126984126986
+Overall Recall: 0.43333333333333335
+Overall F-Score: 0.4941976741242347
+------
+Class 'bag_on_floor'
+Accuracy: 0.6888888888888889
+Precision: 0.3333333333333333
+Recall: 0.8666666666666667
+F-Score: 0.6565656565656566
+------
+Class 'conflict'
+Accuracy: 0.8555555555555555
+Precision: 0.6
+Recall: 0.4
+F-Score: 0.42857142857142855
+------
+Class 'none'
+Accuracy: 0.5555555555555556
+Precision: 0.6190476190476191
+Recall: 0.28888888888888886
+F-Score: 0.5038759689922481
+------
+Class 'swipe_card'
+Accuracy: 0.7666666666666667
+Precision: 0.35
+Recall: 0.4666666666666667
+F-Score: 0.3684210526315789
+
+Stream 'joint'
+------
+Overall Accuracy: 0.6925925925925926
+Overall Precision: 0.5631648461483545
+Overall Recall: 0.4888888888888889
+Overall F-Score: 0.5487657113591862
+------
+Class 'bag_on_floor'
+Accuracy: 0.7333333333333333
+Precision: 0.3448275862068966
+Recall: 0.6666666666666666
+F-Score: 0.5617977528089888
+------
+Class 'conflict'
+Accuracy: 0.8777777777777778
+Precision: 0.6428571428571429
+Recall: 0.6
+F-Score: 0.6081081081081081
+------
+Class 'none'
+Accuracy: 0.5888888888888889
+Precision: 0.6666666666666666
+Recall: 0.35555555555555557
+F-Score: 0.5673758865248227
+------
+Class 'swipe_card'
+Accuracy: 0.7777777777777778
+Precision: 0.391304347826087
+Recall: 0.6
+F-Score: 0.4205607476635514
+

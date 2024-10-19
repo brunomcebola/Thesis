@@ -12,12 +12,11 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
+from typing import Any
 from abc import ABC, abstractmethod
 
-from . import k_fold_finetune
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
+from . import search
+from . import funcs
 
 class Trainer(ABC):
     """
@@ -30,9 +29,8 @@ class Trainer(ABC):
         output_checkpoint_dir: str,
         source_data_dir: str,
         tmp_dir: str,
-        k_folds: int,
-        epochs: int,
-        batch_size: int,
+        learning_rates: list[float],
+        confidence_thresholds: list[float],
     ) -> None:
         """
         Initialize the trainer
@@ -63,12 +61,11 @@ class Trainer(ABC):
         self._samples = []
         self._labels = []
 
-        self._k_folds = k_folds
-        self._epochs = epochs
-        self._batch_size = batch_size
+        self._learning_rates = learning_rates
+        self._confidence_thresholds = confidence_thresholds
 
-        self._best_model = None
-        self._metrics = None
+        self._results = {}
+        self._model = self._gen_model()
 
     def initialize(self) -> None:
         """
@@ -98,26 +95,30 @@ class Trainer(ABC):
         self._samples = train_samples
         self._labels = train_labels
 
-    def train(self) -> None:
+    def search(self) -> None:
         """
         Train the model
         """
 
-        model, metrics = k_fold_finetune(
+        self._results = search.stratified_k_fold(
             self._samples,
             self._labels,
             self._gen_model,
-            self._gen_optimizer,
-            self._gen_loss,
             self._gen_score,
-            self._tmp_dir,
-            self._k_folds,
-            self._epochs,
-            self._batch_size,
+            self._learning_rates,
+            self._confidence_thresholds,
         )
 
-        self._best_model = model
-        self._metrics = metrics
+    def train(self) -> None:
+        dataset = funcs.create_dataset(np.array(self._samples), np.array(self._labels))
+
+        optimizer = tf.optimizers.Adam(learning_rate=self._results["hyperparameters"][1])
+
+        for _ in tqdm(range(self._results["hyperparameters"][0]), desc="Training model"):
+            loss_fn = tf.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+            funcs.train_step(self._model, dataset, optimizer, loss_fn)
+
 
     def save(self) -> None:
         """
@@ -132,53 +133,36 @@ class Trainer(ABC):
         ) as f:
             f.write("\n".join(self._classes.keys()))
 
-        # Save training plot
-        _, axs = plt.subplots(1, 2, figsize=(12, 6))
+        # Save best hyperparameters
+        with open(
+            os.path.join(self._output_checkpoint_dir, "best_hyperparameters.txt"), "w", encoding="utf-8"
+        ) as f:
+            f.write(str(self._results["hyperparameters"]))
 
-        for i, train_losses in enumerate(self._metrics[0], 1):
-            axs[0].plot(range(1, len(train_losses) + 1), train_losses, label=f"K Fold {i}")
-        axs[0].set_title("Train Loss Over Epochs")
-        axs[0].set_xlabel("Epochs")
-        axs[0].set_ylabel("Loss")
-        axs[0].legend()
-        axs[0].grid(True)
+        # Save scores
+        np.save(os.path.join(self._output_checkpoint_dir, "scores.npy"), self._results["scores"])
 
-        for i, train_scores in enumerate(self._metrics[1], 1):
-            axs[1].plot(range(1, len(train_scores) + 1), train_scores, label=f"K Fold {i}")
-        axs[1].set_title("Train Score Over Epochs")
-        axs[1].set_xlabel("Epochs")
-        axs[1].set_ylabel("Scores")
-        axs[1].legend()
-        axs[1].grid(True)
-
+        # Save scores plot
+        plt.rc('font', size=20)
+        plt.rc('axes', titlesize=20)
+        plt.rc('axes', labelsize=20)
+        plt.rc('xtick', labelsize=20)
+        plt.rc('ytick', labelsize=20)
+        plt.rc('legend', fontsize=20)
+        _, axs = plt.subplots(1, 1, figsize=(12, 8))
+        for hyperparameter, scores in self._results["scores"].items():
+            axs.plot(range(len(scores)), scores, label=f"lr: {hyperparameter[0]} ; ct: {hyperparameter[1]}")
+        axs.set_title("Validation Score Over Epochs")
+        axs.set_xlabel("Epochs")
+        axs.set_ylabel("Scores")
+        axs.xaxis.set_major_locator(plt.MaxNLocator(integer=True))  # type: ignore
+        axs.set_yticks([i * 0.1 for i in range(11)])
+        axs.set_ylim(0, 1)
+        axs.set_xlim(left=0, right=len(scores) - 1)
+        axs.legend()
+        axs.grid(True)
         plt.tight_layout()
-        plt.savefig(os.path.join(self._output_checkpoint_dir, "train_plot.png"))
-
-        # Save validation plot
-        _, axs = plt.subplots(1, 2, figsize=(12, 6))
-
-        for i, validation_losses in enumerate(self._metrics[2], 1):
-            axs[0].plot(
-                range(1, len(validation_losses) + 1), validation_losses, label=f"K Fold {i}"
-            )
-        axs[0].set_title("Validation Score Over Epochs")
-        axs[0].set_xlabel("Epochs")
-        axs[0].set_ylabel("Loss")
-        axs[0].legend()
-        axs[0].grid(True)
-
-        for i, validation_scores in enumerate(self._metrics[3], 1):
-            axs[1].plot(
-                range(1, len(validation_scores) + 1), validation_scores, label=f"K Fold {i}"
-            )
-        axs[1].set_title("Validation Score Over Epochs")
-        axs[1].set_xlabel("Epochs")
-        axs[1].set_ylabel("Scores")
-        axs[1].legend()
-        axs[1].grid(True)
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(self._output_checkpoint_dir, "validation_plot.png"))
+        plt.savefig(os.path.join(self._output_checkpoint_dir, "scores_plot.png"))
 
     def cleanup(self) -> None:
         """
@@ -206,31 +190,19 @@ class Trainer(ABC):
         """
 
     @abstractmethod
-    def _gen_model(self):
+    def _gen_model(self) -> Any:
         """
         Generate model
         """
 
     @abstractmethod
-    def _gen_optimizer(self):
-        """
-        Generate optimizer
-        """
-
-    @abstractmethod
-    def _gen_loss(self):
-        """
-        Generate loss
-        """
-
-    @abstractmethod
-    def _gen_score(self):
+    def _gen_score(self, confidence_threshold: float) -> tf.keras.metrics.Metric:
         """
         Generate metrics
         """
 
     @abstractmethod
-    def _save_model(self):
+    def _save_model(self) -> None:
         """
         Save the model
         """

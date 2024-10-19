@@ -20,7 +20,14 @@ class CustomFScore(tf.keras.metrics.Metric):
     Custom F-score metric
     """
 
-    def __init__(self, classes: dict[int, int], betas: dict[int, float], **kwargs) -> None:
+    def __init__(
+        self,
+        classes: dict[int, int],
+        betas: dict[int, float],
+        confidence_threshold: float,
+        fallback_label: int,
+        **kwargs,
+    ) -> None:
         """
         Initialize the metric
 
@@ -37,6 +44,8 @@ class CustomFScore(tf.keras.metrics.Metric):
 
         self.betas = betas
         self.classes = classes
+        self.confidence_threshold = confidence_threshold
+        self.fallback_label = fallback_label
 
         self.precision = [tf.keras.metrics.Precision() for _ in range(len(classes))]
         self.recall = [tf.keras.metrics.Recall() for _ in range(len(classes))]
@@ -51,8 +60,15 @@ class CustomFScore(tf.keras.metrics.Metric):
             sample_weight: Sample weights
         """
 
-        y_pred = tf.nn.softmax(y_pred)
-        y_pred = tf.argmax(y_pred, axis=1)
+        y_prob = tf.nn.softmax(y_pred)
+        y_pred = tf.argmax(y_prob, axis=1)
+        
+        y_prob = tf.reduce_max(y_prob, axis=1)
+        y_pred = tf.where(
+            y_prob < self.confidence_threshold,
+            self.fallback_label,
+            y_pred
+        )
 
         for i in range(len(self.classes)):
             y_true_class = tf.cast(tf.equal(y_true, i), tf.int32)

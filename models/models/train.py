@@ -13,11 +13,13 @@ from typing import Type
 
 from .utils import Trainer
 from . import kinetics
+from . import vivit
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MODELS_MAP: dict[str, Type[Trainer]] = {
     "kinetics": kinetics.Trainer,
+    "vivit": vivit.Trainer,
 }
 
 
@@ -29,6 +31,7 @@ def main():
     parser = argparse.ArgumentParser(description="Fine tune I3D model on custom data")
     parser.add_argument(
         "--model",
+        "-m",
         type=str,
         choices=[*MODELS_MAP.keys()],
         required=True,
@@ -36,35 +39,34 @@ def main():
     )
     parser.add_argument(
         "--data",
+        "-d",
         type=str,
         choices=["color", "depth"],
-        default="color",
+        required=True,
         help="Data type to preprocess",
     )
     parser.add_argument(
-        "--k-folds",
-        type=int,
-        default=5,
-        help="Number of folds for k-fold cross validation",
+        "--learning-rates",
+        "-lr",
+        type=str,
+        required=True,
+        help="Learning rates to search",
     )
     parser.add_argument(
-        "--epochs",
-        type=int,
-        default=5,
-        help="Number of epochs to train the model",
-    )
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=1,
-        help="Batch size for training",
+        "--confidence-thresholds",
+        "-ct",
+        type=str,
+        required=True,
+        help="Confidence thresholds to search",
     )
     args = parser.parse_args()
+    args.learning_rates = list(map(float, args.learning_rates.split(",")))
+    args.confidence_thresholds = list(map(float, args.confidence_thresholds.split(",")))
 
     model_dir = os.path.join(BASE_DIR, args.model)
-    input_checkpoints = os.path.join(model_dir, "checkpoints")
-    output_checkpoints = os.path.join(model_dir, "finetuned_checkpoints")
-    data_dir = os.path.join(model_dir, "data", args.data)
+    input_checkpoints = os.path.join(model_dir, "checkpoints", "base")
+    output_checkpoints = os.path.join(model_dir, "checkpoints", args.data)
+    data_dir = os.path.join(model_dir, "data", "train", args.data)
     tmp_dir = os.path.join(model_dir, "tmp")
 
     for checkpoint in os.listdir(input_checkpoints):
@@ -75,12 +77,13 @@ def main():
             os.path.join(output_checkpoints, checkpoint),
             data_dir,
             tmp_dir,
-            args.k_folds,
-            args.epochs,
-            args.batch_size,
+            args.learning_rates,
+            args.confidence_thresholds,
         )
 
         trainer.initialize()
+
+        trainer.search()
 
         trainer.train()
 

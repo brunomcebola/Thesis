@@ -1,0 +1,93 @@
+Stream 'flow'
+------
+Overall Accuracy: 0.7777777777777778
+Overall Precision: 0.6897276334776336
+Overall Recall: 0.6666666666666666
+Overall F-Score: 0.6962176778189267
+------
+Class 'bag_on_floor'
+Accuracy: 0.7888888888888889
+Precision: 0.4
+Recall: 0.5333333333333333
+F-Score: 0.5
+------
+Class 'conflict'
+Accuracy: 0.9888888888888889
+Precision: 0.9375
+Recall: 1.0
+F-Score: 0.9868421052631579
+------
+Class 'none'
+Accuracy: 0.6666666666666666
+Precision: 0.7272727272727273
+Recall: 0.5333333333333333
+F-Score: 0.6779661016949152
+------
+Class 'swipe_card'
+Accuracy: 0.8888888888888888
+Precision: 0.6190476190476191
+Recall: 0.8666666666666667
+F-Score: 0.6565656565656566
+
+Stream 'rgb'
+------
+Overall Accuracy: 0.5851851851851854
+Overall Precision: 0.3957602339181287
+Overall Recall: 0.3555555555555556
+Overall F-Score: 0.35089424464424473
+------
+Class 'bag_on_floor'
+Accuracy: 0.7666666666666667
+Precision: 0.35
+Recall: 0.4666666666666667
+F-Score: 0.4375
+------
+Class 'conflict'
+Accuracy: 0.8555555555555555
+Precision: 0.6666666666666666
+Recall: 0.26666666666666666
+F-Score: 0.30303030303030304
+------
+Class 'none'
+Accuracy: 0.4
+Precision: 0.4
+Recall: 0.4
+F-Score: 0.4
+------
+Class 'swipe_card'
+Accuracy: 0.6888888888888889
+Precision: 0.15789473684210525
+Recall: 0.2
+F-Score: 0.16483516483516483
+
+Stream 'joint'
+------
+Overall Accuracy: 0.7370370370370372
+Overall Precision: 0.6235546251993621
+Overall Recall: 0.6
+Overall F-Score: 0.6275292626578433
+------
+Class 'bag_on_floor'
+Accuracy: 0.7888888888888889
+Precision: 0.4090909090909091
+Recall: 0.6
+F-Score: 0.5487804878048781
+------
+Class 'conflict'
+Accuracy: 0.9888888888888889
+Precision: 1.0
+Recall: 0.9333333333333333
+F-Score: 0.9459459459459459
+------
+Class 'none'
+Accuracy: 0.6111111111111112
+Precision: 0.631578947368421
+Recall: 0.5333333333333333
+F-Score: 0.6091370558375635
+------
+Class 'swipe_card'
+Accuracy: 0.8111111111111111
+Precision: 0.4375
+Recall: 0.4666666666666667
+F-Score: 0.4430379746835443
+

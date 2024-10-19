@@ -86,26 +86,18 @@ class Trainer(_Trainer):
     def _gen_model(self):
         return i3d_logits.InceptionI3dLogits(self._num_classes)
 
-    def _gen_optimizer(self):
-        return tf.optimizers.Adam(learning_rate=0.001)
-
-    def _gen_loss(self):
-        return tf.losses.SparseCategoricalCrossentropy(from_logits=True)
-
-    def _gen_score(self):
-
+    def _gen_score(self, confidence_threshold: float):
+        # TODO: try not to have this hardcoded
         classes = {i: self._labels.count(i) for i in range(self._num_classes)}
         betas = {0: 2, 1: 2, 2: 0.5, 3: 0.5}
+        fallback_label = 2
 
-        return CustomFScore(classes=classes, betas=betas)
+        return CustomFScore(classes, betas, confidence_threshold, fallback_label)
 
     def _save_model(self) -> None:
         """
         Save the model
         """
-
-        if self._best_model is None:
-            return
 
         # Create sample tensors
         channels = 3 if "rgb" in os.path.basename(self._input_checkpoint_dir) else 2
@@ -125,8 +117,8 @@ class Trainer(_Trainer):
         full_model(input_sample)
 
         # Update the full model with the finetuned logits
-        self._best_model(logits_sample)
-        model_variables = {var.name: var for var in self._best_model.trainable_variables}
+        self._model(logits_sample)
+        model_variables = {var.name: var for var in self._model.trainable_variables}
 
         variables_to_replace_map = {
             "inception_i3d/Logits/Conv3d_0c_1x1/conv_3d/b:0": "inception_i3d_logits/Logits/Conv3d_0c_1x1/conv_3d/b:0",

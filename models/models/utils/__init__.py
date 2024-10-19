@@ -2,6 +2,8 @@
 Init file for the utils module.
 """
 
-from .k_fold import finetune as k_fold_finetune
+from . import search
+from . import funcs
 from .trainer import Trainer
+from .tester import Tester
 from .score import CustomFScore

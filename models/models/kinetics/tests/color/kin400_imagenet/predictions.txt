@@ -1,0 +1,630 @@
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/28'
+True: 1
+------
+flow: (2, 0.99999213)
+rgb: (1, 0.9974942)
+joint: (2, 0.8348309)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/44'
+True: 1
+------
+flow: (1, 1.0)
+rgb: (1, 0.99999964)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/39'
+True: 1
+------
+flow: (1, 1.0)
+rgb: (1, 0.99998415)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/29'
+True: 1
+------
+flow: (1, 1.0)
+rgb: (1, 0.9972445)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/35'
+True: 1
+------
+flow: (1, 1.0)
+rgb: (1, 0.80439895)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/42'
+True: 1
+------
+flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/31'
+True: 1
+------
+flow: (1, 1.0)
+rgb: (1, 0.999895)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/43'
+True: 1
+------
+flow: (1, 0.9995296)
+rgb: (1, 1.0)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/26'
+True: 1
+------
+flow: (1, 1.0)
+rgb: (1, 0.95971054)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/37'
+True: 1
+------
+flow: (1, 0.99999166)
+rgb: (2, 0.9667855)
+joint: (1, 0.998439)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/40'
+True: 1
+------
+flow: (2, 0.5833088)
+rgb: (1, 0.9999311)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/27'
+True: 1
+------
+flow: (2, 0.9996587)
+rgb: (1, 0.9988533)
+joint: (2, 0.77074546)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/30'
+True: 1
+------
+flow: (1, 1.0)
+rgb: (1, 0.9964049)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/36'
+True: 1
+------
+flow: (1, 0.9999932)
+rgb: (2, 0.57071465)
+joint: (1, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/conflict/41'
+True: 1
+------
+flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/44'
+True: 3
+------
+flow: (3, 0.93384916)
+rgb: (1, 0.97215885)
+joint: (2, 0.9999993)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/34'
+True: 3
+------
+flow: (3, 1.0)
+rgb: (2, 0.73664135)
+joint: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/32'
+True: 3
+------
+flow: (3, 0.9611424)
+rgb: (1, 1.0)
+joint: (1, 0.9999814)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/39'
+True: 3
+------
+flow: (2, 0.99707675)
+rgb: (1, 0.99930406)
+joint: (2, 0.9998988)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/29'
+True: 3
+------
+flow: (3, nan)
+rgb: (3, nan)
+joint: (3, nan)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/35'
+True: 3
+------
+flow: (3, 1.0)
+rgb: (1, 0.8420552)
+joint: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/42'
+True: 3
+------
+flow: (2, 0.99998736)
+rgb: (1, 0.91446394)
+joint: (2, 0.99956375)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/31'
+True: 3
+------
+flow: (2, 1.0)
+rgb: (1, 0.9994491)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/38'
+True: 3
+------
+flow: (3, 1.0)
+rgb: (0, 0.9997999)
+joint: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/43'
+True: 3
+------
+flow: (2, 0.6412057)
+rgb: (2, 0.9999989)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/33'
+True: 3
+------
+flow: (3, 1.0)
+rgb: (1, 0.9926918)
+joint: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/37'
+True: 3
+------
+flow: (3, 1.0)
+rgb: (2, 0.9991007)
+joint: (3, 0.99999964)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/40'
+True: 3
+------
+flow: (3, 0.9998653)
+rgb: (1, 0.99117976)
+joint: (2, 0.9993236)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/36'
+True: 3
+------
+flow: (3, 1.0)
+rgb: (0, 0.7847983)
+joint: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/swipe_card/41'
+True: 3
+------
+flow: (2, 0.79782706)
+rgb: (1, 0.9877927)
+joint: (0, 0.966392)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/12'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (1, 0.90376776)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/73'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (0, 0.90507275)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/44'
+True: 2
+------
+flow: (0, 1.0)
+rgb: (0, 0.99999917)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/34'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (2, 0.9999924)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/74'
+True: 2
+------
+flow: (2, 0.999992)
+rgb: (0, 0.9998561)
+joint: (2, 0.947393)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/32'
+True: 2
+------
+flow: (2, 0.9999846)
+rgb: (1, 1.0)
+joint: (1, 0.9836436)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/39'
+True: 2
+------
+flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (0, 0.99987173)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/29'
+True: 2
+------
+flow: (3, 0.99816126)
+rgb: (1, 0.99998903)
+joint: (2, 0.9999962)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/4'
+True: 2
+------
+flow: (2, 0.8986444)
+rgb: (2, 0.57071465)
+joint: (0, 0.9307779)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/62'
+True: 2
+------
+flow: (0, 1.0)
+rgb: (0, 0.99999976)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/14'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (1, 0.937973)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/70'
+True: 2
+------
+flow: (0, 0.999926)
+rgb: (1, 0.882952)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/60'
+True: 2
+------
+flow: (0, 1.0)
+rgb: (0, 0.9936608)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/35'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (2, 0.9999932)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/58'
+True: 2
+------
+flow: (2, 0.9999995)
+rgb: (0, 0.99998987)
+joint: (2, 0.9522371)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/31'
+True: 2
+------
+flow: (3, 0.93174475)
+rgb: (1, 0.9828047)
+joint: (0, 0.98405993)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/51'
+True: 2
+------
+flow: (0, 1.0)
+rgb: (0, 0.99999964)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/38'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (1, 0.9999701)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/71'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (0, 0.99999726)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/18'
+True: 2
+------
+flow: (2, 0.6093145)
+rgb: (3, 0.99919635)
+joint: (3, 0.99950933)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/56'
+True: 2
+------
+flow: (3, 0.9999988)
+rgb: (1, 1.0)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/57'
+True: 2
+------
+flow: (2, 0.9999999)
+rgb: (0, 0.99998987)
+joint: (2, 0.9854929)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/55'
+True: 2
+------
+flow: (3, 0.90896046)
+rgb: (0, 0.9255437)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/69'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (0, 1.0)
+joint: (0, 0.98169965)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/67'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (2, 0.90547895)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/19'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (2, 0.9999888)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/13'
+True: 2
+------
+flow: (2, 0.99999726)
+rgb: (2, 0.83055556)
+joint: (2, 0.99999964)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/52'
+True: 2
+------
+flow: (0, 1.0)
+rgb: (0, 0.8264232)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/2'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (1, 0.8448428)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/33'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (2, 0.8662505)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/45'
+True: 2
+------
+flow: (0, 0.99987185)
+rgb: (2, 0.95222133)
+joint: (0, 0.99728084)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/59'
+True: 2
+------
+flow: (2, 0.95819825)
+rgb: (1, 0.9975395)
+joint: (2, 0.7544666)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/48'
+True: 2
+------
+flow: (0, 1.0)
+rgb: (0, 0.99999917)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/20'
+True: 2
+------
+flow: (3, 1.0)
+rgb: (3, 0.9979818)
+joint: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/63'
+True: 2
+------
+flow: (0, 1.0)
+rgb: (0, 0.99711084)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/17'
+True: 2
+------
+flow: (3, 0.9446328)
+rgb: (1, 0.9524727)
+joint: (3, 0.9971246)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/21'
+True: 2
+------
+flow: (2, 0.999752)
+rgb: (2, 0.9847476)
+joint: (2, 0.9999962)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/22'
+True: 2
+------
+flow: (2, 0.939039)
+rgb: (3, 0.9688265)
+joint: (2, 0.6693879)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/49'
+True: 2
+------
+flow: (3, nan)
+rgb: (3, nan)
+joint: (3, nan)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/72'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (1, 0.95445496)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/47'
+True: 2
+------
+flow: (0, 0.9999999)
+rgb: (1, 0.99993587)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/54'
+True: 2
+------
+flow: (0, 0.99999523)
+rgb: (0, 0.999998)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/30'
+True: 2
+------
+flow: (2, 0.9999802)
+rgb: (1, 0.9999999)
+joint: (2, 0.99657494)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/36'
+True: 2
+------
+flow: (3, 0.9926122)
+rgb: (1, 1.0)
+joint: (1, 0.9999995)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/none/68'
+True: 2
+------
+flow: (2, 1.0)
+rgb: (1, 0.9999999)
+joint: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/12'
+True: 0
+------
+flow: (2, 1.0)
+rgb: (0, 1.0)
+joint: (2, 0.99939156)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/44'
+True: 0
+------
+flow: (2, 0.99994886)
+rgb: (0, 0.9998274)
+joint: (2, 0.59995)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/34'
+True: 0
+------
+flow: (0, 1.0)
+rgb: (0, 0.8871205)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/39'
+True: 0
+------
+flow: (0, 0.99999976)
+rgb: (0, 0.9996069)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/14'
+True: 0
+------
+flow: (2, 0.99995434)
+rgb: (0, 0.99829036)
+joint: (0, 0.9973441)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/10'
+True: 0
+------
+flow: (2, 0.9996828)
+rgb: (2, 0.68350357)
+joint: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/35'
+True: 0
+------
+flow: (2, 0.5831665)
+rgb: (1, 1.0)
+joint: (0, 0.9999999)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/42'
+True: 0
+------
+flow: (0, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/38'
+True: 0
+------
+flow: (0, 0.9998698)
+rgb: (0, 0.9906199)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/43'
+True: 0
+------
+flow: (2, 0.94114786)
+rgb: (2, 0.68844044)
+joint: (2, 0.9999939)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/13'
+True: 0
+------
+flow: (0, 0.99997044)
+rgb: (1, 0.9999999)
+joint: (0, 0.9999962)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/33'
+True: 0
+------
+flow: (0, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/40'
+True: 0
+------
+flow: (0, 0.80133873)
+rgb: (2, 0.51192445)
+joint: (0, 0.9999988)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/11'
+True: 0
+------
+flow: (2, 0.98419696)
+rgb: (2, 0.6671561)
+joint: (0, 0.99606186)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/kinetics/data/test/color/bag_on_floor/41'
+True: 0
+------
+flow: (0, 1.0)
+rgb: (0, 0.99780124)
+joint: (0, 1.0)
+

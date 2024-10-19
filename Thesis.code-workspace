@@ -13,6 +13,5 @@
       "titleBar.activeBackground": "#66235C",
       "titleBar.activeForeground": "#FDF8FC"
     },
-    "python.defaultInterpreterPath": ".venv_base/python-3.9.2/bin/python"
   }
 }
