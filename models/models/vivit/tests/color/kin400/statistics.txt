@@ -1,0 +1,31 @@
+Stream 'rgb'
+------
+Overall Accuracy: 0.6407407407407408
+Overall Precision: 0.5055211558307534
+Overall Recall: 0.3777777777777778
+Overall F-Score: 0.45698277727225206
+------
+Class 'bag_on_floor'
+Accuracy: 0.6555555555555556
+Precision: 0.2647058823529412
+Recall: 0.6
+F-Score: 0.4787234042553192
+------
+Class 'conflict'
+Accuracy: 0.7777777777777778
+Precision: 0.4
+Recall: 0.6666666666666666
+F-Score: 0.5882352941176471
+------
+Class 'none'
+Accuracy: 0.5444444444444444
+Precision: 0.6666666666666666
+Recall: 0.17777777777777778
+F-Score: 0.43010752688172044
+------
+Class 'swipe_card'
+Accuracy: 0.7777777777777778
+Precision: 0.3684210526315789
+Recall: 0.4666666666666667
+F-Score: 0.38461538461538464
+

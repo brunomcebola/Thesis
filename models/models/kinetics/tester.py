@@ -19,8 +19,11 @@ class Tester(_Tester):
     Tester class for the kinetics model
     """
 
-    def _gen_model(self):
-        return i3d.InceptionI3d(self._num_classes, final_endpoint="Logits")
+    def _gen_model(self, checkpoint):
+        model = i3d.InceptionI3d(self._num_classes, final_endpoint="Logits")
+        tf.train.Checkpoint(model=model).restore(checkpoint).expect_partial()
+
+        return lambda x: model(tf.convert_to_tensor(x, dtype=tf.float32))
 
     def _gen_sub_samples(self, sample: tf.Tensor) -> list[tf.Tensor]:
         """

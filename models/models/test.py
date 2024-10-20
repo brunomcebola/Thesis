@@ -14,6 +14,7 @@ from typing import Type
 
 from .utils import Tester
 from . import kinetics
+from . import vivit
 
 ###
 
@@ -21,6 +22,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MODELS_MAP: dict[str, Type[Tester]] = {
     "kinetics": kinetics.Tester,
+    "vivit": vivit.Tester,
 }
 
 ###

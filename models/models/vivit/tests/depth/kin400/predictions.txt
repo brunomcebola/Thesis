@@ -1,0 +1,450 @@
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/28'
+True: 1
+------
+rgb: (2, 0.7817629)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/44'
+True: 1
+------
+rgb: (2, 0.9372537)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/39'
+True: 1
+------
+rgb: (2, 0.67987555)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/29'
+True: 1
+------
+rgb: (3, 0.99834275)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/35'
+True: 1
+------
+rgb: (1, 0.9995701)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/42'
+True: 1
+------
+rgb: (0, 0.9998636)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/31'
+True: 1
+------
+rgb: (1, 0.99995816)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/43'
+True: 1
+------
+rgb: (0, 0.99902725)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/26'
+True: 1
+------
+rgb: (2, 0.8825849)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/37'
+True: 1
+------
+rgb: (0, 0.91970015)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/40'
+True: 1
+------
+rgb: (2, 0.99997604)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/27'
+True: 1
+------
+rgb: (2, 0.53939235)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/30'
+True: 1
+------
+rgb: (2, 0.9169128)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/36'
+True: 1
+------
+rgb: (2, 0.99999106)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/conflict/41'
+True: 1
+------
+rgb: (2, 0.65241075)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/44'
+True: 3
+------
+rgb: (2, 0.8945157)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/34'
+True: 3
+------
+rgb: (3, 0.9999994)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/32'
+True: 3
+------
+rgb: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/39'
+True: 3
+------
+rgb: (2, 0.9449966)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/29'
+True: 3
+------
+rgb: (0, 0.74313754)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/35'
+True: 3
+------
+rgb: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/42'
+True: 3
+------
+rgb: (2, 0.9970534)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/31'
+True: 3
+------
+rgb: (3, 0.99999785)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/38'
+True: 3
+------
+rgb: (2, 0.54900867)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/43'
+True: 3
+------
+rgb: (2, 0.9952637)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/33'
+True: 3
+------
+rgb: (3, 0.9999912)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/37'
+True: 3
+------
+rgb: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/40'
+True: 3
+------
+rgb: (2, 0.58427256)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/36'
+True: 3
+------
+rgb: (3, 0.99999845)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/swipe_card/41'
+True: 3
+------
+rgb: (2, 0.44757646)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/12'
+True: 2
+------
+rgb: (2, 0.98171705)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/73'
+True: 2
+------
+rgb: (0, 0.83816403)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/44'
+True: 2
+------
+rgb: (2, 0.9966608)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/34'
+True: 2
+------
+rgb: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/74'
+True: 2
+------
+rgb: (0, 0.999806)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/32'
+True: 2
+------
+rgb: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/39'
+True: 2
+------
+rgb: (1, 0.99970347)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/29'
+True: 2
+------
+rgb: (2, 0.99999726)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/4'
+True: 2
+------
+rgb: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/62'
+True: 2
+------
+rgb: (2, 0.9987503)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/14'
+True: 2
+------
+rgb: (2, 0.9999907)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/70'
+True: 2
+------
+rgb: (2, 0.9996631)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/60'
+True: 2
+------
+rgb: (0, 0.99681634)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/35'
+True: 2
+------
+rgb: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/58'
+True: 2
+------
+rgb: (0, 0.99954695)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/31'
+True: 2
+------
+rgb: (3, 0.8863322)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/51'
+True: 2
+------
+rgb: (0, 0.70700306)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/38'
+True: 2
+------
+rgb: (2, 0.52507263)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/71'
+True: 2
+------
+rgb: (0, 0.9964635)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/18'
+True: 2
+------
+rgb: (3, 0.96797985)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/56'
+True: 2
+------
+rgb: (3, 0.99131995)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/57'
+True: 2
+------
+rgb: (2, 0.80060446)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/55'
+True: 2
+------
+rgb: (2, 0.73278636)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/69'
+True: 2
+------
+rgb: (2, 0.9999614)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/67'
+True: 2
+------
+rgb: (2, 0.99935657)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/19'
+True: 2
+------
+rgb: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/13'
+True: 2
+------
+rgb: (3, 0.9100782)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/52'
+True: 2
+------
+rgb: (0, 0.99977523)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/2'
+True: 2
+------
+rgb: (0, 0.998324)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/33'
+True: 2
+------
+rgb: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/45'
+True: 2
+------
+rgb: (2, 0.98973036)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/59'
+True: 2
+------
+rgb: (2, 0.9899512)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/48'
+True: 2
+------
+rgb: (0, 0.99823207)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/20'
+True: 2
+------
+rgb: (3, 0.9999045)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/63'
+True: 2
+------
+rgb: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/17'
+True: 2
+------
+rgb: (3, 0.9999788)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/21'
+True: 2
+------
+rgb: (3, 0.9022591)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/22'
+True: 2
+------
+rgb: (2, 0.99982506)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/49'
+True: 2
+------
+rgb: (0, 0.9998166)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/72'
+True: 2
+------
+rgb: (0, 0.993049)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/47'
+True: 2
+------
+rgb: (2, 0.99986994)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/54'
+True: 2
+------
+rgb: (0, 0.9987613)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/30'
+True: 2
+------
+rgb: (2, 0.44468406)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/36'
+True: 2
+------
+rgb: (2, 0.9975957)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/none/68'
+True: 2
+------
+rgb: (0, 0.9995801)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/12'
+True: 0
+------
+rgb: (0, 0.99999976)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/44'
+True: 0
+------
+rgb: (0, 0.99751604)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/34'
+True: 0
+------
+rgb: (0, 0.99996436)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/39'
+True: 0
+------
+rgb: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/14'
+True: 0
+------
+rgb: (0, 0.936045)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/10'
+True: 0
+------
+rgb: (2, 0.9738652)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/35'
+True: 0
+------
+rgb: (0, 0.9514711)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/42'
+True: 0
+------
+rgb: (2, 0.8866026)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/38'
+True: 0
+------
+rgb: (2, 0.99906236)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/43'
+True: 0
+------
+rgb: (2, 0.99671715)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/13'
+True: 0
+------
+rgb: (0, 0.9943984)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/33'
+True: 0
+------
+rgb: (2, 0.98024654)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/40'
+True: 0
+------
+rgb: (2, 0.9793051)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/11'
+True: 0
+------
+rgb: (0, 0.9631425)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/depth/bag_on_floor/41'
+True: 0
+------
+rgb: (2, 0.98520815)
+

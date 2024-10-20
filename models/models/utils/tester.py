@@ -89,8 +89,7 @@ class Tester(ABC):
 
         # Create models
         for stream, checkpoint in self._checkpoint_group[1].items():
-            model = self._gen_model()
-            tf.train.Checkpoint(model=model).restore(checkpoint).expect_partial()
+            model = self._gen_model(checkpoint)
             self._models[stream] = model
 
     def test(self) -> None:
@@ -99,10 +98,8 @@ class Tester(ABC):
             sample_logits = {}
 
             for stream, model in self._models.items():
-                sample = tf.convert_to_tensor(
-                    np.load(os.path.join(sample_path, f"{stream}.npy")), dtype=tf.float32
-                )
-                sub_samples = self._gen_sub_samples(sample)
+                sample = np.load(os.path.join(sample_path, f"{stream}.npy"))
+                sub_samples = self._gen_sub_samples(sample) # type: ignore
                 logits, _ = model(sub_samples[0])
                 if len(sub_samples) > 1:
                     for sub_sample in sub_samples[1:]:
@@ -226,13 +223,13 @@ class Tester(ABC):
     #
 
     @abstractmethod
-    def _gen_model(self) -> Any:
+    def _gen_model(self, checkpoint) -> Any:
         """
         Generate model
         """
 
     @abstractmethod
-    def _gen_sub_samples(self, sample: tf.Tensor) -> list[tf.Tensor]:
+    def _gen_sub_samples(self, sample: np.ndarray) -> list[np.ndarray]:
         """
         Generate sub-samples
         """

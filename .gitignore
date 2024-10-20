@@ -33,4 +33,4 @@ opencv*/
 scenic/
 videos/
 
-!kinetics/kinetics/tests/
+!models/models/*/tests/
