@@ -8,7 +8,6 @@ This file contains the Trainer class for the kinetics model
 # pylint: disable=line-too-long
 
 import os
-import gc
 import math
 import torch
 import numpy as np
@@ -100,38 +99,8 @@ class Trainer(_Trainer):
         Save the model
         """
 
-        # Create sample tensors
-        channels = 3 if "rgb" in os.path.basename(self._input_checkpoint_dir) else 2
-        input_sample = tf.convert_to_tensor(np.random.rand(1, 2, 224, 224, channels), dtype=tf.float32)  # type: ignore
-        logits_sample = tf.convert_to_tensor(np.random.rand(1, 2, 7, 7, 1024), dtype=tf.float32)  # type: ignore
-
-        # Create a new checkpoint with only the mixed_5c layer
-        tf.train.Checkpoint(model=self._mixed_5c_model).write(
-            os.path.join(self._tmp_dir, "mixed_5c", "model.ckpt")
-        )
-
-        # Restore the full model from the mixed_5c checkpoint
-        full_model = i3d.InceptionI3d(num_classes=self._num_classes, final_endpoint="Logits")
-        tf.train.Checkpoint(model=full_model).restore(
-            os.path.join(self._tmp_dir, "mixed_5c", "model.ckpt")
-        ).expect_partial()
-        full_model(input_sample)
-
-        # Update the full model with the finetuned logits
-        self._model(logits_sample)
-        model_variables = {var.name: var for var in self._model.trainable_variables}
-
-        variables_to_replace_map = {
-            "inception_i3d/Logits/Conv3d_0c_1x1/conv_3d/b:0": "inception_i3d_logits/Logits/Conv3d_0c_1x1/conv_3d/b:0",
-            "inception_i3d/Logits/Conv3d_0c_1x1/conv_3d/w:0": "inception_i3d_logits/Logits/Conv3d_0c_1x1/conv_3d/w:0",
-        }
-
-        for i, var in enumerate(full_model.trainable_variables):
-            if var.name in variables_to_replace_map:  # type: ignore
-                full_model.trainable_variables[i].assign(  # type: ignore
-                    model_variables[variables_to_replace_map[var.name]]  # type: ignore
-                )
-
-        tf.train.Checkpoint(model=full_model).write(
+        tf.train.Checkpoint(model=self._model).write(
             os.path.join(self._output_checkpoint_dir, "model.ckpt")
         )
+
+
