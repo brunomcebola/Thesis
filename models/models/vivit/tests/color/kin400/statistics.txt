@@ -1,31 +1,93 @@
-Stream 'rgb'
+Stream 'flow'
 ------
-Overall Accuracy: 0.6407407407407408
-Overall Precision: 0.5055211558307534
-Overall Recall: 0.3777777777777778
-Overall F-Score: 0.45698277727225206
+Overall Accuracy: 0.8
+Overall Precision: 0.6945862647384536
+Overall Recall: 0.688888888888889
+Overall F-Score: 0.7039224983072279
 ------
 Class 'bag_on_floor'
-Accuracy: 0.6555555555555556
-Precision: 0.2647058823529412
-Recall: 0.6
-F-Score: 0.4787234042553192
+Accuracy: 0.7777777777777778
+Precision: 0.35294117647058826
+Recall: 0.4
+F-Score: 0.38961038961038963
 ------
 Class 'conflict'
-Accuracy: 0.7777777777777778
-Precision: 0.4
-Recall: 0.6666666666666666
-F-Score: 0.5882352941176471
+Accuracy: 0.9888888888888889
+Precision: 0.9375
+Recall: 1.0
+F-Score: 0.9868421052631579
 ------
 Class 'none'
-Accuracy: 0.5444444444444444
-Precision: 0.6666666666666666
-Recall: 0.17777777777777778
-F-Score: 0.43010752688172044
+Accuracy: 0.7111111111111111
+Precision: 0.7209302325581395
+Recall: 0.6888888888888889
+F-Score: 0.7142857142857143
 ------
 Class 'swipe_card'
-Accuracy: 0.7777777777777778
-Precision: 0.3684210526315789
+Accuracy: 0.9
+Precision: 0.7142857142857143
+Recall: 0.6666666666666666
+F-Score: 0.704225352112676
+
+Stream 'rgb'
+------
+Overall Accuracy: 0.6555555555555557
+Overall Precision: 0.550763888888889
+Overall Recall: 0.4
+Overall F-Score: 0.49022291917886346
+------
+Class 'bag_on_floor'
+Accuracy: 0.6777777777777778
+Precision: 0.28125
+Recall: 0.6
+F-Score: 0.4891304347826087
+------
+Class 'conflict'
+Accuracy: 0.8
+Precision: 0.44
+Recall: 0.7333333333333333
+F-Score: 0.6470588235294118
+------
+Class 'none'
+Accuracy: 0.5666666666666667
+Precision: 0.75
+Recall: 0.2
+F-Score: 0.4838709677419355
+------
+Class 'swipe_card'
+Accuracy: 0.7555555555555555
+Precision: 0.3333333333333333
 Recall: 0.4666666666666667
-F-Score: 0.38461538461538464
+F-Score: 0.35353535353535354
+
+Stream 'joint'
+------
+Overall Accuracy: 0.7407407407407408
+Overall Precision: 0.6356676003734828
+Overall Recall: 0.588888888888889
+Overall F-Score: 0.6532828282828284
+------
+Class 'bag_on_floor'
+Accuracy: 0.7444444444444445
+Precision: 0.35714285714285715
+Recall: 0.6666666666666666
+F-Score: 0.5681818181818182
+------
+Class 'conflict'
+Accuracy: 0.9555555555555556
+Precision: 0.8235294117647058
+Recall: 0.9333333333333333
+F-Score: 0.9090909090909091
+------
+Class 'none'
+Accuracy: 0.6333333333333333
+Precision: 0.7
+Recall: 0.4666666666666667
+F-Score: 0.6363636363636364
+------
+Class 'swipe_card'
+Accuracy: 0.8444444444444444
+Precision: 0.5333333333333333
+Recall: 0.5333333333333333
+F-Score: 0.5333333333333333
 

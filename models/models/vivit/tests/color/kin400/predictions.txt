@@ -1,450 +1,630 @@
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/28'
 True: 1
 ------
+flow: (1, 0.9999999)
 rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/44'
 True: 1
 ------
+flow: (1, 1.0)
 rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/39'
 True: 1
 ------
+flow: (1, 1.0)
 rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/29'
 True: 1
 ------
-rgb: (2, 0.89820963)
+flow: (1, 1.0)
+rgb: (2, 0.9681971)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/35'
 True: 1
 ------
+flow: (1, 0.9821032)
 rgb: (0, 1.0)
+joint: (1, 0.9999752)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/42'
 True: 1
 ------
+flow: (1, 1.0)
 rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/31'
 True: 1
 ------
+flow: (1, 1.0)
 rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/43'
 True: 1
 ------
+flow: (1, 0.9999999)
 rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/26'
 True: 1
 ------
-rgb: (2, 0.6557917)
+flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/37'
 True: 1
 ------
+flow: (1, 0.9999993)
 rgb: (0, 0.9999999)
+joint: (1, 0.9995328)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/40'
 True: 1
 ------
+flow: (1, 1.0)
 rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/27'
 True: 1
 ------
-rgb: (1, 0.99983716)
+flow: (1, 0.9485084)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/30'
 True: 1
 ------
-rgb: (1, 0.9999982)
+flow: (1, 1.0)
+rgb: (1, 0.9995765)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/36'
 True: 1
 ------
+flow: (1, 0.9999974)
 rgb: (0, 0.9999999)
+joint: (0, 0.93717694)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/conflict/41'
 True: 1
 ------
+flow: (1, 1.0)
 rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/44'
 True: 3
 ------
+flow: (2, 0.9719258)
 rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/34'
 True: 3
 ------
+flow: (3, 0.9999999)
 rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/32'
 True: 3
 ------
-rgb: (1, 0.7987558)
+flow: (3, 0.99999964)
+rgb: (1, 0.95190203)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/39'
 True: 3
 ------
+flow: (2, 0.99999905)
 rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/29'
 True: 3
 ------
-rgb: (3, 0.9097179)
+flow: (3, 0.9964588)
+rgb: (3, 0.8681023)
+joint: (3, 0.9994604)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/35'
 True: 3
 ------
+flow: (3, 1.0)
 rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/42'
 True: 3
 ------
+flow: (3, 0.9996954)
 rgb: (1, 1.0)
+joint: (2, 0.7194123)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/31'
 True: 3
 ------
+flow: (0, 0.96910113)
 rgb: (2, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/38'
 True: 3
 ------
+flow: (3, 0.9999999)
 rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/43'
 True: 3
 ------
+flow: (0, 0.9883449)
 rgb: (1, 1.0)
+joint: (1, 0.9384973)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/33'
 True: 3
 ------
+flow: (3, 1.0)
 rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/37'
 True: 3
 ------
-rgb: (3, 1.0)
+flow: (3, 0.9995165)
+rgb: (3, 0.9988507)
+joint: (3, 0.9999994)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/40'
 True: 3
 ------
-rgb: (1, 0.99901354)
+flow: (3, 0.7938437)
+rgb: (1, 0.9984498)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/36'
 True: 3
 ------
+flow: (3, 0.99182737)
 rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/swipe_card/41'
 True: 3
 ------
-rgb: (1, 0.9999999)
+flow: (2, 0.99998426)
+rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/12'
 True: 2
 ------
-rgb: (2, 0.9999887)
+flow: (2, 1.0)
+rgb: (2, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/73'
 True: 2
 ------
-rgb: (2, 0.9504763)
+flow: (2, 1.0)
+rgb: (2, 0.99850625)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/44'
 True: 2
 ------
-rgb: (0, 0.9936971)
+flow: (0, 1.0)
+rgb: (2, 0.9458841)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/34'
 True: 2
 ------
-rgb: (2, 0.99999976)
+flow: (2, 1.0)
+rgb: (2, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/74'
 True: 2
 ------
-rgb: (0, 0.9999993)
+flow: (0, 0.99999833)
+rgb: (0, 0.9988337)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/32'
 True: 2
 ------
-rgb: (3, 0.8101039)
+flow: (2, 0.999995)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/39'
 True: 2
 ------
-rgb: (1, 0.9999918)
+flow: (2, 0.99847037)
+rgb: (1, 0.99999416)
+joint: (2, 0.58137167)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/29'
 True: 2
 ------
-rgb: (3, 0.9999958)
+flow: (2, 0.99982196)
+rgb: (3, 0.99995756)
+joint: (0, 0.9932968)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/4'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (0, 0.9999999)
+joint: (2, 0.9999589)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/62'
 True: 2
 ------
-rgb: (0, 0.9999695)
+flow: (2, 0.99999976)
+rgb: (0, 0.9998919)
+joint: (0, 0.9971813)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/14'
 True: 2
 ------
-rgb: (3, 1.0)
+flow: (2, 1.0)
+rgb: (3, 0.993519)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/70'
 True: 2
 ------
-rgb: (0, 0.9999951)
+flow: (0, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/60'
 True: 2
 ------
-rgb: (0, 0.9999871)
+flow: (2, 0.54796)
+rgb: (0, 0.99991786)
+joint: (0, 0.999943)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/35'
 True: 2
 ------
-rgb: (2, 0.9999132)
+flow: (2, 1.0)
+rgb: (2, 0.8550468)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/58'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (0, 0.9999999)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/31'
 True: 2
 ------
-rgb: (3, 0.98886347)
+flow: (3, 0.9997669)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/51'
 True: 2
 ------
+flow: (0, 1.0)
 rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/38'
 True: 2
 ------
-rgb: (1, 0.99998367)
+flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/71'
 True: 2
 ------
-rgb: (0, 0.97319734)
+flow: (2, 1.0)
+rgb: (0, 0.99333256)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/18'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (3, 1.0)
+joint: (3, 0.9971621)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/56'
 True: 2
 ------
-rgb: (0, 0.92933005)
+flow: (3, 0.99999976)
+rgb: (0, 0.99999213)
+joint: (0, 0.96028656)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/57'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (0, 0.9999999)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/55'
 True: 2
 ------
-rgb: (2, 0.5718815)
+flow: (0, 0.9763506)
+rgb: (0, 0.9999397)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/69'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (0, 1.0)
+joint: (0, 0.9129187)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/67'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (0, 1.0)
+joint: (0, 0.86695045)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/19'
 True: 2
 ------
-rgb: (2, 0.99892455)
+flow: (2, 1.0)
+rgb: (2, 0.99999857)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/13'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (3, 1.0)
+joint: (3, 0.99999976)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/52'
 True: 2
 ------
+flow: (0, 1.0)
 rgb: (1, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/2'
 True: 2
 ------
-rgb: (0, 0.9888919)
+flow: (2, 0.9967976)
+rgb: (0, 0.9906418)
+joint: (2, 0.74698734)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/33'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (2, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/45'
 True: 2
 ------
-rgb: (0, 0.9997793)
+flow: (0, 1.0)
+rgb: (2, 0.8639986)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/59'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (0, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/48'
 True: 2
 ------
-rgb: (2, 0.9998147)
+flow: (2, 0.637763)
+rgb: (2, 0.99996114)
+joint: (2, 0.99997795)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/20'
 True: 2
 ------
-rgb: (3, 0.99683833)
+flow: (2, 0.990781)
+rgb: (3, 0.99164224)
+joint: (2, 0.5247177)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/63'
 True: 2
 ------
-rgb: (0, 0.9999647)
+flow: (0, 0.9999974)
+rgb: (0, 0.99998283)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/17'
 True: 2
 ------
-rgb: (3, 0.9995184)
+flow: (2, 1.0)
+rgb: (3, 0.99971)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/21'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (3, 1.0)
+joint: (2, 0.87000346)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/22'
 True: 2
 ------
+flow: (3, 0.9999999)
 rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/49'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (0, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/72'
 True: 2
 ------
+flow: (2, 0.99999964)
 rgb: (0, 1.0)
+joint: (0, 0.9996257)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/47'
 True: 2
 ------
-rgb: (0, 0.9999548)
+flow: (3, 0.9999974)
+rgb: (0, 0.9999994)
+joint: (0, 0.99999976)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/54'
 True: 2
 ------
-rgb: (0, 0.99880147)
+flow: (1, 0.9999875)
+rgb: (3, 0.9999609)
+joint: (0, 0.99986386)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/30'
 True: 2
 ------
+flow: (0, 0.99282444)
 rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/36'
 True: 2
 ------
+flow: (2, 1.0)
 rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/none/68'
 True: 2
 ------
+flow: (2, 0.9191676)
 rgb: (0, 1.0)
+joint: (1, 0.9907183)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/12'
 True: 0
 ------
-rgb: (0, 0.95070463)
+flow: (2, 1.0)
+rgb: (3, 0.9957759)
+joint: (2, 0.99294645)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/44'
 True: 0
 ------
+flow: (2, 0.99999917)
 rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/34'
 True: 0
 ------
-rgb: (1, 0.9999988)
+flow: (0, 1.0)
+rgb: (1, 0.9999993)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/39'
 True: 0
 ------
+flow: (0, 0.88443625)
 rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/14'
 True: 0
 ------
-rgb: (1, 0.9997898)
+flow: (0, 0.88139147)
+rgb: (1, 0.9999924)
+joint: (1, 0.9862933)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/10'
 True: 0
 ------
-rgb: (2, 0.99873096)
+flow: (2, 0.9999484)
+rgb: (2, 0.5546891)
+joint: (2, 0.9999417)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/35'
 True: 0
 ------
-rgb: (1, 0.9936668)
+flow: (0, 1.0)
+rgb: (1, 0.9952657)
+joint: (0, 0.9999995)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/42'
 True: 0
 ------
+flow: (2, 0.96226645)
 rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/38'
 True: 0
 ------
-rgb: (0, 1.0)
+flow: (0, 0.9999646)
+rgb: (0, 0.99999976)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/43'
 True: 0
 ------
-rgb: (1, 0.9999789)
+flow: (2, 0.9999907)
+rgb: (0, 0.9997414)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/13'
 True: 0
 ------
+flow: (2, 1.0)
 rgb: (3, 1.0)
+joint: (3, 0.99999547)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/33'
 True: 0
 ------
+flow: (0, 1.0)
 rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/40'
 True: 0
 ------
+flow: (2, 0.9999889)
 rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/11'
 True: 0
 ------
-rgb: (0, 0.9999846)
+flow: (2, 1.0)
+rgb: (0, 0.9999994)
+joint: (2, 0.547888)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/vivit/data/test/color/bag_on_floor/41'
 True: 0
 ------
-rgb: (0, 0.99969697)
+flow: (2, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
 

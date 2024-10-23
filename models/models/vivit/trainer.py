@@ -36,11 +36,14 @@ class Trainer(_Trainer):
         self._pre_logits_model = VivitModel.from_pretrained("google/vivit-b-16x2-kinetics400").to(self._device) # type: ignore
 
     def _get_source_samples(self) -> list:
+        _, stream = os.path.basename(self._input_checkpoint_dir).split(".")
+
         source_samples = []
         for dirpath, _, filenames in os.walk(self._source_data_dir):
             if filenames:
                 for f in filenames:
-                    source_samples.append(os.path.join(dirpath, f))
+                    if stream in f:
+                        source_samples.append(os.path.join(dirpath, f))
 
         return source_samples
 
