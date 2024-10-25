@@ -1,0 +1,450 @@
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/28'
+True: 1
+------
+flow: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/44'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/39'
+True: 1
+------
+flow: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/29'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/35'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/42'
+True: 1
+------
+flow: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/31'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/43'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/26'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/37'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/40'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/27'
+True: 1
+------
+flow: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/30'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/36'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/conflict/41'
+True: 1
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/44'
+True: 3
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/34'
+True: 3
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/32'
+True: 3
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/39'
+True: 3
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/29'
+True: 3
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/35'
+True: 3
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/42'
+True: 3
+------
+flow: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/31'
+True: 3
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/38'
+True: 3
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/43'
+True: 3
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/33'
+True: 3
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/37'
+True: 3
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/40'
+True: 3
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/36'
+True: 3
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/swipe_card/41'
+True: 3
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/12'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/73'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/44'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/34'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/74'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/32'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/39'
+True: 2
+------
+flow: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/29'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/4'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/62'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/14'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/70'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/60'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/35'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/58'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/31'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/51'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/38'
+True: 2
+------
+flow: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/71'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/18'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/56'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/57'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/55'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/69'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/67'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/19'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/13'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/52'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/2'
+True: 2
+------
+flow: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/33'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/45'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/59'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/48'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/20'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/63'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/17'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/21'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/22'
+True: 2
+------
+flow: (3, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/49'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/72'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/47'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/54'
+True: 2
+------
+flow: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/30'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/36'
+True: 2
+------
+flow: (1, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/none/68'
+True: 2
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/12'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/44'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/34'
+True: 0
+------
+flow: (2, 0.9999999999403422)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/39'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/14'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/10'
+True: 0
+------
+flow: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/35'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/42'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/38'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/43'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/13'
+True: 0
+------
+flow: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/33'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/40'
+True: 0
+------
+flow: (2, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/11'
+True: 0
+------
+flow: (0, 1.0)
+
+Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/depth/bag_on_floor/41'
+True: 0
+------
+flow: (2, 1.0)
+

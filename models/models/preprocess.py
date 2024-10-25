@@ -2,6 +2,8 @@
 Script to preprocess the videos
 """
 
+# pylint: disable=wrong-import-position
+
 import os
 import shutil
 import argparse
@@ -12,6 +14,7 @@ from typing import Callable
 
 from . import kinetics
 from . import vivit
+from . import hmm
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -19,6 +22,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_MAP: dict[str, Callable] = {
     "kinetics": kinetics.preprocess,
     "vivit": vivit.preprocess,
+    "hmm": hmm.preprocess,
 }
 
 

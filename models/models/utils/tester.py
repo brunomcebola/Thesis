@@ -93,6 +93,10 @@ class Tester(ABC):
             self._models[stream] = model
 
     def test(self) -> None:
+        """
+        Test the models
+        """
+
         # Perform inferences
         for sample_path in tqdm(self._samples, desc="Testing"):
             sample_logits = {}
@@ -127,7 +131,6 @@ class Tester(ABC):
             del sample_logits
             gc.collect()
 
-        tf.keras.backend.clear_session()
         gc.collect()
 
     def save(self) -> None:

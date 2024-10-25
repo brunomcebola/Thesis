@@ -1,0 +1,31 @@
+Stream 'flow'
+------
+Overall Accuracy: 0.7037037037037038
+Overall Precision: 0.6841575091575093
+Overall Recall: 0.48888888888888893
+Overall F-Score: 0.5734275803905003
+------
+Class 'bag_on_floor'
+Accuracy: 0.8555555555555555
+Precision: 0.5714285714285714
+Recall: 0.5333333333333333
+F-Score: 0.5405405405405406
+------
+Class 'conflict'
+Accuracy: 0.7666666666666667
+Precision: 0.39285714285714285
+Recall: 0.7333333333333333
+F-Score: 0.625
+------
+Class 'none'
+Accuracy: 0.6222222222222222
+Precision: 0.9230769230769231
+Recall: 0.26666666666666666
+F-Score: 0.6185567010309279
+------
+Class 'swipe_card'
+Accuracy: 0.7333333333333333
+Precision: 0.37142857142857144
+Recall: 0.8666666666666667
+F-Score: 0.41935483870967744
+

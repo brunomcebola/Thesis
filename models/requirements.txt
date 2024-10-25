@@ -10,6 +10,6 @@ tqdm==4.66.5
 scikit-learn==1.5.2
 seaborn==0.12.2
 matplotlib==3.6.3
-typing_extensions==4.12.2
 transformers==4.45.1
-#torch==2.0.1
+torch==2.0.1
+hmmlearn==0.3.2

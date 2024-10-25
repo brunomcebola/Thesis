@@ -18,6 +18,7 @@ from abc import ABC, abstractmethod
 from . import search
 from . import funcs
 
+
 class Trainer(ABC):
     """
     Trainer interface
@@ -110,6 +111,10 @@ class Trainer(ABC):
         )
 
     def train(self) -> None:
+        """
+        Train the model
+        """
+
         dataset = funcs.create_dataset(np.array(self._samples), np.array(self._labels))
 
         optimizer = tf.optimizers.Adam(learning_rate=self._results["hyperparameters"][1])
@@ -118,7 +123,6 @@ class Trainer(ABC):
             loss_fn = tf.losses.SparseCategoricalCrossentropy(from_logits=True)
 
             funcs.train_step(self._model, dataset, optimizer, loss_fn)
-
 
     def save(self) -> None:
         """
@@ -135,7 +139,9 @@ class Trainer(ABC):
 
         # Save best hyperparameters
         with open(
-            os.path.join(self._output_checkpoint_dir, "best_hyperparameters.txt"), "w", encoding="utf-8"
+            os.path.join(self._output_checkpoint_dir, "best_hyperparameters.txt"),
+            "w",
+            encoding="utf-8",
         ) as f:
             f.write(str(self._results["hyperparameters"]))
 
@@ -143,15 +149,19 @@ class Trainer(ABC):
         np.save(os.path.join(self._output_checkpoint_dir, "scores.npy"), self._results["scores"])
 
         # Save scores plot
-        plt.rc('font', size=20)
-        plt.rc('axes', titlesize=20)
-        plt.rc('axes', labelsize=20)
-        plt.rc('xtick', labelsize=20)
-        plt.rc('ytick', labelsize=20)
-        plt.rc('legend', fontsize=20)
+        plt.rc("font", size=20)
+        plt.rc("axes", titlesize=20)
+        plt.rc("axes", labelsize=20)
+        plt.rc("xtick", labelsize=20)
+        plt.rc("ytick", labelsize=20)
+        plt.rc("legend", fontsize=20)
         _, axs = plt.subplots(1, 1, figsize=(12, 8))
         for hyperparameter, scores in self._results["scores"].items():
-            axs.plot(range(len(scores)), scores, label=f"lr: {hyperparameter[0]} ; ct: {hyperparameter[1]}")
+            axs.plot(
+                range(len(scores)),
+                scores,
+                label=f"lr: {hyperparameter[0]} ; ct: {hyperparameter[1]}",
+            )
         axs.set_title("Validation Score Over Epochs")
         axs.set_xlabel("Epochs")
         axs.set_ylabel("Scores")
@@ -171,7 +181,6 @@ class Trainer(ABC):
 
         shutil.rmtree(self._tmp_dir, ignore_errors=True)
         gc.collect()
-        tf.keras.backend.clear_session()
 
     #
     # Abstract methods
