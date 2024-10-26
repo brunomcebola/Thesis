@@ -1,5 +1,5 @@
 """
-Module to preprocess videos for kinetics-i3d
+Module to preprocess videos for hmm
 """
 
 import os
@@ -14,7 +14,7 @@ BASE_OUTPUT_DIR = os.path.join(BASE_DIR, "data")
 
 def preprocess(video) -> dict[str, np.ndarray]:
     """
-    Function to preprocess videos for kinetics-i3d
+    Function to preprocess videos for hmm
     """
 
     video = cv2.VideoCapture(video)
@@ -31,6 +31,10 @@ def preprocess(video) -> dict[str, np.ndarray]:
         width = 224
 
     frame_dims = (width, height)
+
+    # variables for rgb analysis
+    rgb_frames = []
+    rgb_divider = cv2.cuda.GpuMat(np.full((frame_dims[1], frame_dims[0], 3), 255, dtype=np.uint8))
 
     # variables for flow analysis
     flow_frames = []
@@ -53,6 +57,14 @@ def preprocess(video) -> dict[str, np.ndarray]:
         ret, frame = video.read()
         if not ret:
             break
+
+        # Process rgb
+
+        rgb_frame = cv2.cuda.GpuMat(frame)
+        rgb_frame = cv2.cuda.resize(rgb_frame, frame_dims, interpolation=cv2.INTER_LINEAR)
+        rgb_frame = cv2.cuda.cvtColor(rgb_frame, cv2.COLOR_BGR2RGB)
+        rgb_frame = cv2.cuda.divide(rgb_frame, rgb_divider)
+        rgb_frames.append(rgb_frame)
 
         # Process flow
 
@@ -77,7 +89,10 @@ def preprocess(video) -> dict[str, np.ndarray]:
 
     video.release()
 
+    rgb_frames = [frame.download() for frame in rgb_frames[:-1]]
     flow_frames = [frame.download() for frame in flow_frames]
+
+    rgb_frames = np.expand_dims(np.array(rgb_frames), axis=0)
     flow_frames = np.expand_dims(np.array(flow_frames), axis=0)
 
-    return {"flow": flow_frames}
+    return {"rgb": rgb_frames, "flow": flow_frames}

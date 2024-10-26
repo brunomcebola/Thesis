@@ -2,449 +2,629 @@ Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conf
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/44'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/39'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/29'
 True: 1
 ------
 flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/35'
 True: 1
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/42'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (0, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/31'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/43'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/26'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/37'
 True: 1
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/40'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/27'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/30'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/36'
 True: 1
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/conflict/41'
 True: 1
 ------
 flow: (1, 1.0)
+rgb: (0, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/44'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/34'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/32'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/39'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/29'
 True: 3
 ------
 flow: (0, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/35'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/42'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/31'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/38'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/43'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/33'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/37'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/40'
 True: 3
 ------
 flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/36'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/swipe_card/41'
 True: 3
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/12'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/73'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/44'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/34'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/74'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (0, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/32'
 True: 2
 ------
 flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/39'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/29'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/4'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/62'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/14'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/70'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/60'
 True: 2
 ------
 flow: (0, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/35'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/58'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/31'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (0, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/51'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (0, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/38'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/71'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/18'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/56'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/57'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/55'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/69'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (0, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/67'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (0, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/19'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (2, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/13'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (2, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/52'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/2'
 True: 2
 ------
 flow: (3, 0.9999999999992535)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/33'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/45'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/59'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/48'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/20'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/63'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/17'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/21'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (3, 1.0)
+joint: (3, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/22'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/49'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (0, 1.0)
+joint: (2, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/72'
 True: 2
 ------
 flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/47'
 True: 2
 ------
 flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/54'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/30'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/36'
 True: 2
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/none/68'
 True: 2
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/12'
 True: 0
 ------
 flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/44'
 True: 0
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/34'
 True: 0
 ------
 flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/39'
 True: 0
 ------
 flow: (0, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/14'
 True: 0
 ------
 flow: (2, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/10'
 True: 0
 ------
 flow: (3, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/35'
 True: 0
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/42'
 True: 0
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/38'
 True: 0
 ------
 flow: (0, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/43'
 True: 0
 ------
 flow: (1, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/13'
 True: 0
 ------
 flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/33'
 True: 0
 ------
 flow: (1, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/40'
 True: 0
 ------
 flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (1, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/11'
 True: 0
 ------
 flow: (0, 1.0)
+rgb: (0, 1.0)
+joint: (0, 1.0)
 
 Sample '/home/brunomcebola/Desktop/Thesis/models/models/hmm/data/test/color/bag_on_floor/41'
 True: 0
 ------
 flow: (0, 1.0)
+rgb: (1, 1.0)
+joint: (0, 1.0)
 
